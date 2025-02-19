@@ -1,3 +1,5 @@
+from xblobs import Blob
+from xblobs import find_blobs
 import xarray as xr
 from show_data import *
 from utils import *
@@ -8,14 +10,7 @@ import matplotlib.pyplot as plt
 shot = 1160616016
 
 ds = xr.open_dataset("data/phantom_{}.nc".format(shot))
-# ds = xr.open_dataset("~/phantom_1160616016.nc")
-# ph_1160616016 goes 1.1 to 1.6
-# ph_1120921007 goes 1.35 to 1.5
-
-# Running mean
 ds = run_norm_ds(ds, 1000)
-
-# Roll mean in space
 box_size = 5
 ds = ds.rolling(x=box_size, y=box_size, center=True, min_periods=1).mean()
 
@@ -25,9 +20,11 @@ print("Data with times from {} to {}".format(t_start, t_end))
 t_start = (t_start + t_end) / 2
 t_end = t_start + 0.01
 ds = ds.sel(time=slice(t_start, t_end))
-ds = ds.coarsen(x=4).mean().coarsen(y=4).mean()
-dt = get_dt(ds)
 
-show_movie(ds, variable="frames", gif_name="output.gif")
+blobs = find_blobs(da=ds, scale_threshold='absolute_value',
+                threshold=1.3, region=40, background='flat',
+                n_var='frames', t_dim='time', rad_dim='x', pol_dim='y')
 
+blob1 = Blob(blobs, 1, n_var='frames', t_dim='time', rad_dim='x', pol_dim='y')
 
+print(blob1)

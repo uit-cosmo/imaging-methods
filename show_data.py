@@ -7,15 +7,19 @@ import xarray as xr
 from matplotlib import animation
 from typing import Union, Any
 
+
 def get_signal(x, y, data):
     return data.isel(x=x, y=y).dropna(dim="time", how="any")["frames"].values
+
 
 def get_rz(x, y, data):
     return data.R.isel(x=x, y=y).values, data.Z.isel(x=x, y=y).values
 
+
 def get_dt(data) -> float:
     times = data["time"]
     return float(times[1].values - times[0].values)
+
 
 def show_movie(
     dataset: xr.Dataset,
@@ -167,6 +171,54 @@ def _setup_2d_plot(fig, cv0):
     tx = ax.set_title("t = 0")
     div = make_axes_locatable(ax)
     cax = div.append_axes("right", "5%", "5%")
-    im = ax.imshow(cv0, origin="lower")
+    im = ax.imshow(cv0, origin="lower", interpolation="spline16")
     fig.colorbar(im, cax=cax)
     return im, tx
+
+
+def plot_velocity_field(ax, ds):
+    import velocity_estimation as ve
+    from utils import PhantomDataInterface
+    import matplotlib as mpl
+
+    eo = ve.EstimationOptions()
+    eo.cc_options.interpolate = True
+    eo.neighbour_options.min_separation = 1
+    eo.neighbour_options.max_separation = 1
+
+    movie_data = ve.estimate_velocity_field(PhantomDataInterface(ds), eo)
+    md_ds = xr.Dataset(
+        data_vars=dict(
+            vx=(["x", "y"], movie_data.get_vx()),
+            vy=(["x", "y"], movie_data.get_vy())
+        ),
+        coords=dict(
+            x=ds.x.values,
+            y=ds.y.values
+        )
+    )
+
+    vx = movie_data.get_vx()
+    vy = movie_data.get_vy()
+    confidences = movie_data.get_confidences()
+    R = movie_data.get_R()
+    Z = movie_data.get_Z()
+
+    plt.rcParams["mathtext.fontset"] = "custom"
+
+    norm = mpl.colors.Normalize(vmin=0, vmax=1)
+    qiv = ax.quiver(
+        R,
+        Z,
+        vx,
+        vy,
+        confidences,
+        scale=210000,  # Scale arrows
+        scale_units="xy",
+        angles="xy",
+        norm=norm,
+    )
+    ax.set_xlabel("R [cm]")
+    ax.set_ylabel("Z [cm]")
+    ax.set_ylim(np.min(Z) - 0.5, np.max(Z) + 0.5)
+    ax.set_xlim([np.min(R) - 0.5, np.max(R) + 0.5])

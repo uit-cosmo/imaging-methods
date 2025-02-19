@@ -144,6 +144,9 @@ example.gif
 
 # png files
 *.png
+*.eps
+
+/data
 
 # gifs
 *.gif
