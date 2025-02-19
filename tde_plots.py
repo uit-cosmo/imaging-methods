@@ -34,8 +34,16 @@ ref_signal = ds.isel(x=px, y=py)["frames"].values
 
 def get_tde_curve(p0, n_neighbours, direction, data):
     tdd = ve.TDEDelegator(ve.TDEMethod.CC, ve.CCOptions(interpolate=True), False)
-    neighbours = [(p0[0]+i, p0[1]) if direction == "h" else (p0[0], p0[1]+i) for i in np.arange(-n_neighbours, n_neighbours + 1)]
-    taus_return, ctaus_return, _ = zip(*[tdd.estimate_time_delay(neighbour, p0, PhantomDataInterface(data)) for neighbour in neighbours])
+    neighbours = [
+        (p0[0] + i, p0[1]) if direction == "h" else (p0[0], p0[1] + i)
+        for i in np.arange(-n_neighbours, n_neighbours + 1)
+    ]
+    taus_return, ctaus_return, _ = zip(
+        *[
+            tdd.estimate_time_delay(neighbour, p0, PhantomDataInterface(data))
+            for neighbour in neighbours
+        ]
+    )
     return taus_return, ctaus_return
 
 

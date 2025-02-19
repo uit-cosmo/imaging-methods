@@ -6,6 +6,7 @@ import numpy as np
 import xarray as xr
 from matplotlib import animation
 from typing import Union, Any
+import cosmoplots as cp
 
 
 def get_signal(x, y, data):
@@ -17,7 +18,7 @@ def get_rz(x, y, data):
 
 
 def get_dt(data) -> float:
-    times = data["time"]
+    times = data["t"] if "t" in data._coord_names else data["time"]
     return float(times[1].values - times[0].values)
 
 
@@ -53,15 +54,10 @@ def show_movie(
     - This function chooses between a 1D and 2D visualizations based on the dimensionality of the dataset.
 
     """
+    t_dim = "t" if "t" in dataset._coord_names else "time"
     fig = plt.figure()
 
     dt = get_dt(dataset)
-
-    frames = []
-
-    for timestep in dataset.time.values:
-        frame = dataset[variable].sel(time=timestep).values
-        frames.append(frame)
 
     def animate_1d(i: int) -> Any:
         """
@@ -78,7 +74,7 @@ def show_movie(
 
         """
         x = dataset.x
-        y = frames[i]
+        y = dataset[variable].isel(**{t_dim: i})
         line.set_data(x, y)
         plt.title(f"t = {i*dt:.2f}")
 
@@ -96,24 +92,24 @@ def show_movie(
         None
 
         """
-        arr = frames[i]
+        arr = dataset[variable].isel(**{t_dim: i})
         vmax = np.max(arr)
         vmin = np.min(arr)
         im.set_data(arr)
         im.set_extent((dataset.x[0], dataset.x[-1], dataset.y[0], dataset.y[-1]))
         im.set_clim(vmin, vmax)
-        time = dataset.time[i]
+        time = dataset[t_dim][i]
         tx.set_text(f"t = {time:.7f}")
 
     if dataset.y.size == 1:
         line, tx = _setup_1d_plot(dataset=dataset, variable=variable)
         ani = animation.FuncAnimation(
-            fig, animate_1d, frames=dataset["time"].values.size, interval=interval
+            fig, animate_1d, frames=dataset[t_dim].values.size, interval=interval
         )
     else:
-        im, tx = _setup_2d_plot(fig=fig, cv0=frames[0])
+        im, tx = _setup_2d_plot(fig=fig, cv0=dataset[variable].isel(**{t_dim: 0}))
         ani = animation.FuncAnimation(
-            fig, animate_2d, frames=dataset["time"].values.size, interval=interval
+            fig, animate_2d, frames=dataset[t_dim].values.size, interval=interval
         )
 
     if gif_name:
@@ -176,6 +172,85 @@ def _setup_2d_plot(fig, cv0):
     return im, tx
 
 
+def show_labels(
+    dataset: xr.Dataset,
+    variable: str = "n",
+    interval: int = 100,
+    gif_name: Union[str, None] = None,
+    fps: int = 10,
+) -> None:
+    import matplotlib.colors as mcolors
+
+    t_dim = "t" if "t" in dataset._coord_names else "time"
+    fig, axes = plt.subplots(1, 2)
+
+    n_blobs = dataset.blob_labels.number_of_blobs
+    base_cmap = plt.cm.viridis
+    cmap = mcolors.ListedColormap(base_cmap(np.linspace(0, 1, n_blobs + 1)))
+    bounds = np.arange(-0.5, n_blobs + 1.5, 1)
+
+    def animate_2d(i: int) -> Any:
+        arr = dataset[variable].isel(**{t_dim: i})
+        arr_labels = dataset.blob_labels.isel(**{t_dim: i})
+        im_original.set_data(arr)
+        im_labels.set_data(arr_labels)
+        im_original.set_extent(
+            (dataset.x[0], dataset.x[-1], dataset.y[0], dataset.y[-1])
+        )
+        im_labels.set_extent((dataset.x[0], dataset.x[-1], dataset.y[0], dataset.y[-1]))
+        # im_original.set_clim(np.min(arr), np.max(arr))
+        time = dataset[t_dim][i]
+        title_original.set_text(f"t = {time:.7f}")
+        title_labels.set_text(f"t = {time:.7f}")
+
+    title_original = axes[0].set_title("t = 0")
+    title_labels = axes[1].set_title("t = 0")
+    im_original = axes[0].imshow(
+        dataset[variable].isel(**{t_dim: 0}), origin="lower", interpolation="spline16"
+    )
+    im_labels = axes[1].imshow(
+        dataset.blob_labels.isel(**{t_dim: 0}),
+        origin="lower",
+        cmap=cmap,
+        norm=mcolors.BoundaryNorm(bounds, cmap.N),
+    )
+    ani = animation.FuncAnimation(
+        fig, animate_2d, frames=dataset[t_dim].values.size, interval=interval
+    )
+
+    if gif_name:
+        ani.save(gif_name, writer="ffmpeg", fps=fps)
+    plt.show()
+
+
+def _setup_2d_plot(fig, cv0):
+    """
+    Set up a 2D plot for the animation.
+
+    Parameters
+    ----------
+    fig : matplotlib.figure.Figure
+        Figure object for the plot.
+    cv0 : numpy.ndarray
+        Initial 2D array for the plot.
+
+    Returns
+    -------
+    im : matplotlib.image.AxesImage
+        Image object representing the plot.
+    tx : matplotlib.text.Text
+        Text object for the plot title.
+
+    """
+    ax = fig.add_subplot(111)
+    tx = ax.set_title("t = 0")
+    div = make_axes_locatable(ax)
+    cax = div.append_axes("right", "5%", "5%")
+    im = ax.imshow(cv0, origin="lower", interpolation="spline16")
+    fig.colorbar(im, cax=cax)
+    return im, tx
+
+
 def plot_velocity_field(ax, ds):
     import velocity_estimation as ve
     from utils import PhantomDataInterface
@@ -189,13 +264,9 @@ def plot_velocity_field(ax, ds):
     movie_data = ve.estimate_velocity_field(PhantomDataInterface(ds), eo)
     md_ds = xr.Dataset(
         data_vars=dict(
-            vx=(["x", "y"], movie_data.get_vx()),
-            vy=(["x", "y"], movie_data.get_vy())
+            vx=(["x", "y"], movie_data.get_vx()), vy=(["x", "y"], movie_data.get_vy())
         ),
-        coords=dict(
-            x=ds.x.values,
-            y=ds.y.values
-        )
+        coords=dict(x=ds.x.values, y=ds.y.values),
     )
 
     vx = movie_data.get_vx()

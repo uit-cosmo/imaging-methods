@@ -21,10 +21,18 @@ t_start = (t_start + t_end) / 2
 t_end = t_start + 0.01
 ds = ds.sel(time=slice(t_start, t_end))
 
-blobs = find_blobs(da=ds, scale_threshold='absolute_value',
-                threshold=1.3, region=40, background='flat',
-                n_var='frames', t_dim='time', rad_dim='x', pol_dim='y')
+blobs = find_blobs(
+    da=ds,
+    scale_threshold="absolute_value",
+    threshold=1.3,
+    region=40,
+    background="flat",
+    n_var="frames",
+    t_dim="time",
+    rad_dim="x",
+    pol_dim="y",
+)
 
-blob1 = Blob(blobs, 1, n_var='frames', t_dim='time', rad_dim='x', pol_dim='y')
+blob1 = Blob(blobs, 1, n_var="frames", t_dim="time", rad_dim="x", pol_dim="y")
 
 print(blob1)

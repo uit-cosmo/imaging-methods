@@ -29,5 +29,3 @@ ds = ds.coarsen(x=4).mean().coarsen(y=4).mean()
 dt = get_dt(ds)
 
 show_movie(ds, variable="frames", gif_name="output.gif")
-
-
