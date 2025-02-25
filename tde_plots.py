@@ -1,9 +1,7 @@
-import xarray as xr
-from show_data import *
-from utils import *
+from phantom.show_data import *
+from phantom.utils import *
 import velocity_estimation as ve
 import cosmoplots as cp
-import matplotlib as mpl
 import matplotlib.pyplot as plt
 
 shot = 1120921007

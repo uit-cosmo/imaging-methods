@@ -1,10 +1,5 @@
 import xblobs as xb
-import xarray as xr
-from show_data import *
-from utils import *
-import velocity_estimation as ve
-import cosmoplots as cp
-import matplotlib.pyplot as plt
+from phantom.show_data import *
 from synthetic_data import *
 
 

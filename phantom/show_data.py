@@ -6,7 +6,6 @@ import numpy as np
 import xarray as xr
 from matplotlib import animation
 from typing import Union, Any
-import cosmoplots as cp
 
 
 def get_signal(x, y, data):
@@ -254,7 +253,7 @@ def _setup_2d_plot(fig, cv0):
 
 def plot_velocity_field(ax, ds):
     import velocity_estimation as ve
-    from utils import PhantomDataInterface
+    from phantom.utils import PhantomDataInterface
     import matplotlib as mpl
 
     eo = ve.EstimationOptions()
