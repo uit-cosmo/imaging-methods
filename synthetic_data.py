@@ -78,4 +78,6 @@ def make_2d_realization(rp: RunParameters, bf: BlobFactory):
         verbose=False,
         t_init=0,
     )
-    return model.make_realization(speed_up=True, error=1e-10)
+    ds = model.make_realization(speed_up=True, error=1e-10)
+    ds = ds.rename({"n": "frames", "t": "time"})
+    return ds

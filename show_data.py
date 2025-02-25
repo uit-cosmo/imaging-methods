@@ -174,7 +174,7 @@ def _setup_2d_plot(fig, cv0):
 
 def show_labels(
     dataset: xr.Dataset,
-    variable: str = "n",
+    variable: str = "frames",
     interval: int = 100,
     gif_name: Union[str, None] = None,
     fps: int = 10,
@@ -185,13 +185,13 @@ def show_labels(
     fig, axes = plt.subplots(1, 2)
 
     n_blobs = dataset.blob_labels.number_of_blobs
-    base_cmap = plt.cm.viridis
+    base_cmap = plt.cm.plasma
     cmap = mcolors.ListedColormap(base_cmap(np.linspace(0, 1, n_blobs + 1)))
     bounds = np.arange(-0.5, n_blobs + 1.5, 1)
 
     def animate_2d(i: int) -> Any:
-        arr = dataset[variable].isel(**{t_dim: i})
-        arr_labels = dataset.blob_labels.isel(**{t_dim: i})
+        arr = dataset[variable].isel(time=i)
+        arr_labels = dataset.blob_labels.isel(time=i)
         im_original.set_data(arr)
         im_labels.set_data(arr_labels)
         im_original.set_extent(
@@ -206,7 +206,7 @@ def show_labels(
     title_original = axes[0].set_title("t = 0")
     title_labels = axes[1].set_title("t = 0")
     im_original = axes[0].imshow(
-        dataset[variable].isel(**{t_dim: 0}), origin="lower", interpolation="spline16"
+        dataset[variable].isel(time=0), origin="lower", interpolation="spline16"
     )
     im_labels = axes[1].imshow(
         dataset.blob_labels.isel(**{t_dim: 0}),

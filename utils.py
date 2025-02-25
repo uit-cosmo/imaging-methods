@@ -81,3 +81,7 @@ def get_t_start_end(ds):
     t_start = times[0]
     t_end = times[len(times) - 1]
     return t_start, t_end
+
+
+def preprocess_dataset(ds):
+    return full_norm_ds(ds)
