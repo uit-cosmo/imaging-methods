@@ -27,6 +27,7 @@ def show_movie(
     interval: int = 100,
     gif_name: Union[str, None] = None,
     fps: int = 10,
+    interpolation: str = "spline16",
 ) -> None:
     """
     Creates an animation that shows the evolution of a specific variable over time.
@@ -107,7 +108,11 @@ def show_movie(
             fig, animate_1d, frames=dataset[t_dim].values.size, interval=interval
         )
     else:
-        im, tx = _setup_2d_plot(fig=fig, cv0=dataset[variable].isel(**{t_dim: 0}))
+        im, tx = _setup_2d_plot(
+            fig=fig,
+            cv0=dataset[variable].isel(**{t_dim: 0}),
+            interpolation=interpolation,
+        )
         ani = animation.FuncAnimation(
             fig, animate_2d, frames=dataset[t_dim].values.size, interval=interval
         )
@@ -144,7 +149,7 @@ def _setup_1d_plot(dataset, variable):
     return line, tx
 
 
-def _setup_2d_plot(fig, cv0):
+def _setup_2d_plot(fig, cv0, interpolation):
     """
     Set up a 2D plot for the animation.
 
@@ -167,7 +172,7 @@ def _setup_2d_plot(fig, cv0):
     tx = ax.set_title("t = 0")
     div = make_axes_locatable(ax)
     cax = div.append_axes("right", "5%", "5%")
-    im = ax.imshow(cv0, origin="lower", interpolation="spline16")
+    im = ax.imshow(cv0, origin="lower", interpolation=interpolation)
     fig.colorbar(im, cax=cax)
     return im, tx
 
@@ -221,34 +226,6 @@ def show_labels(
     if gif_name:
         ani.save(gif_name, writer="ffmpeg", fps=fps)
     plt.show()
-
-
-def _setup_2d_plot(fig, cv0):
-    """
-    Set up a 2D plot for the animation.
-
-    Parameters
-    ----------
-    fig : matplotlib.figure.Figure
-        Figure object for the plot.
-    cv0 : numpy.ndarray
-        Initial 2D array for the plot.
-
-    Returns
-    -------
-    im : matplotlib.image.AxesImage
-        Image object representing the plot.
-    tx : matplotlib.text.Text
-        Text object for the plot title.
-
-    """
-    ax = fig.add_subplot(111)
-    tx = ax.set_title("t = 0")
-    div = make_axes_locatable(ax)
-    cax = div.append_axes("right", "5%", "5%")
-    im = ax.imshow(cv0, origin="lower", interpolation="spline16")
-    fig.colorbar(im, cax=cax)
-    return im, tx
 
 
 def plot_velocity_field(ax, ds):

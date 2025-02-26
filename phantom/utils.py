@@ -77,29 +77,25 @@ def interpolate_nans_3d(ds, time_dim="time"):
 
         nan_points = np.array((x[~valid_mask], y[~valid_mask])).T
 
+        # griddata interpolates only for grid points inside the convex hull, otherwise leave values to nan.
+        # For values outside the convex hull we use "nearest", which is good enough for plotting purposes.
         interpolated_values = griddata(
             valid_points, valid_values, nan_points, method="linear"
         )
+        interpolated_values_nearest = griddata(
+            valid_points, valid_values, nan_points, method="nearest"
+        )
+        interpolated_values[np.isnan(interpolated_values)] = (
+            interpolated_values_nearest[np.isnan(interpolated_values)]
+        )
         array[~valid_mask] = interpolated_values
-        return array
 
     x, y = np.meshgrid(ds["x"], ds["y"], indexing="xy")
 
     # Iterate over the time dimension and interpolate each 2D slice
-    interpolated_data = []
-    for t in ds[time_dim]:
+    for t in ds[time_dim].values:
         slice_data = ds["frames"].sel({time_dim: t}).values
-        interpolated_slice = interpolate_2d(slice_data, x, y)
-        interpolated_data.append(interpolated_slice)
-
-    # Reconstruct the xarray DataArray with interpolated values
-    interpolated_array = xr.DataArray(
-        np.stack(interpolated_data, axis=0),
-        dims=(time_dim, "y", "x"),
-        coords={time_dim: ds[time_dim], "y": ds["y"], "x": ds["x"]},
-    )
-
-    return xr.Dataset({"frames": interpolated_array})
+        interpolate_2d(slice_data, x, y)
 
 
 class PhantomDataInterface(ve.ImagingDataInterface):
