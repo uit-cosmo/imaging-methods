@@ -6,6 +6,7 @@ import numpy as np
 import xarray as xr
 from matplotlib import animation
 from typing import Union, Any
+from scipy import interpolate
 
 
 def get_signal(x, y, data):
@@ -54,29 +55,12 @@ def show_movie(
     - This function chooses between a 1D and 2D visualizations based on the dimensionality of the dataset.
 
     """
+    has_limiter = "rlimt" in dataset.coords.keys()
+    has_lcfs = "rlcfs" in dataset
     t_dim = "t" if "t" in dataset._coord_names else "time"
     fig = plt.figure()
 
     dt = get_dt(dataset)
-
-    def animate_1d(i: int) -> Any:
-        """
-        Create the 1D plot for each frame of the animation.
-
-        Parameters
-        ----------
-        i : int
-            Frame index.
-
-        Returns
-        -------
-        None
-
-        """
-        x = dataset.x
-        y = dataset[variable].isel(**{t_dim: i})
-        line.set_data(x, y)
-        plt.title(f"t = {i*dt:.2f}")
 
     def animate_2d(i: int) -> Any:
         """
@@ -93,88 +77,78 @@ def show_movie(
 
         """
         arr = dataset[variable].isel(**{t_dim: i})
-        vmax = np.max(arr)
-        vmin = np.min(arr)
         vmin, vmax = -1, 3
         im.set_data(arr)
-        im.set_extent((dataset.x[0], dataset.x[-1], dataset.y[0], dataset.y[-1]))
+        # im.set_extent((dataset.x[0], dataset.x[-1], dataset.y[0], dataset.y[-1]))
         im.set_clim(vmin, vmax)
         time = dataset[t_dim][i]
         tx.set_text(f"t = {time:.7f}")
 
-    if dataset.y.size == 1:
-        line, tx = _setup_1d_plot(dataset=dataset, variable=variable)
-        ani = animation.FuncAnimation(
-            fig, animate_1d, frames=dataset[t_dim].values.size, interval=interval
+    ax = fig.add_subplot(111)
+    tx = ax.set_title("t = 0")
+    div = make_axes_locatable(ax)
+    cax = div.append_axes("right", "5%", "5%")
+    t_init = dataset[t_dim][0].values
+    im = ax.imshow(
+        dataset[variable].isel(**{t_dim: 0}),
+        origin="lower",
+        interpolation=interpolation,
+    )
+    fig.colorbar(im, cax=cax)
+
+    if has_limiter:
+        limit_spline = interpolate.interp1d(
+            dataset["zlimit"], dataset["rlimit"], kind="cubic"
         )
-    else:
-        im, tx = _setup_2d_plot(
-            fig=fig,
-            cv0=dataset[variable].isel(**{t_dim: 0}),
-            interpolation=interpolation,
+        zfine = np.linspace(-8, 1, 100)
+        ax.plot(limit_spline(zfine), zfine, color="black", ls="--")
+
+    if has_lcfs:
+        rlcfs, zlcfs = calculate_splinted_LCFS(
+            t_init,
+            dataset["efit_time"].values,
+            dataset["rlcfs"].values,
+            dataset["zlcfs"].values,
         )
-        ani = animation.FuncAnimation(
-            fig, animate_2d, frames=dataset[t_dim].values.size, interval=interval
-        )
+        lcfs = ax.plot(rlcfs, zlcfs, color="black")
+
+    im.set_extent(
+        (dataset.R[0, -1], dataset.R[0, 0], dataset.Z[0, 0], dataset.Z[-1, 0])
+    )
+
+    ani = animation.FuncAnimation(
+        fig, animate_2d, frames=dataset[t_dim].values.size, interval=interval
+    )
 
     if gif_name:
         ani.save(gif_name, writer="ffmpeg", fps=fps)
     plt.show()
 
 
-def _setup_1d_plot(dataset, variable):
-    """
-    Set up a 1D plot for the animation.
+def calculate_splinted_LCFS(
+    time_step: float,
+    efit_time: np.ndarray,
+    rbbbs: np.ndarray,
+    zbbbs: np.ndarray,
+):
+    rbbbs = np.array(rbbbs)
+    zbbbs = np.array(zbbbs)
 
-    Parameters
-    ----------
-    dataset : xr.Dataset
-        Model data.
-    variable : str
-        Variable to be animated.
+    time_difference = np.absolute(time_step - efit_time)
+    time_index = time_difference.argmin()
 
-    Returns
-    -------
-    line : matplotlib.lines.Line2D
-        Line object representing the plot.
-    tx : matplotlib.text.Text
-        Text object for the plot title.
+    closest_rbbbs = rbbbs[:, time_index]
+    closest_zbbbs = zbbbs[:, time_index]
 
-    """
-    ax = plt.axes(xlim=(0, dataset.x[-1]), ylim=(0, dataset[variable].max()))
-    tx = ax.set_title(r"$t = 0$")
-    (line,) = ax.plot([], [], lw=2)
-    ax.set_xlabel(r"$x$")
-    ax.set_ylabel(rf"${variable}$")
-    return line, tx
+    f = interpolate.interp1d(
+        closest_zbbbs[closest_rbbbs >= 86],
+        closest_rbbbs[closest_rbbbs >= 86],
+        kind="cubic",
+    )
+    z_fine = np.linspace(-8, 1, 100)
+    r_fine = f(z_fine)
 
-
-def _setup_2d_plot(fig, cv0, interpolation):
-    """
-    Set up a 2D plot for the animation.
-
-    Parameters
-    ----------
-    fig : matplotlib.figure.Figure
-        Figure object for the plot.
-    cv0 : numpy.ndarray
-        Initial 2D array for the plot.
-
-    Returns
-    -------
-    im : matplotlib.image.AxesImage
-        Image object representing the plot.
-    tx : matplotlib.text.Text
-        Text object for the plot title.
-
-    """
-    ax = fig.add_subplot(111)
-    tx = ax.set_title("t = 0")
-    div = make_axes_locatable(ax)
-    cax = div.append_axes("right", "5%", "5%")
-    im = ax.imshow(cv0, origin="lower", interpolation=interpolation)
-    fig.colorbar(im, cax=cax)
-    return im, tx
+    return r_fine, z_fine
 
 
 def show_labels(
