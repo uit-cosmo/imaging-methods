@@ -12,7 +12,7 @@ t_start, t_end = get_t_start_end(ds_phantom)
 print("Data with times from {} to {}".format(t_start, t_end))
 
 t_start = (t_start + t_end) / 2
-t_end = t_start + 0.002
+t_end = t_start + 0.0005
 ds_phantom = ds_phantom.sel(time=slice(t_start, t_end))
 
 # Roll mean in space

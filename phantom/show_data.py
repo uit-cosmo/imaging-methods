@@ -18,7 +18,7 @@ def get_rz(x, y, data):
 
 
 def get_dt(data) -> float:
-    times = data["t"] if "t" in data._coord_names else data["time"]
+    times = data["time"] if "time" in data._coord_names else data["tau"]
     return float(times[1].values - times[0].values)
 
 
@@ -57,7 +57,7 @@ def show_movie(
     """
     has_limiter = "rlimt" in dataset.coords.keys()
     has_lcfs = "rlcfs" in dataset
-    t_dim = "t" if "t" in dataset._coord_names else "time"
+    t_dim = "time" if "time" in dataset._coord_names else "tau"
     fig = plt.figure()
 
     dt = get_dt(dataset)
@@ -78,6 +78,7 @@ def show_movie(
         """
         arr = dataset[variable].isel(**{t_dim: i})
         vmin, vmax = -1, 3
+        vmin, vmax = 0, 1
         im.set_data(arr)
         # im.set_extent((dataset.x[0], dataset.x[-1], dataset.y[0], dataset.y[-1]))
         im.set_clim(vmin, vmax)
