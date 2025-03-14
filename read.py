@@ -1,7 +1,7 @@
 from phantom.show_data import *
 from phantom.utils import *
 
-shot = 1160616025
+shot = 1160616016
 
 ds = xr.open_dataset("data/phantom_{}.nc".format(shot))
 # ds = xr.open_dataset("~/phantom_1160616016.nc")

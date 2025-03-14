@@ -1,7 +1,7 @@
 from phantom.show_data import *
 from phantom.utils import *
 
-shot = 1160616025
+shot = 1140613026
 
 ds = xr.open_dataset("data/apd_{}.nc".format(shot))
 ds = run_norm_ds(ds, 1000)

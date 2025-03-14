@@ -1,0 +1,1 @@
+gifsicle -i output.gif -O3 --colors 32 --lossy=150 -o output-opt.gif

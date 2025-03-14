@@ -78,7 +78,7 @@ def show_movie(
         """
         arr = dataset[variable].isel(**{t_dim: i})
         vmin, vmax = -1, 3
-        vmin, vmax = 0, 1
+        # vmin, vmax = 0, 1
         im.set_data(arr)
         # im.set_extent((dataset.x[0], dataset.x[-1], dataset.y[0], dataset.y[-1]))
         im.set_clim(vmin, vmax)
