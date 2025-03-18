@@ -79,8 +79,7 @@ def plot_ccfs_grid(ccf=True):
     plt.show()
 
 
-plot_ccfs_grid()
-
+# plot_ccfs_grid()
 
 ds_short = ds.isel(x=slice(-4, None))
 refx = refx - 5
@@ -94,107 +93,92 @@ tau, _ = fpp.corr_fun(
 )  # Apply correlation function to each time series
 
 
-def corr_wrapper(s):
-    tau, res = fpp.corr_fun(
-        s_ref, s, dt=5e-7
-    )  # Apply correlation function to each time series
-    return res
+def get_2d_corr(x, y):
+    ref_signal = ds_short.frames.isel(x=x, y=y).values  # Select the time series at (refx, refy)
+    def corr_wrapper(s):
+        tau, res = fpp.corr_fun(
+            ref_signal, s, dt=5e-7
+        )  # Apply correlation function to each time series
+        return res
+
+    ds_corr = xr.apply_ufunc(
+        corr_wrapper,
+        ds_short,
+        input_core_dims=[["time"]],  # Each function call operates on a single time series
+        output_core_dims=[["tau"]],  # Output is also a time array
+        vectorize=True,
+    )
+    ds_corr = ds_corr.assign_coords(tau=tau)
+    trajectory_times = tau[np.abs(tau) < 1e-5]
+    return ds_corr.sel(tau=trajectory_times)
 
 
-ds_corr = xr.apply_ufunc(
-    corr_wrapper,
-    ds_short,
-    input_core_dims=[["time"]],  # Each function call operates on a single time series
-    output_core_dims=[["tau"]],  # Output is also a time array
-    vectorize=True,
-)
-ds_corr = ds_corr.assign_coords(tau=tau)
-trajectory_times = tau[np.abs(tau) < 1e-5]
-ds_corr = ds_corr.sel(tau=trajectory_times)
-
-
-def rotated_blob(params, x, y):
-    lx, ly, rx, ry, t = params
+def rotated_blob(params, rx, ry, x, y):
+    lx, ly, t = params
     xt = (x - rx) * np.cos(t) + (y - ry) * np.sin(t)
     yt = (y - ry) * np.cos(t) - (x - rx) * np.sin(t)
     return np.exp(-((xt / lx) ** 2) - ((yt / ly) ** 2))
 
 
+def plot_2d_ccf(x, y, ax):
+    corr_data = get_2d_corr(x, y)
+    rx, ry = corr_data.R.isel(x=x, y=y).values, corr_data.Z.isel(x=x,y=y).values
+    data = corr_data.sel(tau=0).frames.values
+
+    def model(params):
+        blob = rotated_blob(params, rx, ry, corr_data.R.values, corr_data.Z.values)
+        return np.sum((blob - data) ** 2)
+
+    # Initial guesses for lx, ly, and t
+    # Rough estimation
+    bounds = [
+        (0, 5),  # lx: 0 to 5
+        (0, 5),  # ly: 0 to 5
+        (-np.pi / 4, np.pi / 4)  # t: 0 to 2π
+    ]
+
+    result = differential_evolution(
+        model,
+        bounds,
+        seed=42,  # Optional: for reproducibility
+        popsize=15,  # Optional: population size multiplier
+        maxiter=1000  # Optional: maximum number of iterations
+    )
+
+    im = ax.imshow(corr_data.sel(tau=0).frames, origin="lower", interpolation="spline16")
+    ax.scatter(rx, ry, color="black")
+
+    rmin, rmax, zmin, zmax = corr_data.R[0, 0] - 0.05, corr_data.R[0, -1], corr_data.Z[0, 0], corr_data.Z[-1, 0]
+
+    def ellipse_parameters(params, alpha):
+        lx, ly, t = params
+        lx, ly = lx / 2, ly / 2
+        xvals = lx * np.cos(alpha) * np.cos(t) - ly * np.sin(alpha) * np.sin(t) + rx
+        yvals = lx * np.cos(alpha) * np.sin(t) + ly * np.sin(alpha) * np.cos(t) + ry
+        return xvals, yvals
+
+    alphas = np.linspace(0, 2 * np.pi, 200)
+    elipsx, elipsy = zip(*[ellipse_parameters(result.x, a) for a in alphas])
+    ax.plot(elipsx, elipsy)
+    im.set_extent((rmin, rmax, zmin, zmax))
+
+    return result.x
+
+
 # Define the function to fit
-data = ds_corr.sel(tau=0).frames.values
-def model(params):
-    blob = rotated_blob(params, ds_corr.R.values, ds_corr.Z.values)
-    return np.sum((blob - data) ** 2)
+fig, ax = plt.subplots(3, 5, figsize=(30, 50))
+yvals = [7, 5, 4, 3, 1]
+xvals = [1, 2, 3]
 
-
-# Initial guesses for lx, ly, and t
-# Rough estimation
-R, Z = ds_corr.R.values, ds_corr.Z.values
-r_bounds = (np.min(R), np.max(R))
-z_bounds = (np.min(Z), np.max(Z))
-bounds = [
-    (0, 5),           # lx: 0 to 5
-    (0, 5),           # ly: 0 to 5
-    r_bounds,         # rx: min to max of R data
-    z_bounds,         # ry: min to max of Z data
-    (-np.pi/4, np.pi/4)    # t: 0 to 2π
-]
-
-data_weighted = data / data.sum()
-rx_guess = np.sum(R * data_weighted)
-ry_guess = np.sum(Z * data_weighted)
-lx_guess = np.std(R)  # Rough width estimate
-ly_guess = np.std(Z)
-t_guess = 0.0  # Start with no rotation
-
-initial_guess = [lx_guess, ly_guess, rx_guess, ry_guess, t_guess]
-# initial_guess = [1.0, 1.0, 90, 0, 0.0]
-
-# Perform the least squares fit
-# result = minimize(model, initial_guess, method="Nelder-Mead")
-
-result = differential_evolution(
-    model,
-    bounds,
-    seed=42,  # Optional: for reproducibility
-    popsize=15,  # Optional: population size multiplier
-    maxiter=1000  # Optional: maximum number of iterations
-)
-
-# Extract fitted parameters
-lx_fit, ly_fit, rx_fit, ry_fit, t_fit = result.x
-
-print(f"Fitted parameters: lx = {lx_fit:.4f}, ly = {ly_fit:.4f}, rx = {rx_fit:.4f}, ry = {ry_fit:.4f}, t = {t_fit:.4f}")
-
-fig, ax = plt.subplots(1, 2)
-
-im = ax[0].imshow(ds_corr.sel(tau=0).frames, origin="lower", interpolation="spline16")
-ax[0].scatter(ds_corr.isel(x=refx, y=refy).R, ds_corr.isel(x=refx, y=refy).Z, color="black")
-
-rmin, rmax, zmin, zmax = ds_corr.R[0, 0]-0.05, ds_corr.R[0, -1], ds_corr.Z[0, 0], ds_corr.Z[-1, 0]
-rfine = np.linspace(rmin, rmax, 50)
-zfine = np.linspace(zmin, zmax, 50)
-r_grid, z_grid = np.meshgrid(rfine, zfine)
-
-
-def ellipse_parameters(params, alpha):
-    lx, ly, rx, ry, t = params
-    lx, ly = lx/2, ly/2
-    x = lx * np.cos(alpha) * np.cos(t) - ly * np.sin(alpha) * np.sin(t) + rx
-    y = lx * np.cos(alpha) * np.sin(t) + ly * np.sin(alpha) * np.cos(t) + ry
-    return x, y
-
-alphas = np.linspace(0, 2 * np.pi, 200)
-elipsx, elipsy = zip(*[ellipse_parameters(result.x, a) for a in alphas])
-ax[0].plot(elipsx, elipsy)
-im.set_extent((rmin, rmax, zmin, zmax))
-
-im2 = ax[1].imshow(rotated_blob(result.x, r_grid, z_grid), origin="lower", interpolation="spline16")
-im2.set_extent((rmin, rmax, zmin, zmax))
+for x in range(3):
+    for y in range(5):
+        lx, ly, t = plot_2d_ccf(xvals[x], yvals[y], ax[x, y])
+        ax[x, y].set_title(r"lx = {:.2f}, ly = {:.2f}, a = {:.2f}".format(lx, ly, t))
 
 plt.savefig("2d_ccf_{}{}".format(refx+5, refy), bbox_inches="tight")
 plt.show()
 
+ds_corr = get_2d_corr(refx, refy)
 
 pd = ve.estimate_velocities_for_pixel(refx, refy, ve.CModImagingDataInterface(ds_short), estimation_options=eo)
 vx, vy = pd.vx, pd.vy
