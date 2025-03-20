@@ -29,6 +29,7 @@ def show_movie(
     gif_name: Union[str, None] = None,
     fps: int = 10,
     interpolation: str = "spline16",
+    lims = None,
 ) -> None:
     """
     Creates an animation that shows the evolution of a specific variable over time.
@@ -77,7 +78,10 @@ def show_movie(
 
         """
         arr = dataset[variable].isel(**{t_dim: i})
-        vmin, vmax = -1, 3
+        if lims is None:
+            vmin, vmax = -1, 3
+        else:
+            vmin, vmax = lims
         # vmin, vmax = 0, 1
         im.set_data(arr)
         # im.set_extent((dataset.x[0], dataset.x[-1], dataset.y[0], dataset.y[-1]))
@@ -114,7 +118,7 @@ def show_movie(
         lcfs = ax.plot(rlcfs, zlcfs, color="black")
 
     im.set_extent(
-        (dataset.R[0, -1], dataset.R[0, 0], dataset.Z[0, 0], dataset.Z[-1, 0])
+        (dataset.R[0, 0], dataset.R[0, -1], dataset.Z[0, 0], dataset.Z[-1, 0])
     )
 
     ani = animation.FuncAnimation(

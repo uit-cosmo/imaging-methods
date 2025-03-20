@@ -4,7 +4,7 @@ from phantom.utils import *
 shot = 1140613026
 
 ds = xr.open_dataset("data/apd_{}.nc".format(shot))
-ds = run_norm_ds(ds, 1000)
+ds["frames"] = run_norm_ds(ds, 1000)["frames"]
 
 t_start, t_end = get_t_start_end(ds)
 print("Data with times from {} to {}".format(t_start, t_end))

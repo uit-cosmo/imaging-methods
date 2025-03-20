@@ -1,10 +1,8 @@
 from typing import Union, List
 
-from nptyping import NDArray
-
-from synthetic_data import *
-import json
 import numpy as np
+from nptyping import NDArray
+import xarray as xr
 
 from blobmodel import (
     Model,
@@ -79,5 +77,9 @@ def make_2d_realization(rp: RunParameters, bf: BlobFactory):
         t_init=0,
     )
     ds = model.make_realization(speed_up=True, error=1e-10)
-    ds = ds.rename({"n": "frames", "t": "time"})
-    return ds
+    grid_r, grid_z = np.meshgrid(ds.x.values, ds.y.values)
+
+    return xr.Dataset(
+        {"frames": (["y", "x", "time"], ds.n.values)},
+        coords={"R": (["y", "x"], grid_r), "Z": (["y", "x"], grid_z), "time": (["time"], ds.t.values)},
+    )
