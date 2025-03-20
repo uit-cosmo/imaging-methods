@@ -27,8 +27,8 @@ def get_blob(vx, vy, posx, posy, lx, ly, t_init, theta, bs=BlobShapeImpl()):
     )
 
 
-num_blobs = 100
-T = 200
+num_blobs = 1000
+T = 2000
 Lx = 3
 Ly = 3
 lx = 0.5
@@ -92,8 +92,9 @@ def find_events(ds, refx, refy, threshold=3, window_size=10):
 
         global_max = True
         if global_max:
-            peak = event_ts[max_idx_in_event]
-            if not peak == ds.isel(time=peak_time_idx).max():
+            ref_peak = ds.frames.isel(time=peak_time_idx, x=refx, y=refy).item()
+            global_peak = ds.frames.isel(time=peak_time_idx, x=slice(refx-5, refy+5), y=slice(refy-5, refy+5)).max().item()
+            if not np.isclose(ref_peak, global_peak, atol=1e-6):
                 continue
 
         # Calculate window bounds
