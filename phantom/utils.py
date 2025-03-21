@@ -203,7 +203,6 @@ def rotated_blob(params, rx, ry, x, y):
 
 def ellipse_parameters(params, rx, ry, alpha):
     lx, ly, t = params
-    lx, ly = lx / 2, ly / 2
     xvals = lx * np.cos(alpha) * np.cos(t) - ly * np.sin(alpha) * np.sin(t) + rx
     yvals = lx * np.cos(alpha) * np.sin(t) + ly * np.sin(alpha) * np.cos(t) + ry
     return xvals, yvals
