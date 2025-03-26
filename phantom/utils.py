@@ -257,3 +257,90 @@ def get_taumax(v, w, dx, dy, lx, ly, t):
     d2 = (lx_fit ** 2 * v ** 2 + ly_fit ** 2 * w ** 2) * np.sin(t_fit) ** 2
     d3 = 2 * (lx_fit ** 2 - ly_fit ** 2) * v * w * np.cos(t_fit) * np.sin(t_fit)
     return (a1 - a2 + a3) / (d1 + d2 - d3)
+
+
+def find_events(ds, refx, refy, threshold=3, window_size=10):
+    """
+    Find events where reference pixel exceeds threshold and extract windows around peaks.
+
+    Parameters:
+    ds (xarray.Dataset): Input dataset with time, x, y coordinates
+    refx (int): X index of reference pixel
+    refy (int): Y index of reference pixel
+    threshold (float): Threshold value for event detection
+    window_size (int): Size of window to extract around peaks
+
+    Returns:
+    list: List of xarray.Dataset objects containing extracted windows
+    """
+    # Assuming the data variable is named 'data' - adjust if different
+    ref_ts = ds.frames.isel(x=refx, y=refy)
+
+    # Find indices where signal exceeds threshold
+    above_threshold = ref_ts > threshold
+    indices = np.where(above_threshold)[0]
+
+    # Split into contiguous events
+    events = []
+    if len(indices) > 0:
+        diffs = np.diff(indices)
+        split_points = np.where(diffs > 1)[0] + 1
+        events = np.split(indices, split_points)
+
+    windows = []
+    half_window = window_size // 2
+
+    for event in events:
+        if len(event) == 0:
+            continue
+
+        # Find peak within the event
+        event_ts = ref_ts.isel(time=event)
+        max_idx_in_event = event_ts.argmax().item()
+        peak_time_idx = event[max_idx_in_event]
+
+        global_max = True
+        if global_max:
+            ref_peak = ds.frames.isel(time=peak_time_idx, x=refx, y=refy).item()
+            global_peak = ds.frames.isel(time=peak_time_idx, x=slice(refx-5, refy+5), y=slice(refy-5, refy+5)).max().item()
+            if not np.isclose(ref_peak, global_peak, atol=1e-6):
+                continue
+
+        # Calculate window bounds
+        start = max(0, peak_time_idx - half_window)
+        end = min(len(ds.time), peak_time_idx + half_window + 1)  # +1 for inclusive end
+
+        # Skip incomplete windows if needed (optional)
+        if (end - start) < window_size:
+            continue
+
+        # Extract window for all pixels
+        window = ds.isel(time=slice(start, end))
+        windows.append(window)
+
+    return windows
+
+
+def compute_average_event(windows):
+    """
+    Compute average event across all windows by aligning peak times.
+
+    Parameters:
+    windows (list of xarray.Dataset): List of event windows from find_events_and_extract_windows
+
+    Returns:
+    xarray.Dataset: Dataset containing average event across all input events
+    """
+    processed = []
+    for win in windows:
+        # Create relative time coordinates centered on peak
+        time_length = win.sizes['time']
+        half_window = (time_length - 1) // 2
+        relative_time = np.arange(time_length) - half_window
+
+        # Assign new time coordinates
+        win = win.assign_coords(time=relative_time)
+        processed.append(win)
+
+    # Combine all events along new dimension and compute mean
+    return xr.concat(processed, dim='event').mean(dim='event')

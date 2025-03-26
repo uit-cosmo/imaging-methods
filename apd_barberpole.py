@@ -15,32 +15,6 @@ times = ds["time"].values
 refx, refy = 7, 5
 
 
-def plot_ccfs():
-    fig, ax = plt.subplots(4, 1, sharex=True, figsize=(10, 20))
-    ref_signal = ds["frames"].isel(x=refx, y=refy).values
-    delta = 1e-5
-
-    for row in range(4):
-        ax[row].set_title("Col {}".format(5 + row))
-        ax[row].vlines(0, -10, 10, ls="--")
-        ax[row].set_ylim(-0.5, 1.1)
-        for j in [3, 4, 5, 6, 7]:
-            signal = ds["frames"].isel(x=refx - 2 + row, y=j)
-            time, res = fpp.corr_fun(signal, ref_signal, 5e-7)
-            window = np.abs(time) < delta
-            # Svals, s_av, s_var, t_av, peaks, wait = fpp.cond_av(S=get_signal(j, refx-2+row), T=times, smin=2, Sref=get_signal(refy, refx), delta=5e-5)
-            ax[row].plot(
-                time[window],
-                res[window],
-                label="Z={:.2f}".format(ds.Z.isel(x=refx - 2 + row, y=j).values),
-            )
-
-    ax[0].legend(loc=5)
-
-    plt.savefig("ref72_ccf.eps", bbox_inches="tight")
-    plt.show()
-
-
 delta = 1e-5
 eo = ve.EstimationOptions(cc_options=ve.CCOptions(cc_window=delta, minimum_cc_value=0.5, interpolate=True))
 tded = ve.TDEDelegator(ve.TDEMethod.CC, ve.CCOptions(cc_window=delta, minimum_cc_value=0.2, interpolate=True), cache=False)
