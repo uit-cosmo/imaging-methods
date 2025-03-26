@@ -136,10 +136,15 @@ def get_dt(ds):
     return float(times[1].values - times[0].values)
 
 
-def plot_ccfs_grid(ds, ax, refx, refy, rows, cols, delta, ccf=True, plot_tau_M=False, **kwargs):
+def plot_ccfs_grid(
+    ds, ax, refx, refy, rows, cols, delta, ccf=True, plot_tau_M=False, **kwargs
+):
     ref_signal = ds["frames"].isel(x=refx, y=refy).values
-    tded = ve.TDEDelegator(ve.TDEMethod.CC, ve.CCOptions(cc_window=delta, minimum_cc_value=0.2, interpolate=True),
-                           cache=False)
+    tded = ve.TDEDelegator(
+        ve.TDEMethod.CC,
+        ve.CCOptions(cc_window=delta, minimum_cc_value=0.2, interpolate=True),
+        cache=False,
+    )
 
     for row_ix in range(5):
         y = rows[row_ix]
@@ -148,24 +153,52 @@ def plot_ccfs_grid(ds, ax, refx, refy, rows, cols, delta, ccf=True, plot_tau_M=F
             signal = ds["frames"].isel(x=x, y=y)
             if ccf:
                 time, res = fppa.corr_fun(signal, ref_signal, get_dt(ds))
-                tau, c, _ = tded.estimate_time_delay((x, y), (refx, refy), ve.CModImagingDataInterface(ds))
+                tau, c, _ = tded.estimate_time_delay(
+                    (x, y), (refx, refy), ve.CModImagingDataInterface(ds)
+                )
             else:
-                Svals, res, s_var, time, peaks, wait = fppa.cond_av(S=signal, T=ds["time"].values, smin=2, Sref=ref_signal, delta=delta*2)
-                tau, c, _ = tded.estimate_time_delay((x, y), (refx, refy), ve.CModImagingDataInterface(ds))
+                Svals, res, s_var, time, peaks, wait = fppa.cond_av(
+                    S=signal,
+                    T=ds["time"].values,
+                    smin=2,
+                    Sref=ref_signal,
+                    delta=delta * 2,
+                )
+                tau, c, _ = tded.estimate_time_delay(
+                    (x, y), (refx, refy), ve.CModImagingDataInterface(ds)
+                )
 
             window = np.abs(time) < delta
             ax[row_ix, col_ix].plot(time[window], res[window])
 
-            ax[row_ix, col_ix].set_title("R = {:.2f} Z = {:.2f}".format(ds.R.isel(x=x, y=y), ds.Z.isel(x=x,y=y)))
+            ax[row_ix, col_ix].set_title(
+                "R = {:.2f} Z = {:.2f}".format(ds.R.isel(x=x, y=y), ds.Z.isel(x=x, y=y))
+            )
             ax[row_ix, col_ix].vlines(0, -10, 10, ls="--")
             ax[row_ix, col_ix].set_ylim(-0.5, 1)
             multiply = 1 if get_dt(ds) > 1e-3 else 1e6
             if tau is not None:
-                ax[row_ix, col_ix].text(x=delta/2, y = 0.5, s=r"$\tau = {:.2f}$".format(tau*multiply))
+                ax[row_ix, col_ix].text(
+                    x=delta / 2, y=0.5, s=r"$\tau = {:.2f}$".format(tau * multiply)
+                )
                 if plot_tau_M:
-                    vx, vy, lx, ly, theta = kwargs["vx"], kwargs["vy"], kwargs["lx"], kwargs["ly"], kwargs["theta"]
-                    dx, dy = ds.R.isel(x=x, y=y) - ds.R.isel(x=refx, y=refy), ds.Z.isel(x=x, y=y) - ds.Z.isel(x=refx, y=refy)
-                    ax[row_ix, col_ix].text(x=delta/2, y=0.7, s=r"$\tau_M = {:.2f}$".format(get_taumax(vx, vy, dx, dy, lx, ly, theta)*multiply))
+                    vx, vy, lx, ly, theta = (
+                        kwargs["vx"],
+                        kwargs["vy"],
+                        kwargs["lx"],
+                        kwargs["ly"],
+                        kwargs["theta"],
+                    )
+                    dx, dy = ds.R.isel(x=x, y=y) - ds.R.isel(x=refx, y=refy), ds.Z.isel(
+                        x=x, y=y
+                    ) - ds.Z.isel(x=refx, y=refy)
+                    ax[row_ix, col_ix].text(
+                        x=delta / 2,
+                        y=0.7,
+                        s=r"$\tau_M = {:.2f}$".format(
+                            get_taumax(vx, vy, dx, dy, lx, ly, theta) * multiply
+                        ),
+                    )
 
 
 def get_ccf_tau(ds):
@@ -175,7 +208,10 @@ def get_ccf_tau(ds):
 
 
 def get_2d_corr(ds, x, y, delta):
-    ref_signal = ds.frames.isel(x=x, y=y).values  # Select the time series at (refx, refy)
+    ref_signal = ds.frames.isel(
+        x=x, y=y
+    ).values  # Select the time series at (refx, refy)
+
     def corr_wrapper(s):
         tau, res = fppa.corr_fun(
             ref_signal, s, dt=5e-7
@@ -185,7 +221,9 @@ def get_2d_corr(ds, x, y, delta):
     ds_corr = xr.apply_ufunc(
         corr_wrapper,
         ds,
-        input_core_dims=[["time"]],  # Each function call operates on a single time series
+        input_core_dims=[
+            ["time"]
+        ],  # Each function call operates on a single time series
         output_core_dims=[["tau"]],  # Output is also a time array
         vectorize=True,
     )
@@ -201,6 +239,7 @@ def rotated_blob(params, rx, ry, x, y):
     yt = (y - ry) * np.cos(t) - (x - rx) * np.sin(t)
     return np.exp(-((xt / lx) ** 2) - ((yt / ly) ** 2))
 
+
 def ellipse_parameters(params, rx, ry, alpha):
     lx, ly, t = params
     xvals = lx * np.cos(alpha) * np.cos(t) - ly * np.sin(alpha) * np.sin(t) + rx
@@ -210,7 +249,7 @@ def ellipse_parameters(params, rx, ry, alpha):
 
 def plot_2d_ccf(ds, x, y, delta, ax):
     corr_data = get_2d_corr(ds, x, y, delta)
-    rx, ry = corr_data.R.isel(x=x, y=y).values, corr_data.Z.isel(x=x,y=y).values
+    rx, ry = corr_data.R.isel(x=x, y=y).values, corr_data.Z.isel(x=x, y=y).values
     data = corr_data.sel(tau=0).frames.values
 
     def model(params):
@@ -222,7 +261,7 @@ def plot_2d_ccf(ds, x, y, delta, ax):
     bounds = [
         (0, 5),  # lx: 0 to 5
         (0, 5),  # ly: 0 to 5
-        (-np.pi / 4, np.pi / 4)  # t: 0 to 2π
+        (-np.pi / 4, np.pi / 4),  # t: 0 to 2π
     ]
 
     result = differential_evolution(
@@ -230,13 +269,20 @@ def plot_2d_ccf(ds, x, y, delta, ax):
         bounds,
         seed=42,  # Optional: for reproducibility
         popsize=15,  # Optional: population size multiplier
-        maxiter=1000  # Optional: maximum number of iterations
+        maxiter=1000,  # Optional: maximum number of iterations
     )
 
     if ax is not None:
-        im = ax.imshow(corr_data.sel(tau=0).frames, origin="lower", interpolation="spline16")
+        im = ax.imshow(
+            corr_data.sel(tau=0).frames, origin="lower", interpolation="spline16"
+        )
         ax.scatter(rx, ry, color="black")
-        rmin, rmax, zmin, zmax = corr_data.R[0, 0] - 0.05, corr_data.R[0, -1] + 0.05, corr_data.Z[0, 0] - 0.05, corr_data.Z[-1, 0] + 0.05
+        rmin, rmax, zmin, zmax = (
+            corr_data.R[0, 0] - 0.05,
+            corr_data.R[0, -1] + 0.05,
+            corr_data.Z[0, 0] - 0.05,
+            corr_data.Z[-1, 0] + 0.05,
+        )
 
         alphas = np.linspace(0, 2 * np.pi, 200)
         elipsx, elipsy = zip(*[ellipse_parameters(result.x, rx, ry, a) for a in alphas])
@@ -249,10 +295,123 @@ def plot_2d_ccf(ds, x, y, delta, ax):
 def get_taumax(v, w, dx, dy, lx, ly, t):
     lx_fit, ly_fit = lx, ly
     t_fit = t
-    a1 = (dx * ly_fit ** 2 * v + dy * lx_fit ** 2 * w) * np.cos(t_fit) ** 2
-    a2 = (lx_fit ** 2 - ly_fit ** 2) * (dy * v + dx * w) * np.cos(t_fit) * np.sin(t_fit)
-    a3 = (dx * lx_fit ** 2 * v + dy * ly_fit ** 2 * w) * np.sin(t_fit) ** 2
-    d1 = (ly_fit ** 2 * v ** 2 + lx_fit ** 2 * w ** 2) * np.cos(t_fit) ** 2
-    d2 = (lx_fit ** 2 * v ** 2 + ly_fit ** 2 * w ** 2) * np.sin(t_fit) ** 2
-    d3 = 2 * (lx_fit ** 2 - ly_fit ** 2) * v * w * np.cos(t_fit) * np.sin(t_fit)
+    a1 = (dx * ly_fit**2 * v + dy * lx_fit**2 * w) * np.cos(t_fit) ** 2
+    a2 = (lx_fit**2 - ly_fit**2) * (dy * v + dx * w) * np.cos(t_fit) * np.sin(t_fit)
+    a3 = (dx * lx_fit**2 * v + dy * ly_fit**2 * w) * np.sin(t_fit) ** 2
+    d1 = (ly_fit**2 * v**2 + lx_fit**2 * w**2) * np.cos(t_fit) ** 2
+    d2 = (lx_fit**2 * v**2 + ly_fit**2 * w**2) * np.sin(t_fit) ** 2
+    d3 = 2 * (lx_fit**2 - ly_fit**2) * v * w * np.cos(t_fit) * np.sin(t_fit)
     return (a1 - a2 + a3) / (d1 + d2 - d3)
+
+
+def find_events(ds, refx, refy, threshold=3, window_size=10, check_max=0):
+    """
+    Find events where reference pixel exceeds threshold and extract windows around peaks.
+
+    Parameters:
+    ds (xarray.Dataset): Input dataset with time, x, y coordinates
+    refx (int): X index of reference pixel
+    refy (int): Y index of reference pixel
+    threshold (float): Threshold value for event detection
+    window_size (int): Size of window to extract around peaks
+
+    Returns:
+    list: List of xarray.Dataset objects containing extracted windows
+    """
+    # Assuming the data variable is named 'data' - adjust if different
+    ref_ts = ds.frames.isel(x=refx, y=refy)
+
+    # Find indices where signal exceeds threshold
+    above_threshold = ref_ts > threshold
+    indices = np.where(above_threshold)[0]
+
+    # Split into contiguous events
+    events = []
+    if len(indices) > 0:
+        diffs = np.diff(indices)
+        split_points = np.where(diffs > 1)[0] + 1
+        events = np.split(indices, split_points)
+
+    print("Found {} events".format(len(events)))
+    windows = []
+    half_window = window_size // 2
+    discarded_events_zero_len = 0
+    discarded_events_not_max = 0
+    discarded_events_truncated = 0
+
+    for event in events:
+        if len(event) == 0:
+            discarded_events_zero_len += 1
+            continue
+
+        # Find peak within the event
+        event_ts = ref_ts.isel(time=event)
+        max_idx_in_event = event_ts.argmax().item()
+        peak_time_idx = event[max_idx_in_event]
+
+        if check_max != 0:
+            ref_peak = ds.frames.isel(time=peak_time_idx, x=refx, y=refy).item()
+            fromx = max(refx - check_max, 0)
+            tox = min(refx + check_max, ds.sizes["x"] - 1)
+            fromy = max(refy - check_max, 0)
+            toy = min(refy + check_max, ds.sizes["y"] - 1)
+            global_peak = (
+                ds.frames.isel(
+                    time=peak_time_idx, x=slice(fromx, tox), y=slice(fromy, toy)
+                )
+                .max()
+                .item()
+            )
+            if not np.isclose(ref_peak, global_peak, atol=1e-6):
+                discarded_events_not_max += 1
+                continue
+
+        # Calculate window bounds
+        start = max(0, peak_time_idx - half_window)
+        end = min(len(ds.time), peak_time_idx + half_window + 1)  # +1 for inclusive end
+
+        # Skip incomplete windows if needed (optional)
+        if (end - start) < window_size:
+            discarded_events_truncated += 1
+            continue
+
+        # Extract window for all pixels
+        window = ds.isel(time=slice(start, end))
+        windows.append(window)
+
+    print(
+        "Discarded {} events. Not max {}, zero len {}, truncation {}".format(
+            discarded_events_not_max
+            + discarded_events_zero_len
+            + discarded_events_truncated,
+            discarded_events_not_max,
+            discarded_events_zero_len,
+            discarded_events_truncated,
+        )
+    )
+    return windows
+
+
+def compute_average_event(windows):
+    """
+    Compute average event across all windows by aligning peak times.
+
+    Parameters:
+    windows (list of xarray.Dataset): List of event windows from find_events_and_extract_windows
+
+    Returns:
+    xarray.Dataset: Dataset containing average event across all input events
+    """
+    processed = []
+    for win in windows:
+        # Create relative time coordinates centered on peak
+        time_length = win.sizes["time"]
+        half_window = (time_length - 1) // 2
+        relative_time = np.arange(time_length) - half_window
+
+        # Assign new time coordinates
+        win = win.assign_coords(time=relative_time)
+        processed.append(win)
+
+    # Combine all events along new dimension and compute mean
+    return xr.concat(processed, dim="event").mean(dim="event")

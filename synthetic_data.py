@@ -81,5 +81,9 @@ def make_2d_realization(rp: RunParameters, bf: BlobFactory):
 
     return xr.Dataset(
         {"frames": (["y", "x", "time"], ds.n.values)},
-        coords={"R": (["y", "x"], grid_r), "Z": (["y", "x"], grid_z), "time": (["time"], ds.t.values)},
+        coords={
+            "R": (["y", "x"], grid_r),
+            "Z": (["y", "x"], grid_z),
+            "time": (["time"], ds.t.values),
+        },
     )

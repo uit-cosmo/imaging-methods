@@ -29,7 +29,7 @@ def show_movie(
     gif_name: Union[str, None] = None,
     fps: int = 10,
     interpolation: str = "spline16",
-    lims = None,
+    lims=None,
 ) -> None:
     """
     Creates an animation that shows the evolution of a specific variable over time.
