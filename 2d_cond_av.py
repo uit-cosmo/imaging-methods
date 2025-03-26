@@ -54,60 +54,36 @@ blobs = [
 rp = RunParameters(T=T, lx=Lx, ly=Ly, nx=nx, ny=ny)
 bf = DeterministicBlobFactory(blobs)
 
-ds = make_2d_realization(rp, bf)
+# ds = make_2d_realization(rp, bf)
+shot = 1160616025
 
-refx, refy = 2, 2
+def get_sample_data(shot, window):
+    ds = xr.open_dataset("data/apd_{}.nc".format(shot))
+    ds["frames"] = run_norm_ds(ds, 1000)["frames"]
 
-events = find_events(ds, refx, refy, threshold=0.2, check_max=2)
-average = compute_average_event(events)
+    t_start, t_end = get_t_start_end(ds)
+    print("Data with times from {} to {}".format(t_start, t_end))
 
-fig, ax = plt.subplots()
-rx, ry = average.R.isel(x=refx, y=refy).item(), average.Z.isel(x=refx, y=refy).item()
-R_min, R_max = average.R.min().item(), average.R.max().item()
-Z_min, Z_max = average.Z.min().item(), average.Z.max().item()
+    t_start = (t_start + t_end) / 2
+    t_end = t_start + window
+    ds = ds.sel(time=slice(t_start, t_end))
+    interpolate_nans_3d(ds)
+    return ds
 
-average_blob = average.sel(time=0).frames.values
+ds = xr.open_dataset("data/ds_short.nc")
+#ds = get_sample_data(shot, 0.1)
+#ds.to_netcdf("data_tmp.nc")
 
-im = ax.imshow(
-    average_blob,
-    origin="lower",
-    interpolation="spline16",
-    extent=(R_min, R_max, Z_min, Z_max),
-)
-ax.scatter(rx, ry)
+for refx in [5, 6, 7]:
+    for refy in [3, 4, 5, 6, 7]:
+        events = find_events(ds, refx, refy, threshold=0.2, check_max=2)
+        average = compute_average_event(events)
 
-
-def model(params):
-    """Objective function with regularization"""
-    blob = rotated_blob(params, rx, ry, average.R.values, average.Z.values)
-    diff = blob - average_blob
-
-    # Add regularization to prevent lx/ly from collapsing
-    reg = 0.01 * (1 / lx**2 + 1 / ly**2)
-    return np.sum(diff**2) + reg
+        fig, ax = plt.subplots()
+        elispe = plot_average_blob(average, refx, refy, ax)
+        plt.savefig("CA{}{}".format(refx, refy), bbox_inches="tight")
 
 
-# Initial guesses for lx, ly, and t
-# Rough estimation
-bounds = [
-    (0, 5),  # lx: 0 to 5
-    (0, 5),  # ly: 0 to 5
-    (-np.pi / 4, np.pi / 4),  # t: 0 to 2π
-]
-
-result = differential_evolution(
-    model,
-    bounds,
-    seed=42,  # Optional: for reproducibility
-    popsize=15,  # Optional: population size multiplier
-    maxiter=1000,  # Optional: maximum number of iterations
-)
-
-alphas = np.linspace(0, 2 * np.pi, 200)
-elipsx, elipsy = zip(*[ellipse_parameters(result.x, rx, ry, a) for a in alphas])
-ax.plot(elipsx, elipsy)
-
-print(result.x)
 
 plt.show()
 print("LOL")

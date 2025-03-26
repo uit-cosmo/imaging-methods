@@ -415,3 +415,53 @@ def compute_average_event(windows):
 
     # Combine all events along new dimension and compute mean
     return xr.concat(processed, dim="event").mean(dim="event")
+
+
+def plot_average_blob(average, refx, refy, ax):
+    rx, ry = average.R.isel(x=refx, y=refy).item(), average.Z.isel(x=refx, y=refy).item()
+    R_min, R_max = average.R.min().item(), average.R.max().item()
+    Z_min, Z_max = average.Z.min().item(), average.Z.max().item()
+
+    average_blob = average.sel(time=0).frames.values
+    average_blob = average_blob/np.max(average_blob)
+
+    def model(params):
+        """Objective function with regularization"""
+        lx, ly, t = params
+        blob = rotated_blob(params, rx, ry, average.R.values, average.Z.values)
+        diff = blob - average_blob
+
+        # Add regularization to prevent lx/ly from collapsing
+        reg = 0.01 * (1 / lx**2 + 1 / ly**2)
+        return np.sum(diff**2) + reg
+
+
+    # Initial guesses for lx, ly, and t
+    # Rough estimation
+    bounds = [
+        (0, 5),  # lx: 0 to 5
+        (0, 5),  # ly: 0 to 5
+        (-np.pi / 4, np.pi / 4),  # t: 0 to 2π
+    ]
+
+    result = differential_evolution(
+        model,
+        bounds,
+        seed=42,  # Optional: for reproducibility
+        popsize=150,  # Optional: population size multiplier
+        maxiter=1000,  # Optional: maximum number of iterations
+    )
+
+    alphas = np.linspace(0, 2 * np.pi, 200)
+    elipsx, elipsy = zip(*[ellipse_parameters(result.x, rx, ry, a) for a in alphas])
+    ax.plot(elipsx, elipsy)
+
+    im = ax.imshow(
+        average_blob,
+        origin="lower",
+        interpolation="spline16",
+        extent=(R_min, R_max, Z_min, Z_max),
+    )
+    ax.scatter(rx, ry)
+
+    return result.x
