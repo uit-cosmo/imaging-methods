@@ -1,5 +1,7 @@
 from synthetic_data import *
 from phantom.utils import *
+from phantom.show_data import *
+from phantom.cond_av import *
 from blobmodel import BlobShapeEnum
 import matplotlib.pyplot as plt
 import numpy as np
@@ -54,8 +56,9 @@ blobs = [
 rp = RunParameters(T=T, lx=Lx, ly=Ly, nx=nx, ny=ny)
 bf = DeterministicBlobFactory(blobs)
 
-# ds = make_2d_realization(rp, bf)
-shot = 1160616025
+ds = make_2d_realization(rp, bf)
+shot = 1160616018
+
 
 def get_sample_data(shot, window):
     ds = xr.open_dataset("data/apd_{}.nc".format(shot))
@@ -70,20 +73,32 @@ def get_sample_data(shot, window):
     interpolate_nans_3d(ds)
     return ds
 
-ds = xr.open_dataset("data/ds_short.nc")
-#ds = get_sample_data(shot, 0.1)
-#ds.to_netcdf("data_tmp.nc")
 
-for refx in [5, 6, 7]:
-    for refy in [3, 4, 5, 6, 7]:
-        events = find_events(ds, refx, refy, threshold=0.2, check_max=2)
-        average = compute_average_event(events)
-
-        fig, ax = plt.subplots()
-        elispe = plot_average_blob(average, refx, refy, ax)
-        plt.savefig("CA{}{}".format(refx, refy), bbox_inches="tight")
+# ds = xr.open_dataset("ds_short.nc")
+ds = get_sample_data(shot, 0.1)
+ds.to_netcdf("data_tmp.nc")
 
 
+refx, refy = 6, 5
+events, average = find_events(
+    ds, refx, refy, threshold=0.2, check_max=2, window_size=60
+)
 
-plt.show()
+# ds_corr = get_2d_corr(ds, refx, refy, delta=30*get_dt(ds))
+
+# show_movie(ds.sel(time=slice(T/2, T/2+10)), variable="frames", lims=(0, 0.3), gif_name="data.gif")
+show_movie(
+    average,
+    variable="frames",
+    lims=(0, np.max(average.frames.values)),
+    gif_name="out.gif",
+)
+# show_movie(ds_corr, variable="frames", lims=(0, 1), gif_name="out.gif")
+
+# fig, ax = plt.subplots()
+# values = plot_average_blob(ds_corr, refx, refy, ax)
+# plt.savefig("2d_ccf_fit.png", bbox_inches="tight")
+# plt.show()
+
+print(values)
 print("LOL")
