@@ -74,14 +74,14 @@ def get_sample_data(shot, window):
     return ds
 
 
-# ds = xr.open_dataset("ds_short.nc")
-ds = get_sample_data(shot, 0.1)
-ds.to_netcdf("data_tmp.nc")
+ds = xr.open_dataset("ds_short.nc")
+# ds = get_sample_data(shot, 0.1)
+# ds.to_netcdf("data_tmp.nc")
 
 
 refx, refy = 6, 5
 events, average = find_events(
-    ds, refx, refy, threshold=0.2, check_max=2, window_size=60
+    ds, refx, refy, threshold=0.2, check_max=2, window_size=60, single_counting=True
 )
 
 # ds_corr = get_2d_corr(ds, refx, refy, delta=30*get_dt(ds))

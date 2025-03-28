@@ -6,7 +6,7 @@ import xarray as xr
 from matplotlib import animation
 from typing import Union, Any
 from scipy import interpolate
-from utils import *
+from .utils import *
 
 
 def get_signal(x, y, data):
