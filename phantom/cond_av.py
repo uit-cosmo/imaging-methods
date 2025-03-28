@@ -56,9 +56,9 @@ def find_events(
         if check_max != 0:
             ref_peak = ds.frames.isel(time=peak_time_idx, x=refx, y=refy).item()
             fromx = max(refx - check_max, 0)
-            tox = min(refx + check_max, ds.sizes["x"] - 1)
+            tox = min(refx + check_max, ds.sizes["x"])
             fromy = max(refy - check_max, 0)
-            toy = min(refy + check_max, ds.sizes["y"] - 1)
+            toy = min(refy + check_max, ds.sizes["y"])
             global_peak = (
                 ds.frames.isel(
                     time=peak_time_idx, x=slice(fromx, tox), y=slice(fromy, toy)
