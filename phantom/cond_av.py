@@ -3,7 +3,14 @@ import xarray as xr
 
 
 def find_events(
-    ds, refx, refy, threshold=3, window_size=30, check_max=0, single_counting=False
+    ds,
+    refx,
+    refy,
+    threshold=3,
+    window_size=30,
+    check_max=0,
+    single_counting=False,
+    verbose=True,
 ):
     """
     Find events where reference pixel exceeds threshold and extract windows around peaks.
@@ -16,26 +23,26 @@ def find_events(
     window_size (int): Size of window to extract around peaks
     check_max (int): Radius of the area on which the reference pixel is checked to be maximum at peak time
     single_counting (bool): If True, ensures a minimum distance between events given by window_size.
+    verbose (bool): If True, print some method information.
 
     Returns:
     events: List of xarray.Dataset objects containing extracted windows
     average: xarray.Dataset containing average event across all input events
     """
-    # Assuming the data variable is named 'data' - adjust if different
+    # Assuming the data is on cmod_functions format, in xarray and with frames name
     ref_ts = ds.frames.isel(x=refx, y=refy)
 
-    # Find indices where signal exceeds threshold
     above_threshold = ref_ts > threshold
     indices = np.where(above_threshold)[0]
 
-    # Split into contiguous events
     events = []
     if len(indices) > 0:
         diffs = np.diff(indices)
         split_points = np.where(diffs > 1)[0] + 1
         events = np.split(indices, split_points)
 
-    print("Found {} events".format(len(events)))
+    if verbose:
+        print("Found {} events".format(len(events)))
     candidate_events = []
     half_window = window_size // 2
     discarded_events_zero_len = 0
@@ -48,7 +55,6 @@ def find_events(
             discarded_events_zero_len += 1
             continue
 
-        # Find peak within the event
         event_ts = ref_ts.isel(time=event)
         max_idx_in_event = event_ts.argmax().item()
         peak_time_idx = event[max_idx_in_event]
@@ -112,18 +118,19 @@ def find_events(
         window = ds.isel(time=slice(candidate["start"], candidate["end"]))
         windows.append(window)
 
-    print(
-        "Discarded {} events. Not max {}, zero len {}, truncation {}, single count {}".format(
-            discarded_events_not_max
-            + discarded_events_zero_len
-            + discarded_events_truncated
-            + discarded_events_single_count,
-            discarded_events_not_max,
-            discarded_events_zero_len,
-            discarded_events_truncated,
-            discarded_events_single_count,
+    if verbose:
+        print(
+            "Discarded {} events. Not max {}, zero len {}, truncation {}, single count {}".format(
+                discarded_events_not_max
+                + discarded_events_zero_len
+                + discarded_events_truncated
+                + discarded_events_single_count,
+                discarded_events_not_max,
+                discarded_events_zero_len,
+                discarded_events_truncated,
+                discarded_events_single_count,
+            )
         )
-    )
 
     # Processed events are the same as events in windows but with a time base relative to their maximum,
     # to make averaging possible
