@@ -7,7 +7,7 @@ def find_events(
     refx,
     refy,
     threshold=3,
-    window_size=30,
+    window_size=60,
     check_max=0,
     single_counting=False,
     verbose=True,
@@ -135,6 +135,7 @@ def find_events(
     # Processed events are the same as events in windows but with a time base relative to their maximum,
     # to make averaging possible
     processed = []
+    event_id = 0
     for win in windows:
         # Create relative time coordinates centered on peak
         time_length = win.sizes["time"]
@@ -142,12 +143,15 @@ def find_events(
         relative_time = np.arange(time_length) - half_window
 
         # Assign new time coordinates
-        win = win.assign_coords(time=relative_time)
+        dt = float(ds["time"][1].values - ds["time"][0].values)
+        win = win.assign_coords(time=relative_time * dt)
+        win["event_id"] = event_id
+        event_id += 1
         processed.append(win)
 
     # Combine all events along new dimension and compute mean
     if len(processed) != 0:
         average = xr.concat(processed, dim="event").mean(dim="event")
-        return windows, average
+        return processed, average
 
-    return windows, None
+    return processed, None

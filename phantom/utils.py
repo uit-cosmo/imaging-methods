@@ -303,3 +303,17 @@ def get_taumax(v, w, dx, dy, lx, ly, t):
     d2 = (lx_fit**2 * v**2 + ly_fit**2 * w**2) * np.sin(t_fit) ** 2
     d3 = 2 * (lx_fit**2 - ly_fit**2) * v * w * np.cos(t_fit) * np.sin(t_fit)
     return (a1 - a2 + a3) / (d1 + d2 - d3)
+
+
+def get_sample_data(shot, window):
+    ds = xr.open_dataset("data/apd_{}.nc".format(shot))
+    ds["frames"] = run_norm_ds(ds, 1000)["frames"]
+
+    t_start, t_end = get_t_start_end(ds)
+    print("Data with times from {} to {}".format(t_start, t_end))
+
+    t_start = (t_start + t_end) / 2
+    t_end = t_start + window
+    ds = ds.sel(time=slice(t_start, t_end))
+    interpolate_nans_3d(ds)
+    return ds
