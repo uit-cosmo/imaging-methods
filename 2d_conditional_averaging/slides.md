@@ -1,0 +1,90 @@
+---
+# You can also start simply with 'default'
+theme: seriph
+background: 
+# some information about your slides (markdown enabled)
+title: 2D Conditional Averaging on APD
+# apply unocss classes to the current slide
+class: text-left
+# https://sli.dev/features/drawing
+drawings:
+  persist: false
+# slide transition: https://sli.dev/guide/animations.html#slide-transitions
+transition: slide-left
+# enable MDC Syntax: https://sli.dev/features/mdc
+mdc: true
+# open graph
+# seoMeta:
+#  ogImage: https://cover.sli.dev
+---
+
+# 2D Conditional averaging
+
+Given 2D imaging data, select a reference pixel on which:
+- Find all events where the signal is over a **threshold**. 
+- For each event:
+	- Define the **peak** as the event maximum
+	- Register and save the data centered in the peak with a fixed **window size**
+	- Optionally, discard the event if any neighbour pixels at a distance lower than check argument have a higher value at the time the peak occurs.
+	- Optionally, discard events with overlapping windows with preference for higher amplitude events.
+- Return list of events and average over all events
+
+---
+transition: slide-left
+---
+## Arguments
+| Name            | Description                          |
+|-----------------|--------------------------------------|
+| `dataset`       | The 2D imaging data to process      |
+| `reference pixel` | Pixel to base events on           |
+| `threshold`     | Minimum signal value for events     |
+| `window_size`   | Size of data window around peaks    |
+| `check_max`     | Distance to check neighboring peaks |
+| `single_counting` | Avoid overlapping event windows   |
+
+---
+transition: slide-left
+---
+
+# Synthetic data
+
+Simulated 5x5 data with 1000 blobs:  
+`lx/ly = 1/3`, `theta = -π/4`, `v = 1`, `w = -1`
+
+![](https://github.com/uit-cosmo/phantom/blob/main/presentation/opt_data.gif?raw=true){.w-80.mx-auto}
+
+---
+transition: slide-left
+---
+
+## Result
+Averaged output after conditional averaging:
+
+![](https://github.com/uit-cosmo/phantom/blob/main/presentation/opt_out.gif?raw=true){.w-80.mx-auto}
+
+---
+transition: slide-left
+---
+
+## Parameter estimation
+Fit to a rotated ellipse to estimate sizes $\ell_x$ and $\ell_y$ and rotation $\theta$
+
+![](https://github.com/uit-cosmo/phantom/blob/main/presentation/2d_ca_fit.png?raw=true){.w-80.mx-auto}
+
+$\ell_x = 1.57$, $\ell_y=0.62$, $\theta = 0.78$
+
+---
+transition: slide-left
+---
+
+# Results: I mode
+
+![](https://github.com/uit-cosmo/phantom/blob/main/presentation/opt_out_imode.gif?raw=true){.w-80.mx-auto}
+
+---
+transition: slide-left
+---
+
+# Results: L mode
+
+![](https://github.com/uit-cosmo/phantom/blob/main/presentation/opt_out_lmode25.gif?raw=true){.w-80.mx-auto}
