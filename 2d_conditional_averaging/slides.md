@@ -46,7 +46,7 @@ transition: slide-left
 transition: slide-left
 ---
 
-# Synthetic data
+## Synthetic data
 
 Simulated 5x5 data with 1000 blobs:  
 `lx/ly = 1/3`, `theta = -π/4`, `v = 1`, `w = -1`
@@ -77,7 +77,7 @@ $\ell_x = 1.57$, $\ell_y=0.62$, $\theta = 0.78$
 transition: slide-left
 ---
 
-# Results: I mode
+## Results: I mode
 
 ![](https://github.com/uit-cosmo/phantom/blob/main/presentation/opt_out_imode.gif?raw=true){.w-80.mx-auto}
 
@@ -85,6 +85,6 @@ transition: slide-left
 transition: slide-left
 ---
 
-# Results: L mode
+## Results: L mode
 
 ![](https://github.com/uit-cosmo/phantom/blob/main/presentation/opt_out_lmode25.gif?raw=true){.w-80.mx-auto}
