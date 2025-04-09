@@ -151,5 +151,8 @@ example.gif
 # gifs
 *.gif
 
+!/presentation/*.gif
+!/presentation/*.png
+
 old_files/
 good_movies/

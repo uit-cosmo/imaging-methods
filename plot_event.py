@@ -23,9 +23,13 @@ if __name__ == "__main__":
         print("Error: Number of points must be positive")
         sys.exit(1)
 
-    shot = 1160616025
+    shot = 1160616018
     event = xr.open_dataset("tmp/event_{}_{}.nc".format(shot, event_id))
 
+    fig, ax = plt.subplots()
+    R = event.R.isel(x=event["refx"].item(), y=event["refy"].item())
+    Z = event.Z.isel(x=event["refx"].item(), y=event["refy"].item())
+    ax.scatter(R, Z, color="black")
     show_movie(
         event,
         variable="frames",
@@ -33,5 +37,7 @@ if __name__ == "__main__":
         fps=60,
         interpolation="spline16",
         lims=(0, np.max(event.frames.values)),
+        fig=fig,
+        ax=ax,
     )
     os.system("gifsicle -i output.gif -O3 --colors 32 --lossy=150 -o output.gif")

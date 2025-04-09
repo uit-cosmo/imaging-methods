@@ -146,6 +146,8 @@ def find_events(
         dt = float(ds["time"][1].values - ds["time"][0].values)
         win = win.assign_coords(time=relative_time * dt)
         win["event_id"] = event_id
+        win["refx"] = refx
+        win["refy"] = refy
         event_id += 1
         processed.append(win)
 

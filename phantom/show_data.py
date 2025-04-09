@@ -30,6 +30,8 @@ def show_movie(
     fps: int = 10,
     interpolation: str = "spline16",
     lims=None,
+    fig=None,
+    ax=None,
 ) -> None:
     """
     Creates an animation that shows the evolution of a specific variable over time.
@@ -59,7 +61,8 @@ def show_movie(
     has_limiter = "rlimt" in dataset.coords.keys()
     has_lcfs = "rlcfs" in dataset
     t_dim = "time" if "time" in dataset._coord_names else "tau"
-    fig = plt.figure()
+    if fig is None:
+        fig = plt.figure()
 
     dt = get_dt(dataset)
 
@@ -89,7 +92,8 @@ def show_movie(
         time = dataset[t_dim][i]
         tx.set_text(f"t = {time:.7f}")
 
-    ax = fig.add_subplot(111)
+    if ax is None:
+        ax = fig.add_subplot(111)
     tx = ax.set_title("t = 0")
     div = make_axes_locatable(ax)
     cax = div.append_axes("right", "5%", "5%")
