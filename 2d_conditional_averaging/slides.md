@@ -179,7 +179,21 @@ y_\theta &= (y - y_0) \cos(\theta) - (x - x_0) \sin(\theta) \\
 \end{align}
 $$
 
-![](https://github.com/uit-cosmo/phantom/blob/main/presentation/blob.png?raw=true){.w-80.mx-auto}
+![](https://github.com/uit-cosmo/phantom/blob/main/presentation/blob.png?raw=true){.w-60.mx-auto}
+
+---
+transition: slide-left
+---
+
+## Fit
+
+Given the event image at time 0, we find the parameters $\ell_x$, $\ell_y$ and $\theta$ that minimize the error function
+
+$$
+\begin{equation}
+E = \sum_{\text{pixels}} (\phi(x, y) - e(x, y)) ^ 2
+\end{equation}
+$$
 
 ---
 transition: slide-left
@@ -187,4 +201,32 @@ transition: slide-left
 
 ## Results
 
-![](https://github.com/uit-cosmo/phantom/blob/main/presentation/event_fits.png?raw=true){.w-80.mx-auto}
+![](https://github.com/uit-cosmo/phantom/blob/main/presentation/event_fits.png?raw=true){.w-140.mx-auto}
+
+---
+transition: slide-left
+---
+
+## Results with size penalty
+
+Add a penalty factor:
+
+$$
+\begin{equation}
+E = \sum_{\text{pixels}} (\phi(x, y) - e(x, y)) ^ 2 + P_c \phi(x, y) ^ 2
+\end{equation}
+$$
+
+Where $P_c$ is a user-defined penalty factor
+
+![](https://github.com/uit-cosmo/phantom/blob/main/presentation/event_fits.png?raw=true){.w-140.mx-auto}
+
+
+
+---
+transition: slide-left
+---
+
+---
+transition: slide-left
+---
