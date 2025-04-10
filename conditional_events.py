@@ -151,11 +151,15 @@ for e in events:
     e["w"] = w / 100
 
 amplitudes = np.array([e["amplitude"] for e in events])
-velocities = np.array([e["v"] for e in events])
+vs = np.array([e["v"] for e in events])
+ws = np.array([e["w"] for e in events])
+us = np.array([e["u"] for e in events])
+
+print("Events {}, Mean v {:.2f}, mean w {:.2f}".format(len(amplitudes), vs.mean(), ws.mean()))
 
 fig, ax = plt.subplots()
 
-ax.scatter(velocities, amplitudes)
+ax.scatter(vs, amplitudes)
 ax.set_xlabel(r"$v_{\text{TDE}}$")
 ax.set_ylabel(r"$a$")
 plt.show()

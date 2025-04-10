@@ -88,3 +88,52 @@ transition: slide-left
 ## Results: L mode
 
 ![](https://github.com/uit-cosmo/phantom/blob/main/presentation/opt_out_lmode25.gif?raw=true){.w-80.mx-auto}
+
+---
+transition: slide-left
+---
+
+## L mode events: 1160616018
+
+![](https://github.com/uit-cosmo/phantom/blob/main/presentation/31.gif?raw=true){.w-80.mx-auto}
+
+---
+transition: slide-left
+---
+
+![](https://github.com/uit-cosmo/phantom/blob/main/presentation/32.gif?raw=true){.w-80.mx-auto}
+
+---
+transition: slide-left
+---
+
+![](https://github.com/uit-cosmo/phantom/blob/main/presentation/33.gif?raw=true){.w-80.mx-auto}
+---
+transition: slide-left
+---
+
+![](https://github.com/uit-cosmo/phantom/blob/main/presentation/34.gif?raw=true){.w-80.mx-auto}
+---
+transition: slide-left
+---
+
+![](https://github.com/uit-cosmo/phantom/blob/main/presentation/35.gif?raw=true){.w-80.mx-auto}
+
+---
+transition: slide-left
+---
+
+## Statistics of events
+
+100ms of data: Events 301, Mean v 439.82, mean w -58.89
+
+![](https://github.com/uit-cosmo/phantom/blob/main/presentation/v_events.png?raw=true){.w-80.mx-auto}
+
+---
+transition: slide-left
+---
+
+## Velocity u
+
+![](https://github.com/uit-cosmo/phantom/blob/main/presentation/u_events.png?raw=true){.w-80.mx-auto}
+
