@@ -1,8 +1,8 @@
 ---
 # You can also start simply with 'default'
-theme: seriph
-background: 
-# some information about your slides (markdown enabled)
+theme: default
+background: # some information about your slides (markdown enabled)
+
 title: 2D Conditional Averaging on APD
 # apply unocss classes to the current slide
 class: text-left
@@ -13,6 +13,7 @@ drawings:
 transition: slide-left
 # enable MDC Syntax: https://sli.dev/features/mdc
 mdc: true
+
 # open graph
 # seoMeta:
 #  ogImage: https://cover.sli.dev
@@ -129,6 +130,8 @@ transition: slide-left
 
 ![](https://github.com/uit-cosmo/phantom/blob/main/presentation/v_events.png?raw=true){.w-80.mx-auto}
 
+$\sigma = 0.11$
+
 ---
 transition: slide-left
 ---
@@ -137,3 +140,51 @@ transition: slide-left
 
 ![](https://github.com/uit-cosmo/phantom/blob/main/presentation/u_events.png?raw=true){.w-80.mx-auto}
 
+$\sigma = -0.05$
+
+---
+transition: slide-left
+---
+
+# Blob size
+
+Many ways to estimate blob size:
+
+- Exponential fit to poloidal column/ radial row
+- Thresholding
+- Combination of blob speed and single pixel duration time
+- Fit to 2D Gaussian (rotated)
+
+I chose to fit an ellipse because:
+
+- Low spatial resolution might be detrimental to thresholding
+- Tilt angle is important in some cases
+
+
+---
+transition: slide-left
+---
+
+## 2D Gaussian
+
+Free parameters: $\ell_x, \ell_y, \theta$
+
+Ellipse centre $x_0, y_0$ is taken as the reference pixel
+
+$$
+\begin{align}
+x_\theta &= (x - x_0) \cos(\theta) + (y - y_0) \sin(\theta) \\
+y_\theta &= (y - y_0) \cos(\theta) - (x - x_0) \sin(\theta) \\
+\phi(x, y) &= \exp \left( -(x_\theta/\ell_x) ^ 2 - (y_\theta/\ell_y) ^ 2\right) 
+\end{align}
+$$
+
+![](https://github.com/uit-cosmo/phantom/blob/main/presentation/blob.png?raw=true){.w-80.mx-auto}
+
+---
+transition: slide-left
+---
+
+## Results
+
+![](https://github.com/uit-cosmo/phantom/blob/main/presentation/event_fits.png?raw=true){.w-80.mx-auto}

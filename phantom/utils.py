@@ -248,6 +248,40 @@ def ellipse_parameters(params, rx, ry, alpha):
     return xvals, yvals
 
 
+def fit_ellipse(data, rx, ry, size_penalty_factor=0, aspect_ratio_penalty_factor=0):
+    """
+    Returns lx, ly, theta
+    """
+    data_mass = np.sum(data.frames.values**2)
+
+    def model(params):
+        blob = rotated_blob(params, rx, ry, data.R.values, data.Z.values)
+        blob_sum = np.sum(blob**2)
+        penalty = blob_sum * size_penalty_factor
+        aspect_ratio_penalty = (
+            blob_sum * (1 - params[0] / params[1]) ** 2 * aspect_ratio_penalty_factor
+        )
+        return np.sum((blob - data.frames.values) ** 2) + penalty + aspect_ratio_penalty
+
+    # Initial guesses for lx, ly, and t
+    # Rough estimation
+    bounds = [
+        (0, 5),  # lx: 0 to 5
+        (0, 5),  # ly: 0 to 5
+        (-np.pi / 4, np.pi / 4),  # t: 0 to 2π
+    ]
+
+    result = differential_evolution(
+        model,
+        bounds,
+        seed=42,  # Optional: for reproducibility
+        popsize=15,  # Optional: population size multiplier
+        maxiter=1000,  # Optional: maximum number of iterations
+    )
+
+    return result.x
+
+
 def plot_2d_ccf(ds, x, y, delta, ax):
     corr_data = get_2d_corr(ds, x, y, delta)
     rx, ry = corr_data.R.isel(x=x, y=y).values, corr_data.Z.isel(x=x, y=y).values
