@@ -128,7 +128,7 @@ transition: slide-left
 
 100ms of data: Events 301, Mean v 439.82, mean w -58.89
 
-![](https://github.com/uit-cosmo/phantom/blob/main/presentation/v_events.png?raw=true){.w-80.mx-auto}
+![](https://github.com/uit-cosmo/phantom/blob/main/presentation/v_events.png?raw=true){.w-140.mx-auto}
 
 $\sigma = 0.11$
 
@@ -138,7 +138,7 @@ transition: slide-left
 
 ## Velocity u
 
-![](https://github.com/uit-cosmo/phantom/blob/main/presentation/u_events.png?raw=true){.w-80.mx-auto}
+![](https://github.com/uit-cosmo/phantom/blob/main/presentation/u_events.png?raw=true){.w-150.mx-auto}
 
 $\sigma = -0.05$
 

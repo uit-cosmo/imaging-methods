@@ -32,5 +32,5 @@ if __name__ == "__main__":
 
     fig, ax = plt.subplots()
     ax.imshow(blob, interpolation="spline16", extent=[-3 * L, 3 * L, -3 * L, 3 * L])
-    plt.show()
     plt.savefig("blob.png", bbox_inches="tight")
+    plt.show()
