@@ -150,7 +150,7 @@ rmin, rmax, zmin, zmax = (
 )
 R, Z = average.R.isel(x=refx, y=refy).item(), average.Z.isel(x=refx, y=refy).item()
 
-fig, ax = plt.subplots(4, 4, figsize=(40, 40))
+fig, ax = plt.subplots(4, 4, figsize=(16, 16))
 
 for i in range(16):
     axe = ax[int(i / 4)][i % 4]
@@ -166,7 +166,7 @@ for i in range(16):
     axe.plot(elipsx, elipsy)
     im.set_extent((rmin, rmax, zmin, zmax))
 
-plt.savefig("event_fits.png", bbox_inches="tight")
+plt.savefig("event_fits.eps", bbox_inches="tight")
 quit()
 
 for e in events:
