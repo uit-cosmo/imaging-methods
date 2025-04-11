@@ -150,7 +150,7 @@ rmin, rmax, zmin, zmax = (
 )
 R, Z = average.R.isel(x=refx, y=refy).item(), average.Z.isel(x=refx, y=refy).item()
 
-fig, ax = plt.subplots(4, 4, figsize=(16, 16))
+fig, ax = plt.subplots(4, 4)
 
 for i in range(16):
     axe = ax[int(i / 4)][i % 4]
