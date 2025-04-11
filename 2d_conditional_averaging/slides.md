@@ -254,4 +254,4 @@ transition: slide-left
 
 $P_c = 10$, $P_\epsilon = 1$
 
-![](https://github.com/uit-cosmo/phantom/blob/main/presentation/event_fits_size_penalty.png?raw=true){.w-140.mx-auto}
+![](https://github.com/uit-cosmo/phantom/blob/main/presentation/event_fits_size_aspect_penalty.png?raw=true){.w-140.mx-auto}
