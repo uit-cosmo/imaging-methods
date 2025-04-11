@@ -195,6 +195,8 @@ E = \sum_{\text{pixels}} (\phi(x, y) - e(x, y)) ^ 2
 \end{equation}
 $$
 
+Where $e(x, y)$ is the event intensity at pixel $x, y$.
+
 ---
 transition: slide-left
 ---
@@ -207,7 +209,7 @@ transition: slide-left
 transition: slide-left
 ---
 
-## Results with size penalty
+## Size penalty
 
 Add a penalty factor:
 
@@ -217,16 +219,39 @@ E = \sum_{\text{pixels}} (\phi(x, y) - e(x, y)) ^ 2 + P_c \phi(x, y) ^ 2
 \end{equation}
 $$
 
-Where $P_c$ is a user-defined penalty factor
-
-![](https://github.com/uit-cosmo/phantom/blob/main/presentation/event_fits.png?raw=true){.w-140.mx-auto}
-
-
+Where $P_c$ is a user-defined size penalty factor
 
 ---
 transition: slide-left
 ---
 
+## Results with size penalty
+$P_c = 10$
+
+![](https://github.com/uit-cosmo/phantom/blob/main/presentation/event_fits_size_penalty.png?raw=true){.w-140.mx-auto}
+
 ---
 transition: slide-left
 ---
+
+## Aspect ratio penalty
+
+Add an aspect ratio penalty
+
+$$
+\begin{equation}
+E = \sum_{\text{pixels}} (\phi(x, y) - e(x, y)) ^ 2 + \phi(x, y) ^ 2 (P_c + P_\epsilon(1- \ell_x/\ell_y)^2)
+\end{equation}
+$$
+
+Where $P_\epsilon$ is a user-defined aspect ratio penalty factor
+
+---
+transition: slide-left
+---
+
+## Results with aspect ratio and size penalty
+
+$P_c = 10$, $P_\epsilon = 1$
+
+![](https://github.com/uit-cosmo/phantom/blob/main/presentation/event_fits_size_penalty.png?raw=true){.w-140.mx-auto}
