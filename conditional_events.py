@@ -166,7 +166,7 @@ for i in range(16):
     axe.plot(elipsx, elipsy)
     im.set_extent((rmin, rmax, zmin, zmax))
 
-plt.savefig("event_fits.eps", bbox_inches="tight")
+plt.savefig("event_fits.pdf", bbox_inches="tight")
 quit()
 
 for e in events:
