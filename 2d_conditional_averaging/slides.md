@@ -217,15 +217,25 @@ E = \sum_{\text{pixels}} (\phi(x, y) - e(x, y)) ^ 2 + P_c \phi(x, y) ^ 2
 \end{equation}
 $$
 
-Where $P_c$ is a user-defined penalty factor
+Where $P_c$ is a user-defined size penalty factor
 
-![](https://github.com/uit-cosmo/phantom/blob/main/presentation/event_fits.png?raw=true){.w-140.mx-auto}
-
-
+![](https://github.com/uit-cosmo/phantom/blob/main/presentation/event_fits_size_penalty.png?raw=true){.w-140.mx-auto}
 
 ---
 transition: slide-left
 ---
+
+## Results with size and aspect ratio penalty
+
+$$
+\begin{equation}
+E = \sum_{\text{pixels}} (\phi(x, y) - e(x, y)) ^ 2 + \phi(x, y) ^ 2 (P_c + P_\epsilon(1 - \ell_x/\ell_y) ^2)
+\end{equation}
+$$
+
+Where $P_\epsilon$ is a user-defined aspect ratio penalty factor
+
+![](https://github.com/uit-cosmo/phantom/blob/main/presentation/event_fits_size_aspect_penalty.png?raw=true){.w-140.mx-auto}
 
 ---
 transition: slide-left
