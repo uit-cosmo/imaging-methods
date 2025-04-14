@@ -153,6 +153,7 @@ example.gif
 
 !/presentation/*.gif
 !/presentation/*.png
+!/presentation/*.eps
 
 old_files/
 good_movies/
