@@ -156,7 +156,7 @@ for i in range(16):
     axe = ax[int(i / 4)][i % 4]
     e = events[i]
     lx, ly, theta = fit_ellipse(
-        e.sel(time=0), R, Z, size_penalty_factor=0, aspect_ratio_penalty_factor=0
+        e.sel(time=0), R, Z, size_penalty_factor=5, aspect_ratio_penalty_factor=1
     )
     im = axe.imshow(e.sel(time=0).frames, origin="lower", interpolation="spline16")
     alphas = np.linspace(0, 2 * np.pi, 200)
@@ -166,7 +166,7 @@ for i in range(16):
     axe.plot(elipsx, elipsy)
     im.set_extent((rmin, rmax, zmin, zmax))
 
-plt.savefig("event_fits.png", bbox_inches="tight")
+plt.savefig("event_fits_size_aspect_penalty.png", bbox_inches="tight")
 quit()
 
 for e in events:

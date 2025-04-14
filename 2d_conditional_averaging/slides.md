@@ -203,7 +203,7 @@ transition: slide-left
 
 ## Results
 
-# ![](https://github.com/uit-cosmo/phantom/blob/main/presentation/event_fits.pdf?raw=true){.w-140.mx-auto}
+# ![](https://github.com/uit-cosmo/phantom/blob/main/presentation/event_fits.png?raw=true){.w-140.mx-auto}
 
 ---
 transition: slide-left
@@ -228,7 +228,7 @@ transition: slide-left
 ## Results with size penalty
 $P_c = 10$
 
-![](https://github.com/uit-cosmo/phantom/blob/main/presentation/event_fits_size_aspect_penalty.png?raw=true){.w-140.mx-auto}
+![](https://github.com/uit-cosmo/phantom/blob/main/presentation/event_fits_size_penalty.png?raw=true){.w-140.mx-auto}
 
 ---
 transition: slide-left
