@@ -14,9 +14,10 @@ from scipy import stats
 
 
 shot = 1160616018
-ds = get_sample_data(shot, 0.4)
-ds.to_netcdf("data18large.nc")
-# ds = xr.open_dataset("data.nc")
+shot = 1140613026
+# ds = get_sample_data(shot, 0.2)
+# ds.to_netcdf("data1426large.nc")
+ds = xr.open_dataset("data1426large.nc")
 
 refx, refy = 6, 5
 
@@ -168,6 +169,9 @@ def plot_fit_ellipse():
         im.set_extent((rmin, rmax, zmin, zmax))
 
     plt.savefig("event_fits_size_aspect_penalty.png", bbox_inches="tight")
+
+
+plot_fit_ellipse()
 
 
 plot = False

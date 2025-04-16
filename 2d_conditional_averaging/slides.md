@@ -265,3 +265,13 @@ transition: slide-left
 ![](https://github.com/uit-cosmo/phantom/blob/main/presentation/ell_corr.png?raw=true){.w-135.mx-auto}
 
 $\sigma = 0.4$
+
+## Same for I mode (1140613026)
+
+![](https://github.com/uit-cosmo/phantom/blob/main/presentation/event_fits_size_aspect_penalty_imode.png?raw=true){.w-135.mx-auto}
+
+## I mode correlation
+
+![](https://github.com/uit-cosmo/phantom/blob/main/presentation/ell_corr_imode.png?raw=true){.w-135.mx-auto}
+
+$\sigma_v = 0.06, \sigma_u = 0.07$, \sigma_\ell = 0.70$
