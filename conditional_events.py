@@ -14,9 +14,10 @@ from scipy import stats
 
 
 shot = 1160616018
-# ds = get_sample_data(shot, 0.01)
-# ds.to_netcdf("data18small.nc")
-ds = xr.open_dataset("data18small.nc")
+shot = 1140613026
+# ds = get_sample_data(shot, 0.2)
+# ds.to_netcdf("data1426large.nc")
+ds = xr.open_dataset("data1426large.nc")
 
 refx, refy = 6, 5
 
@@ -150,25 +151,30 @@ rmin, rmax, zmin, zmax = (
 )
 R, Z = average.R.isel(x=refx, y=refy).item(), average.Z.isel(x=refx, y=refy).item()
 
-fig, ax = plt.subplots(4, 4)
 
-for i in range(16):
-    axe = ax[int(i / 4)][i % 4]
-    e = events[i]
-    lx, ly, theta = fit_ellipse(
-        e.sel(time=0), R, Z, size_penalty_factor=5, aspect_ratio_penalty_factor=1
-    )
-    im = axe.imshow(e.sel(time=0).frames, origin="lower", interpolation="spline16")
-    alphas = np.linspace(0, 2 * np.pi, 200)
-    elipsx, elipsy = zip(
-        *[ellipse_parameters((lx, ly, theta), R, Z, a) for a in alphas]
-    )
-    axe.plot(elipsx, elipsy)
-    im.set_extent((rmin, rmax, zmin, zmax))
+def plot_fit_ellipse():
+    fig, ax = plt.subplots(4, 4)
+    for i in range(16):
+        axe = ax[int(i / 4)][i % 4]
+        e = events[i]
+        lx, ly, theta = fit_ellipse(
+            e.sel(time=0), R, Z, size_penalty_factor=5, aspect_ratio_penalty_factor=1
+        )
+        im = axe.imshow(e.sel(time=0).frames, origin="lower", interpolation="spline16")
+        alphas = np.linspace(0, 2 * np.pi, 200)
+        elipsx, elipsy = zip(
+            *[ellipse_parameters((lx, ly, theta), R, Z, a) for a in alphas]
+        )
+        axe.plot(elipsx, elipsy)
+        im.set_extent((rmin, rmax, zmin, zmax))
 
-plt.savefig("event_fits_size_aspect_penalty.png", bbox_inches="tight")
-quit()
+    plt.savefig("event_fits_size_aspect_penalty.png", bbox_inches="tight")
 
+
+plot_fit_ellipse()
+
+
+plot = False
 for e in events:
     taux, tauy = get_delays(e, refx, refy)
     amplitude = get_maximum_amplitude(e, refx, refy)
@@ -182,25 +188,30 @@ for e in events:
     e["v"] = v / 100
     e["w"] = w / 100
     lx, ly, theta = fit_ellipse(
-        e.sel(time=0), R, Z, size_penalty_factor=0, aspect_ratio_penalty_factor=0
+        e.sel(time=0), R, Z, size_penalty_factor=5, aspect_ratio_penalty_factor=1
     )
     e["lx"] = lx
     e["ly"] = ly
     e["theta"] = theta
-    fig, ax = plt.subplots()
-    im = ax.imshow(e.sel(time=0).frames, origin="lower", interpolation="spline16")
-    alphas = np.linspace(0, 2 * np.pi, 200)
-    elipsx, elipsy = zip(
-        *[ellipse_parameters((lx, ly, theta), R, Z, a) for a in alphas]
-    )
-    ax.plot(elipsx, elipsy)
-    im.set_extent((rmin, rmax, zmin, zmax))
-    plt.savefig("tmp/fit_{}.png".format(e["event_id"].item()), bbox_inches="tight")
+    if plot:
+        fig, ax = plt.subplots()
+        im = ax.imshow(e.sel(time=0).frames, origin="lower", interpolation="spline16")
+        alphas = np.linspace(0, 2 * np.pi, 200)
+        elipsx, elipsy = zip(
+            *[ellipse_parameters((lx, ly, theta), R, Z, a) for a in alphas]
+        )
+        ax.plot(elipsx, elipsy)
+        im.set_extent((rmin, rmax, zmin, zmax))
+        plt.savefig("tmp/fit_{}.png".format(e["event_id"].item()), bbox_inches="tight")
 
 amplitudes = np.array([e["amplitude"] for e in events])
 vs = np.array([e["v"] for e in events])
 ws = np.array([e["w"] for e in events])
 us = np.array([e["u"] for e in events])
+lxs = np.array([e["lx"] for e in events])
+lys = np.array([e["ly"] for e in events])
+ells = np.sqrt(lxs * lys)
+thetas = np.array([e["theta"] for e in events])
 
 print(
     "Events {}, Mean v {:.2f}, mean w {:.2f}".format(
@@ -210,15 +221,21 @@ print(
 
 fig, ax = plt.subplots()
 
-sigma_v, sigma_u = stats.pearsonr(amplitudes, vs), stats.pearsonr(amplitudes, us)
+sigma_v, sigma_u, sigma_ell = (
+    stats.pearsonr(amplitudes, vs),
+    stats.pearsonr(amplitudes, us),
+    stats.pearsonr(amplitudes, ells),
+)
 print(
-    r"$\sigma_v = {:.2f}, \sigma_u = {:.2f}$".format(
-        sigma_v.statistic, sigma_u.statistic
+    r"$\sigma_v = {:.2f}, \sigma_u = {:.2f}$, \sigma_\ell = {:.2f}".format(
+        sigma_v.statistic, sigma_u.statistic, sigma_ell.statistic
     )
 )
-ax.scatter(us, amplitudes)
-ax.set_xlabel(r"$u_{\text{TDE}}$")
+ax.scatter(ells, amplitudes)
+# ax.set_xlabel(r"$u_{\text{TDE}}$")
+ax.set_xlabel(r"$\ell$")
 ax.set_ylabel(r"$a$")
+plt.savefig("tmp/ell_corr.png", bbox_inches="tight")
 plt.show()
 
 print("LOL")

@@ -228,7 +228,7 @@ transition: slide-left
 ## Results with size penalty
 $P_c = 10$
 
-![](https://github.com/uit-cosmo/phantom/blob/main/presentation/event_fits_size_penalty.png?raw=true){.w-140.mx-auto}
+![](https://github.com/uit-cosmo/phantom/blob/main/presentation/event_fits_size_penalty.png?raw=true){.w-130.mx-auto}
 
 ---
 transition: slide-left
@@ -254,4 +254,24 @@ transition: slide-left
 
 $P_c = 10$, $P_\epsilon = 1$
 
-![](https://github.com/uit-cosmo/phantom/blob/main/presentation/event_fits_size_aspect_penalty.png?raw=true){.w-140.mx-auto}
+![](https://github.com/uit-cosmo/phantom/blob/main/presentation/event_fits_size_aspect_penalty.png?raw=true){.w-130.mx-auto}
+
+---
+transition: slide-left
+---
+
+## Correlation
+
+![](https://github.com/uit-cosmo/phantom/blob/main/presentation/ell_corr.png?raw=true){.w-135.mx-auto}
+
+$\sigma = 0.4$
+
+## Same for I mode (1140613026)
+
+![](https://github.com/uit-cosmo/phantom/blob/main/presentation/event_fits_size_aspect_penalty_imode.png?raw=true){.w-135.mx-auto}
+
+## I mode correlation
+
+![](https://github.com/uit-cosmo/phantom/blob/main/presentation/ell_corr_imode.png?raw=true){.w-135.mx-auto}
+
+$\sigma_v = 0.06, \sigma_u = 0.07$, \sigma_\ell = 0.70$
