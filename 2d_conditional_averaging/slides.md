@@ -30,6 +30,13 @@ Given 2D imaging data, select a reference pixel on which:
 	- Optionally, discard events with overlapping windows with preference for higher amplitude events.
 - Return list of events and average over all events
 
+
+---
+transition: slide-left
+---
+
+![](https://github.com/uit-cosmo/phantom/blob/main/presentation/event_illustration.png?raw=true){.w-80.mx-auto}
+
 ---
 transition: slide-left
 ---
