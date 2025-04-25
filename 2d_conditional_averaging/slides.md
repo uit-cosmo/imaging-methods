@@ -203,7 +203,7 @@ transition: slide-left
 
 ## Results
 
-# ![](https://github.com/uit-cosmo/phantom/blob/main/presentation/event_fits.pdf?raw=true){.w-140.mx-auto}
+# ![](https://github.com/uit-cosmo/phantom/blob/main/presentation/event_fits.png?raw=true){.w-140.mx-auto}
 
 ---
 transition: slide-left
