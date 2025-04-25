@@ -35,7 +35,7 @@ Given 2D imaging data, select a reference pixel on which:
 transition: slide-left
 ---
 
-![](https://github.com/uit-cosmo/phantom/blob/main/presentation/event_illustration.png?raw=true){.w-80.mx-auto}
+![](https://github.com/uit-cosmo/phantom/blob/main/presentation/event_illustration.png?raw=true){.w-140.mx-auto}
 
 ---
 transition: slide-left
@@ -198,7 +198,7 @@ Given the event image at time 0, we find the parameters $\ell_x$, $\ell_y$ and $
 
 $$
 \begin{equation}
-E = \sum_{\text{pixels}} (\phi(x, y) - e(x, y)) ^ 2
+E(\ell_x, \ell_y, \theta) = \sum_{\text{pixels}} (\phi_{(\ell_x, \ell_y, \theta)}(x, y) - e(x, y)) ^ 2
 \end{equation}
 $$
 
