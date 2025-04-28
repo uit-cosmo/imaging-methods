@@ -41,14 +41,14 @@ transition: slide-left
 transition: slide-left
 ---
 ## Arguments
-| Name            | Description                          |
-|-----------------|--------------------------------------|
-| `dataset`       | The 2D imaging data to process      |
-| `reference pixel` | Pixel to base events on           |
-| `threshold`     | Minimum signal value for events     |
-| `window_size`   | Size of data window around peaks    |
-| `check_max`     | Distance to check neighboring peaks |
-| `single_counting` | Avoid overlapping event windows   |
+| Name            | Description                                   |
+|-----------------|-----------------------------------------------|
+| `dataset`       | The 2D imaging data to process (preprocessed) |
+| `reference pixel` | Pixel to base events on                       |
+| `threshold`     | Minimum signal value for events               |
+| `window_size`   | Size of data window around peaks              |
+| `check_max`     | Distance to check neighboring peaks           |
+| `single_counting` | Avoid overlapping event windows               |
 
 ---
 transition: slide-left
@@ -87,7 +87,15 @@ transition: slide-left
 
 ## Results: I mode
 
-![](https://github.com/uit-cosmo/phantom/blob/main/presentation/opt_out_imode.gif?raw=true){.w-80.mx-auto}
+![](https://github.com/uit-cosmo/phantom/blob/main/presentation/opt_out_imode.gif?raw=true){.w-100.mx-auto}
+
+---
+transition: slide-left
+---
+
+## Results: I mode variable cbar
+
+![](https://github.com/uit-cosmo/phantom/blob/main/presentation/opt_imode_variable.gif?raw=true){.w-100.mx-auto}
 
 ---
 transition: slide-left
@@ -95,7 +103,7 @@ transition: slide-left
 
 ## Results: L mode
 
-![](https://github.com/uit-cosmo/phantom/blob/main/presentation/opt_out_lmode25.gif?raw=true){.w-80.mx-auto}
+![](https://github.com/uit-cosmo/phantom/blob/main/presentation/opt_out_lmode25.gif?raw=true){.w-100.mx-auto}
 
 ---
 transition: slide-left
@@ -204,6 +212,10 @@ $$
 
 Where $e(x, y)$ is the event intensity at pixel $x, y$.
 
+Use `differential_evolution` from `scipy` to find global minimum. 
+
+> Finds the global minimum of a multivariate function. The differential evolution method [1] is stochastic in nature. It does not use gradient methods to find the minimum, and can search large areas of candidate space, but often requires larger numbers of function evaluations than conventional gradient-based techniques.
+
 ---
 transition: slide-left
 ---
@@ -273,12 +285,20 @@ transition: slide-left
 
 $\sigma = 0.4$
 
+---
+transition: slide-left
+---
+
 ## Same for I mode (1140613026)
 
 ![](https://github.com/uit-cosmo/phantom/blob/main/presentation/event_fits_size_aspect_penalty_imode.png?raw=true){.w-135.mx-auto}
+
+---
+transition: slide-left
+---
 
 ## I mode correlation
 
 ![](https://github.com/uit-cosmo/phantom/blob/main/presentation/ell_corr_imode.png?raw=true){.w-135.mx-auto}
 
-$\sigma_v = 0.06, \sigma_u = 0.07$, \sigma_\ell = 0.70$
+$\sigma_v = 0.06, \sigma_u = 0.07, \sigma_\ell = 0.70$

@@ -82,7 +82,7 @@ def show_movie(
         """
         arr = dataset[variable].isel(**{t_dim: i})
         if lims is None:
-            vmin, vmax = -1, 3
+            vmin, vmax = np.min(arr), np.max(arr)
         else:
             vmin, vmax = lims
         # vmin, vmax = 0, 1

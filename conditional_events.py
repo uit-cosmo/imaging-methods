@@ -15,7 +15,7 @@ from scipy import stats
 
 shot = 1160616018
 shot = 1140613026
-# ds = get_sample_data(shot, 0.2)
+ds = get_sample_data(shot, 0.2)
 # ds.to_netcdf("data1426large.nc")
 ds = xr.open_dataset("data1426large.nc")
 
