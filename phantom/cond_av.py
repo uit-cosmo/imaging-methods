@@ -28,6 +28,7 @@ def find_events(
     Returns:
     events: List of xarray.Dataset objects containing extracted windows
     average: xarray.Dataset containing average event across all input events
+    cond_repr: xarray.Dataset containing the conditional reproducibility of the signal <f>^2/<f^2>
     """
     # Assuming the data is on cmod_functions format, in xarray and with frames name
     ref_ts = ds.frames.isel(x=refx, y=refy)
@@ -156,7 +157,9 @@ def find_events(
     # Combine all events along new dimension and compute mean
     if len(processed) != 0:
         average = xr.concat(processed, dim="event").mean(dim="event")
-        std = xr.concat(processed, dim="event").std(dim="event")
-        return processed, average, std
+        mean2 = xr.apply_ufunc(
+            lambda x: x**2, xr.concat(processed, dim="event")
+        ).mean(dim="event")
+        return processed, average, average**2 / mean2
 
     return processed, None, None

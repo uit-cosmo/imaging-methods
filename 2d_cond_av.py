@@ -81,7 +81,7 @@ ds = xr.open_dataset("ds_imode_long.nc")
 
 
 refx, refy = 6, 5
-events, average = find_events(
+events, average, std = find_events(
     ds, refx, refy, threshold=0.2, check_max=1, window_size=60, single_counting=True
 )
 
@@ -89,10 +89,10 @@ events, average = find_events(
 
 # show_movie(ds.sel(time=slice(T/2, T/2+10)), variable="frames", lims=(0, 0.3), gif_name="data.gif")
 show_movie(
-    average,
+    std,
     variable="frames",
-    # lims=(0, np.max(average.frames.values)),
-    gif_name="out.gif",
+    lims=(0, 1),
+    gif_name="out_std.gif",
 )
 # show_movie(ds_corr, variable="frames", lims=(0, 1), gif_name="out.gif")
 

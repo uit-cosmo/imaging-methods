@@ -102,6 +102,27 @@ def test_truncation():
     assert len(events) == 1
 
 
+def test_conditional_reproducibility():
+    signal = np.repeat(np.array([0, 0, 0, 1, 2, 3, 2, 1, 0, 0, 0]), 10)
+    ds = get_single_pixel_ds(signal)
+    events, _, cr = ph.find_events(
+        ds, 0, 0, threshold=2.5, window_size=5, single_counting=True
+    )
+    assert np.all(cr.frames.isel(x=0, y=0).values == 1)
+
+
+def test_conditional_reproducibility_change():
+    signal = np.repeat(
+        np.array([0, 0, 0, 1, 2, 3, 2, 1, 0, 0, 0, 0, 0, 0, 2, 3, 4, 3, 2, 0, 0, 0, 0]),
+        10,
+    )
+    ds = get_single_pixel_ds(signal)
+    events, _, cr = ph.find_events(
+        ds, 0, 0, threshold=2.5, window_size=5, single_counting=True
+    )
+    assert np.all(cr.frames.isel(x=0, y=0).values < 1)
+
+
 def test_check_max():
     signal1 = np.array([0, 0, 1, 3, 1, 0, 0])
     signal2 = np.array([0, 0, 1, 2, 1, 0, 0])
