@@ -141,6 +141,7 @@ def find_events(
         time_length = win.sizes["time"]
         half_window = (time_length - 1) // 2
         relative_time = np.arange(time_length) - half_window
+        abs_time = win.time[half_window].item()
 
         # Assign new time coordinates
         dt = float(ds["time"][1].values - ds["time"][0].values)
@@ -148,12 +149,14 @@ def find_events(
         win["event_id"] = event_id
         win["refx"] = refx
         win["refy"] = refy
+        win["abs_time"] = abs_time
         event_id += 1
         processed.append(win)
 
     # Combine all events along new dimension and compute mean
     if len(processed) != 0:
         average = xr.concat(processed, dim="event").mean(dim="event")
-        return processed, average
+        std = xr.concat(processed, dim="event").std(dim="event")
+        return processed, average, std
 
-    return processed, None
+    return processed, None, None
