@@ -1,0 +1,92 @@
+[
+    {
+        "shot_number": 1160616027,
+        "plasma_current": 0.51,
+        "line_averaged_density": 2.82,
+        "greenwald_fraction": 0.8,
+        "t_start": 1.15,
+        "t_end": 1.45,
+        "duration": 0.3,
+        "mlp_mode": "-"
+    },
+    {
+        "shot_number": 1160616026,
+        "plasma_current": 0.51,
+        "line_averaged_density": 2.83,
+        "greenwald_fraction": 0.8,
+        "t_start": 1.15,
+        "t_end": 1.45,
+        "duration": 0.3,
+        "mlp_mode": "-"
+    },
+    {
+        "shot_number": 1160616025,
+        "plasma_current": 0.51,
+        "line_averaged_density": 2.76,
+        "greenwald_fraction": 0.8,
+        "t_start": 1.15,
+        "t_end": 1.45,
+        "duration": 0.3,
+        "mlp_mode": "-"
+    },
+    {
+        "shot_number": 1160616022,
+        "plasma_current": 0.52,
+        "line_averaged_density": 2.29,
+        "greenwald_fraction": 0.65,
+        "t_start": 1.15,
+        "t_end": 1.45,
+        "duration": 0.3,
+        "mlp_mode": "scan"
+    },
+    {
+        "shot_number": 1160616018,
+        "plasma_current": 0.53,
+        "line_averaged_density": 1.65,
+        "greenwald_fraction": 0.46,
+        "t_start": 1.15,
+        "t_end": 1.45,
+        "duration": 0.3,
+        "mlp_mode": "dwell"
+    },
+    {
+        "shot_number": 1160616017,
+        "plasma_current": 0.53,
+        "line_averaged_density": 1.56,
+        "greenwald_fraction": 0.44,
+        "t_start": 1.15,
+        "t_end": 1.45,
+        "duration": 0.3,
+        "mlp_mode": "scan"
+    },
+    {
+        "shot_number": 1160616016,
+        "plasma_current": 0.53,
+        "line_averaged_density": 1.6,
+        "greenwald_fraction": 0.45,
+        "t_start": 1.15,
+        "t_end": 1.45,
+        "duration": 0.3,
+        "mlp_mode": "scan"
+    },
+    {
+        "shot_number": 1160616011,
+        "plasma_current": 0.54,
+        "line_averaged_density": 1.07,
+        "greenwald_fraction": 0.3,
+        "t_start": 1.15,
+        "t_end": 1.45,
+        "duration": 0.3,
+        "mlp_mode": "scan"
+    },
+    {
+        "shot_number": 1160616009,
+        "plasma_current": 0.54,
+        "line_averaged_density": 0.87,
+        "greenwald_fraction": 0.24,
+        "t_start": 1.305,
+        "t_end": 1.45,
+        "duration": 0.145,
+        "mlp_mode": "scan"
+    }
+]
