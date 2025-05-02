@@ -32,6 +32,7 @@ def show_movie(
     lims=None,
     fig=None,
     ax=None,
+    show=True,
 ) -> None:
     """
     Creates an animation that shows the evolution of a specific variable over time.
@@ -131,7 +132,8 @@ def show_movie(
 
     if gif_name:
         ani.save(gif_name, writer="ffmpeg", fps=fps)
-    plt.show()
+    if show:
+        plt.show()
 
 
 def calculate_splinted_LCFS(
