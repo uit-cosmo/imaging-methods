@@ -339,15 +339,34 @@ def get_taumax(v, w, dx, dy, lx, ly, t):
     return (a1 - a2 + a3) / (d1 + d2 - d3)
 
 
-def get_sample_data(shot, window):
-    ds = xr.open_dataset("data/apd_{}.nc".format(shot))
+def get_sample_data(shot, window=None, data_folder="data"):
+    """
+    Returns APD data from the specified shot processed by running normalization and 2d interpolation to fill dead pixels.
+    :param shot: shot
+    :param window: Optionally, total duration time to use
+    :param data_folder: Data folder
+    :return: xr.DataSet containing the APD data
+    """
+    import os
+
+    file_name = os.path.join(data_folder, f"apd_{shot}.nc")
+    try:
+        if os.path.exists(file_name):
+            ds = xr.open_dataset(file_name)
+        else:
+            print(f"Warning: File {file_name} not found.")
+    except Exception as e:
+        print(f"Error reading file {file_name}: {str(e)}")
+
     ds["frames"] = run_norm_ds(ds, 1000)["frames"]
 
-    t_start, t_end = get_t_start_end(ds)
-    print("Data with times from {} to {}".format(t_start, t_end))
+    if window is not None:
+        t_start, t_end = get_t_start_end(ds)
+        print("Data with times from {} to {}".format(t_start, t_end))
 
-    t_start = (t_start + t_end) / 2
-    t_end = t_start + window
-    ds = ds.sel(time=slice(t_start, t_end))
+        t_start = (t_start + t_end) / 2
+        t_end = t_start + window
+        ds = ds.sel(time=slice(t_start, t_end))
+
     interpolate_nans_3d(ds)
     return ds
