@@ -312,7 +312,7 @@ def show_movie_with_contours(
     dataset: xr.Dataset,
     refx,
     refy,
-    contours_da,
+    contours_ds,
     variable: str = "n",
     interval: int = 100,
     gif_name: Union[str, None] = None,
@@ -321,6 +321,7 @@ def show_movie_with_contours(
     lims=None,
     fig=None,
     ax=None,
+    show=True,
 ) -> None:
     """
     Creates an animation that shows the evolution of a specific variable over time.
@@ -386,11 +387,17 @@ def show_movie_with_contours(
         im.set_data(arr)
         # im.set_extent((dataset.x[0], dataset.x[-1], dataset.y[0], dataset.y[-1]))
         im.set_clim(vmin, vmax)
-        c = contours_da.isel(time=i).data
-        line[0].set_data(c[:, 1], c[:, 0])
+        c = contours_ds.contours.isel(time=i).data
+        line[0].set_data(c[:, 0], c[:, 1])
 
         time = dataset[t_dim][i]
-        tx.set_text(f"t = {time:.7f}")
+        l = contours_ds.length.isel(time=i).item()
+        convexity_deficienty = contours_ds.convexity_deficiency.isel(time=i).item()
+        com = contours_ds.center_of_mass.isel(time=i).values
+        size = contours_ds.area.isel(time=i).item()
+        tx.set_text(
+            f"l = {l:.2f}, cd = {convexity_deficienty:.2f}, com = {com[0]:.2f} {com[1]:.2f}, area = {size:.2f}"
+        )
 
     if ax is None:
         ax = fig.add_subplot(111)
@@ -416,4 +423,5 @@ def show_movie_with_contours(
 
     if gif_name:
         ani.save(gif_name, writer="ffmpeg", fps=fps)
-    plt.show()
+    if show:
+        plt.show()

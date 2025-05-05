@@ -2,6 +2,7 @@ from synthetic_data import *
 from phantom.utils import *
 from phantom.show_data import *
 from phantom.cond_av import *
+from phantom.contours import *
 from blobmodel import BlobShapeEnum
 import matplotlib.pyplot as plt
 import numpy as np
@@ -19,11 +20,11 @@ from shapely.geometry import Polygon, Point
 from scipy.spatial import ConvexHull
 
 
-def get_blob(vx, vy, posx, posy, lx, ly, t_init, theta, bs=BlobShapeImpl()):
+def get_blob(amplitude, vx, vy, posx, posy, lx, ly, t_init, theta, bs=BlobShapeImpl()):
     return Blob(
         1,
         bs,
-        amplitude=1,
+        amplitude=amplitude,
         width_prop=lx,
         width_perp=ly,
         v_x=vx,
@@ -37,14 +38,14 @@ def get_blob(vx, vy, posx, posy, lx, ly, t_init, theta, bs=BlobShapeImpl()):
     )
 
 
-num_blobs = 5
-T = 20
+num_blobs = 50
+T = 200
 Lx = 5
 Ly = 5
 lx = 1
 ly = 1
-nx = 64
-ny = 64
+nx = 32
+ny = 32
 vx = 1
 vy = 0
 theta = 0
@@ -52,6 +53,7 @@ bs = BlobShapeImpl(BlobShapeEnum.gaussian, BlobShapeEnum.gaussian)
 
 blobs = [
     get_blob(
+        amplitude=np.random.exponential(),
         vx=vx,
         vy=vy,
         posx=np.random.uniform(0, Lx),
@@ -66,86 +68,29 @@ blobs = [
 ]
 
 rp = RunParameters(T=T, lx=Lx, ly=Ly, nx=nx, ny=ny)
-bf = DeterministicBlobFactory(
-    [get_blob(vx, vy, 0, 2.5, lx, ly, t_init=10, bs=bs, theta=theta)]
-)
+bf = DeterministicBlobFactory(blobs)
 
 ds = make_2d_realization(rp, bf)
 
-refx, refy = 32, 32
+refx, refy = 16, 16
 events, average, std = find_events(
-    ds, refx, refy, threshold=0.2, check_max=1, window_size=60, single_counting=True
+    ds, refx, refy, threshold=0.2, check_max=1, window_size=30, single_counting=True
 )
 e = events[0]
 
-contours_list = []
-for t in e.time.values:
-    frame = e.sel(time=t).frames.values
-    contours = measure.find_contours(frame, np.max(frame) / 2)
-    contour = (
-        contours[0] if len(contours) > 0 else np.array([])
-    )  # Default to first contour
-    if len(contours) > 1:
-        contour = max(contours, key=len)  # Select longest contour
+contours_da = get_contour_evolution(events[0])
 
-    contours_list.append(contour)
-
-
-def indexes_to_coordinates(R, Z, indexes):
-    dx = R[0, 1] - R[0, 0]
-    dy = Z[1, 0] - Z[0, 0]
-    r_values = np.min(R) + indexes[:, 0] * dx
-    z_values = np.min(Z) + indexes[:, 1] * dy
-    return r_values, z_values
-
-
-max_points = max(len(c) for c in contours_list) if contours_list else 1
-contour_data = np.full(
-    (len(e.time.values), max_points, 2), np.nan
-)  # Initialize with NaN
-for t, contour in enumerate(contours_list):
-    n_points = len(contour)
-    r_values, z_values = indexes_to_coordinates(e.R.values, e.Z.values, contour)
-    if n_points > 0:
-        contour_data[t, :n_points, :] = np.stack(
-            (r_values, z_values), axis=-1
-        )  # Store (x, y) points
-
-contours_da = xr.DataArray(
-    contour_data,
-    dims=("time", "point_idx", "coord"),
-    coords={"time": e.time.values, "coord": ["x", "y"]},
-)
-
-show_movie_with_contours(
-    events[0], refx, refy, contours_da, "frames", interpolation="spline16"
-)
-
-fig, ax = plt.subplots()
-
-
-t = 0
-extent = (e.R[0, 0], e.R[0, -1], e.Z[0, 0], e.Z[-1, 0])
-ax.imshow(e.sel(time=t).frames.values, extent=extent)
-ax.scatter(
-    e.R.isel(x=refx, y=refy).item(), e.Z.isel(x=refx, y=refy).item(), color="black"
-)
-
-peak = e.frames.sel(time=t).isel(x=refx, y=refy).item()
-ref_pixel = Point(e.R.isel(x=refx, y=refy).item(), e.Z.isel(x=refx, y=refy).item())
-
-contour = measure.find_contours(e.frames.sel(time=t).values, peak / 2)
-r_values, z_values = indexes_to_coordinates(e.R.values, e.Z.values, contour[0])
-ax.plot(r_values, z_values, ls="--", color="black")
-
-polygon = Polygon(np.array([r_values, z_values]).T)  # Polygon object
-convex = ConvexHull(np.array([r_values, z_values]).T)
-
-length = polygon.length  # float
-convexity_deficiency = abs((convex.volume - polygon.area) / convex.volume)  # float
-
-print(convex.area, convex.volume)
-
-print("LOL")
-
-plt.show()
+for e in events:
+    contours_ds = get_contour_evolution(e)
+    velocity = get_contour_velocity(contours_ds.center_of_mass)
+    avg_velocity = velocity.mean(dim="time", skipna=True)
+    print(avg_velocity)
+    show_movie_with_contours(
+        e,
+        refx,
+        refy,
+        contours_ds,
+        "frames",
+        interpolation=None,
+        gif_name="e{}.gif".format(e["event_id"].item(), show=False),
+    )
