@@ -42,13 +42,13 @@ num_blobs = 50
 T = 200
 Lx = 5
 Ly = 5
-lx = 1
-ly = 1
+lx = 0.2
+ly = 0.6
 nx = 32
 ny = 32
-vx = 1
-vy = 0
-theta = 0
+vx = 0
+vy = -1
+theta = np.pi / 4
 bs = BlobShapeImpl(BlobShapeEnum.gaussian, BlobShapeEnum.gaussian)
 
 blobs = [
@@ -81,7 +81,9 @@ e = events[0]
 contours_da = get_contour_evolution(events[0])
 
 for e in events:
-    contours_ds = get_contour_evolution(e)
+    contours_ds = get_contour_evolution(e, max_displacement_threshold=0.2)
+    if contours_ds is None:
+        continue
     velocity = get_contour_velocity(contours_ds.center_of_mass)
     avg_velocity = velocity.mean(dim="time", skipna=True)
     print(avg_velocity)
