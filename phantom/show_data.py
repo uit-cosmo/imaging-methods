@@ -24,7 +24,7 @@ def get_dt(data) -> float:
 
 def show_movie(
     dataset: xr.Dataset,
-    variable: str = "n",
+    variable: str = "frames",
     interval: int = 100,
     gif_name: Union[str, None] = None,
     fps: int = 10,

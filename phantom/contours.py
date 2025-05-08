@@ -277,7 +277,7 @@ def get_contour_velocity(com_da, sigma=1.0):
     -------
     xr.DataArray
         Velocity of the center of mass in (r, z) coordinates with dimensions (time, coord).
-        Units depend on the units of com_da and time (e.g., m/s if com_da is in meters and time in seconds).
+        Units are com_da units per time unit (e.g., cm/s if com_da is in cm and time in seconds).
     """
     # Input validation
     if not isinstance(com_da, xr.DataArray):
@@ -298,7 +298,7 @@ def get_contour_velocity(com_da, sigma=1.0):
     com = com_da.values  # Shape: (time, 2) for (r, z)
     n_times = len(time)
 
-    # Handle time differences
+    # Handle insufficient time points
     if n_times < 2:
         raise ValueError("At least two time points are required to compute velocity")
 
@@ -318,12 +318,10 @@ def get_contour_velocity(com_da, sigma=1.0):
     # Initialize velocity array
     velocity = np.zeros_like(com_smooth)  # Shape: (time, 2)
 
-    # Compute time deltas (non-uniform time steps)
-    dt = np.diff(time)  # Shape: (n_times-1,)
-
     # Forward difference for first point
+    dt = time[1] - time[0]
     velocity[0] = (
-        (com_smooth[1] - com_smooth[0]) / dt[0]
+        (com_smooth[1] - com_smooth[0]) / dt
         if not np.any(np.isnan(com_smooth[0]))
         else np.array([np.nan, np.nan])
     )
@@ -333,12 +331,11 @@ def get_contour_velocity(com_da, sigma=1.0):
         if np.any(np.isnan(com_smooth[i])):
             velocity[i] = np.array([np.nan, np.nan])
         else:
-            # Average time step: (dt[i-1] + dt[i]) / 2
-            velocity[i] = (com_smooth[i + 1] - com_smooth[i - 1]) / (dt[i - 1] + dt[i])
+            velocity[i] = (com_smooth[i + 1] - com_smooth[i - 1]) / (2 * dt)
 
     # Backward difference for last point
     velocity[-1] = (
-        (com_smooth[-1] - com_smooth[-2]) / dt[-1]
+        (com_smooth[-1] - com_smooth[-2]) / dt
         if not np.any(np.isnan(com_smooth[-1]))
         else np.array([np.nan, np.nan])
     )

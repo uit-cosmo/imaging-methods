@@ -72,6 +72,8 @@ bf = DeterministicBlobFactory(blobs)
 
 ds = make_2d_realization(rp, bf)
 
+show_movie(ds.sel(time=slice(10, 20)), lims=(0, 0.3))
+
 refx, refy = 16, 16
 events, average, std = find_events(
     ds, refx, refy, threshold=0.2, check_max=1, window_size=30, single_counting=True
@@ -96,3 +98,8 @@ for e in events:
         interpolation=None,
         gif_name="e{}.gif".format(e["event_id"].item(), show=False),
     )
+
+
+fig, ax = plt.subplots()
+ax.plot(ds.time.values, ds.frames.isel(x=refx, y=refy).values)
+plt.show()
