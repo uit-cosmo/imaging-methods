@@ -3,6 +3,7 @@ import velocity_estimation as ve
 import xarray as xr
 import numpy as np
 from scipy.optimize import differential_evolution
+import matplotlib.pyplot as plt
 
 
 def run_norm_ds(ds, radius):
@@ -280,6 +281,32 @@ def fit_ellipse(data, rx, ry, size_penalty_factor=0, aspect_ratio_penalty_factor
     )
 
     return result.x
+
+
+def plot_event_with_fit(e, ax, fig_name=None):
+    refx, refy = int(e["refx"].item()), int(e["refy"].item())
+    rx, ry = e.R.isel(x=refx, y=refy).item(), e.Z.isel(x=refx, y=refy).item()
+    lx, ly, theta = fit_ellipse(
+        e.sel(time=0), rx, ry, size_penalty_factor=5, aspect_ratio_penalty_factor=1
+    )
+    im = ax.imshow(e.sel(time=0).frames, origin="lower", interpolation="spline16")
+    alphas = np.linspace(0, 2 * np.pi, 200)
+    elipsx, elipsy = zip(
+        *[ellipse_parameters((lx, ly, theta), rx, ry, a) for a in alphas]
+    )
+    ax.plot(elipsx, elipsy)
+
+    rmin, rmax, zmin, zmax = (
+        e.R[0, 0] - 0.05,
+        e.R[0, -1] + 0.05,
+        e.Z[0, 0] - 0.05,
+        e.Z[-1, 0] + 0.05,
+    )
+    im.set_extent((rmin, rmax, zmin, zmax))
+    if fig_name is not None:
+        plt.savefig(fig_name, bbox_inches="tight")
+
+    return lx, ly, theta
 
 
 def plot_2d_ccf(ds, x, y, delta, ax):
