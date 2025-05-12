@@ -303,6 +303,7 @@ def plot_event_with_fit(e, ax, fig_name=None):
         e.Z[-1, 0] + 0.05,
     )
     im.set_extent((rmin, rmax, zmin, zmax))
+    ax.set_title(r"$\ell_x={:.2f} \ell_y={:.2f} \theta={:.2f}".format(lx, ly, theta))
     if fig_name is not None:
         plt.savefig(fig_name, bbox_inches="tight")
 
