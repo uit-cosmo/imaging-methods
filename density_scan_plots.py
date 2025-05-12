@@ -4,9 +4,13 @@ from phantom import (
     find_events,
     show_movie,
     plot_event_with_fit,
+    get_delays,
+    get_maximum_amplitude,
+    get_3tde_velocities,
 )
 import numpy as np
 import matplotlib.pyplot as plt
+import velocity_estimation as ve
 
 manager = PlasmaDischargeManager()
 manager.load_from_json("plasma_discharges.json")
@@ -49,6 +53,8 @@ if plot_duration_times:
             window_size=60,
             single_counting=True,
         )
+        v, w = get_3tde_velocities(average)
+
         fig, ax = plt.subplots()
         lx, ly, theta = plot_event_with_fit(
             average, ax, "average_fig_{}.png".format(shot)

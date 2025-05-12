@@ -283,6 +283,85 @@ def fit_ellipse(data, rx, ry, size_penalty_factor=0, aspect_ratio_penalty_factor
     return result.x
 
 
+def gaussian_convolve(x, times, s=1.0, kernel_size=None):
+    # If kernel_size not specified, use 6*sigma to capture most of the Gaussian
+    if kernel_size is None:
+        kernel_size = int(6 * s)
+        # Ensure kernel_size is odd
+        if kernel_size % 2 == 0:
+            kernel_size += 1
+
+    center = kernel_size // 2
+    kernel = np.exp(-((np.arange(-center, center + 1) / s) ** 2))
+    kernel = kernel / kernel.sum()
+
+    return times[center:-center], np.convolve(x, kernel, mode="valid")
+
+
+def find_maximum_interpolate(x, y):
+    from scipy.interpolate import InterpolatedUnivariateSpline
+    import warnings
+
+    # Taking the derivative and finding the roots only work if the spline degree is at least 4.
+    spline = InterpolatedUnivariateSpline(x, y, k=4)
+    possible_maxima = spline.derivative().roots()
+    possible_maxima = np.append(
+        possible_maxima, (x[0], x[-1])
+    )  # also check the endpoints of the interval
+    values = spline(possible_maxima)
+
+    max_index = np.argmax(values)
+    max_time = possible_maxima[max_index]
+    if max_time == x[0] or max_time == x[-1]:
+        warnings.warn(
+            "Maximization on interpolation yielded a maximum in the boundary!"
+        )
+
+    return max_time, spline(max_time)
+
+
+def get_maximum_time(e):
+    """
+    Given an event e find the time at which the maximum amplitude is achieved. Data is convolved with a gaussian with
+    standard deviation 3.
+    :param e:
+    :return:
+    """
+    refx, refy = int(e["refx"].item()), int(e["refy"].item())
+    convolved_times, convolved_data = gaussian_convolve(
+        e.frames.isel(x=refx, y=refy), e.time, s=3
+    )
+    tau, _ = find_maximum_interpolate(convolved_times, convolved_data)
+    return tau
+
+
+def get_maximum_amplitude(e, x, y):
+    convolved_times, convolved_data = gaussian_convolve(
+        e.frames.isel(x=x, y=y), e.time, s=3
+    )
+    _, amp = find_maximum_interpolate(convolved_times, convolved_data)
+    return amp
+
+
+def get_3tde_velocities(e):
+    refx, refy = int(e["refx"].item()), int(e["refy"].item())
+    taux, tauy = get_delays(e, refx, refy)
+
+    deltax = e.R.isel(x=refx + 1, y=refy).item() - e.R.isel(x=refx, y=refy).item()
+    deltay = e.Z.isel(x=refx, y=refy + 1).item() - e.Z.isel(x=refx, y=refy).item()
+    return ve.get_2d_velocities_from_time_delays(taux, tauy, deltax, 0, 0, deltay)
+
+
+def get_delays(e):
+    refx, refy = int(e["refx"].item()), int(e["refy"].item())
+    ref_time = get_maximum_time(e, refx, refy)
+    taux_right = get_maximum_time(e, refx + 1, refy) - ref_time
+    taux_left = get_maximum_time(e, refx - 1, refy) - ref_time
+    tauy_up = get_maximum_time(e, refx, refy + 1) - ref_time
+    tauy_down = get_maximum_time(e, refx, refy - 1) - ref_time
+    return (taux_right - taux_left) / 2, (tauy_up - tauy_down) / 2
+
+
 def plot_event_with_fit(e, ax, fig_name=None):
     refx, refy = int(e["refx"].item()), int(e["refy"].item())
     rx, ry = e.R.isel(x=refx, y=refy).item(), e.Z.isel(x=refx, y=refy).item()

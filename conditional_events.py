@@ -38,67 +38,6 @@ def save_events(event_list):
 save_events(events)
 
 
-def gaussian_convolve(x, times, s=1.0, kernel_size=None):
-    # If kernel_size not specified, use 6*sigma to capture most of the Gaussian
-    if kernel_size is None:
-        kernel_size = int(6 * s)
-        # Ensure kernel_size is odd
-        if kernel_size % 2 == 0:
-            kernel_size += 1
-
-    center = kernel_size // 2
-    kernel = np.exp(-((np.arange(-center, center + 1) / s) ** 2))
-    kernel = kernel / kernel.sum()
-
-    return times[center:-center], np.convolve(x, kernel, mode="valid")
-
-
-def find_maximum_interpolate(x, y):
-    from scipy.interpolate import InterpolatedUnivariateSpline
-
-    # Taking the derivative and finding the roots only work if the spline degree is at least 4.
-    spline = InterpolatedUnivariateSpline(x, y, k=4)
-    possible_maxima = spline.derivative().roots()
-    possible_maxima = np.append(
-        possible_maxima, (x[0], x[-1])
-    )  # also check the endpoints of the interval
-    values = spline(possible_maxima)
-
-    max_index = np.argmax(values)
-    max_time = possible_maxima[max_index]
-    if max_time == x[0] or max_time == x[-1]:
-        warnings.warn(
-            "Maximization on interpolation yielded a maximum in the boundary!"
-        )
-
-    return max_time, spline(max_time)
-
-
-def get_maximum_time(e, x, y):
-    convolved_times, convolved_data = gaussian_convolve(
-        e.frames.isel(x=x, y=y), e.time, s=3
-    )
-    tau, _ = find_maximum_interpolate(convolved_times, convolved_data)
-    return tau
-
-
-def get_maximum_amplitude(e, x, y):
-    convolved_times, convolved_data = gaussian_convolve(
-        e.frames.isel(x=x, y=y), e.time, s=3
-    )
-    _, amp = find_maximum_interpolate(convolved_times, convolved_data)
-    return amp
-
-
-def get_delays(e, refx, refy):
-    ref_time = get_maximum_time(e, refx, refy)
-    taux_right = get_maximum_time(e, refx + 1, refy) - ref_time
-    taux_left = get_maximum_time(e, refx - 1, refy) - ref_time
-    tauy_up = get_maximum_time(e, refx, refy + 1) - ref_time
-    tauy_down = get_maximum_time(e, refx, refy - 1) - ref_time
-    return (taux_right - taux_left) / 2, (tauy_up - tauy_down) / 2
-
-
 def plot_event(e, ax, indx):
     convolved_times_ref, convolved_data_ref = gaussian_convolve(
         e.frames.isel(x=refx, y=refy), e.time, s=3

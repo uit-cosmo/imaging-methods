@@ -1,25 +1,73 @@
 from phantom.show_data import *
 from phantom.utils import *
+from velocity_estimation.correlation import corr_fun
+from scipy.optimize import minimize
+from scipy import signal
 
-shot = 1140613026
+shot = 1160616025
 
-ds = xr.open_dataset("data/apd_{}.nc".format(shot))
-ds["frames"] = run_norm_ds(ds, 1000)["frames"]
+# ds = get_sample_data(shot, 0.005)
+ds = xr.open_dataset("data.nc")
+refx, refy = 6, 5
 
-t_start, t_end = get_t_start_end(ds)
-print("Data with times from {} to {}".format(t_start, t_end))
+data_series = ds.frames.isel(x=refx, y=refy).values
 
-t_start = (t_start + t_end) / 2
-t_end = t_start + 0.001
-ds = ds.sel(time=slice(t_start, t_end))
-interpolate_nans_3d(ds)
+cutoff_freq = 1e8
 
-dt = get_dt(ds)
 
-show_movie(
-    ds,
-    variable="frames",
-    gif_name="movie_apd_{}.gif".format(shot),
-    fps=60,
-    interpolation="spline16",
+def get_pds_fit(freqs, taud, lamda):
+    l = 1 / (1 + lamda**2)
+    return (
+        4
+        * taud
+        / ((1 + (1 - l) ** 2 * (taud * freqs) ** 2) * (1 + (l * taud * freqs) ** 2))
+    )
+
+
+def get_error_pdf_fit(params, expected):
+    return np.sum(
+        (
+            get_pds_fit(freqs[freqs < cutoff_freq], params[0], params[1])
+            - expected[freqs < cutoff_freq]
+        )
+        ** 2
+    )
+
+
+freqs, psd = signal.welch(data_series, fs=1 / get_dt(ds), nperseg=10**4)
+freqs = 2 * np.pi * freqs
+
+minimization = minimize(
+    lambda params: get_error_pdf_fit(params, psd),
+    [10, 1],
+    method="Nelder-Mead",
+    options={"maxiter": 1000},
 )
+lam = minimization.x[1]
+tau = minimization.x[0]
+
+fig, ax = plt.subplots()
+ax.plot(freqs, psd)
+ax.plot(freqs, get_pds_fit(freqs, tau, lam), ls="--", label="fit")
+ax.text(
+    0.1,
+    0.8,
+    r"$\tau_d: {:.2g}$".format(tau),
+    transform=ax.transAxes,
+    fontsize=10,
+    alpha=0.5,
+)
+ax.text(
+    0.1,
+    0.7,
+    r"$\lambda: {:.2g}$".format(1 / (1 + lam**2)),
+    transform=ax.transAxes,
+    fontsize=10,
+    alpha=0.5,
+)
+
+ax.set_xscale("log")
+ax.set_yscale("log")
+ax.set_xlim(1e0, 1e7)
+
+plt.show()
