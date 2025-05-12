@@ -177,25 +177,24 @@ def get_contour_evolution(event, threshold_factor=0.5, max_displacement_threshol
         centers_of_mass.append(com)
         areas.append(area)
 
-    # Check if max_displacement exceeds threshold or insufficient time points
-    if max_displacement_threshold is not None:
-        # Compute maximum frame-to-frame displacement
-        max_displacement = np.nan
-        if len(time_coords) >= 2:
-            com_values = np.array(centers_of_mass)  # Shape: (time, 2)
-            displacements = np.sqrt(
-                np.sum((com_values[1:] - com_values[:-1]) ** 2, axis=1)
-            )
-            valid_displacements = displacements[~np.isnan(displacements)]
+    # Compute maximum frame-to-frame displacement
+    max_displacement = np.nan
+    if len(time_coords) >= 2:
+        com_values = np.array(centers_of_mass)  # Shape: (time, 2)
+        displacements = np.sqrt(np.sum((com_values[1:] - com_values[:-1]) ** 2, axis=1))
+        if np.any(np.isnan(displacements)):
+            max_displacement = np.inf
+        else:
             max_displacement = (
-                np.max(valid_displacements) if len(valid_displacements) > 0 else np.nan
+                np.max(displacements) if len(displacements) > 0 else np.nan
             )
-        if len(time_coords) < 2 or (
-            not np.isnan(max_displacement)
-            and max_displacement > max_displacement_threshold
-        ):
-            print(f"Exceeded maximum displacement: {max_displacement:.2f}")
-            return None
+    if len(time_coords) < 2 or (
+        not np.isnan(max_displacement)
+        and max_displacement_threshold is not None
+        and max_displacement > max_displacement_threshold
+    ):
+        print(f"Exceeded maximum displacement: {max_displacement:.2f}")
+        return None
 
     # Create ragged array for contours
     max_points = max(len(c) for c in contours) if contours else 1
@@ -247,7 +246,7 @@ def get_contour_evolution(event, threshold_factor=0.5, max_displacement_threshol
     )
 
     # Combine into Dataset
-    return xr.Dataset(
+    contour_ds = xr.Dataset(
         {
             "contours": contours_da,
             "length": length_da,
@@ -256,6 +255,9 @@ def get_contour_evolution(event, threshold_factor=0.5, max_displacement_threshol
             "area": area_da,
         }
     )
+    contour_ds["max_displacement"] = max_displacement
+
+    return contour_ds
 
 
 from scipy.ndimage import gaussian_filter1d

@@ -395,13 +395,17 @@ def show_movie_with_contours(
         convexity_deficienty = contours_ds.convexity_deficiency.isel(time=i).item()
         com = contours_ds.center_of_mass.isel(time=i).values
         size = contours_ds.area.isel(time=i).item()
+        max_displacement = contours_ds["max_displacement"]
         tx.set_text(
-            f"l = {l:.2f}, cd = {convexity_deficienty:.2f}, com = {com[0]:.2f} {com[1]:.2f}, area = {size:.2f}"
+            f"l = {l:.2f}, cd = {convexity_deficienty:.2f}, com = {com[0]:.2f} {com[1]:.2f}, area = {size:.2f}, Md = {max_displacement:.2f}"
         )
 
     if ax is None:
         ax = fig.add_subplot(111)
     tx = ax.set_title("t = 0")
+    ax.scatter(
+        dataset.R.isel(x=refx, y=refy).item(), dataset.Z.isel(x=refx, y=refy).item()
+    )
     div = make_axes_locatable(ax)
     cax = div.append_axes("right", "5%", "5%")
     t_init = dataset[t_dim][0].values

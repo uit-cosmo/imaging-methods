@@ -5,6 +5,8 @@ from phantom.utils import *
 from blobmodel import BlobShapeEnum
 import matplotlib.pyplot as plt
 import xarray as xr
+from phantom.cond_av import *
+from phantom.contours import *
 import numpy as np
 import pandas as pd
 
@@ -13,8 +15,7 @@ ds = xr.open_dataset("ds_short.nc")
 
 refx, refy = 6, 5
 
-events = find_events(ds, refx, refy, threshold=2)
-average = compute_average_event(events)
+events, average, std = find_events(ds, refx, refy, threshold=2)
 
 fig, ax = plt.subplots()
 

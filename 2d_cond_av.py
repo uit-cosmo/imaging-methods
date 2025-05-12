@@ -1,3 +1,4 @@
+from phantom.contours import get_contour_evolution, get_contour_velocity
 from synthetic_data import *
 from phantom.utils import *
 from phantom.show_data import *
@@ -7,32 +8,32 @@ from blobmodel import BlobShapeEnum
 import matplotlib.pyplot as plt
 import numpy as np
 
-shot = 1160616018
-# ds = get_sample_data(shot, 0.2)
-ds = xr.open_dataset("ds_imode_long.nc")
+shot = 1160616025
+ds = get_sample_data(shot, 0.005)
+ds = ds.isel(x=slice(4, 9), y=slice(3, 8))
 # ds.to_netcdf("ds_imode_long.nc")
 
 
-refx, refy = 6, 5
+refx, refy = 2, 2
 events, average, std = find_events(
-    ds, refx, refy, threshold=0.2, check_max=1, window_size=60, single_counting=True
+    ds, refx, refy, threshold=2, check_max=0, window_size=20, single_counting=True
 )
+fig, ax = plt.subplots()
 
-# ds_corr = get_2d_corr(ds, refx, refy, delta=30*get_dt(ds))
+for e in events:
+    contours_ds = get_contour_evolution(e, 0.75, max_displacement_threshold=None)
+    if contours_ds["max_displacement"] < 0.5:
+        velocity = get_contour_velocity(contours_ds.center_of_mass, sigma=3)
+        ax.plot(velocity.time.values, velocity.values[:, 0] / 100)
+        show_movie_with_contours(
+            e,
+            refx,
+            refy,
+            contours_ds,
+            variable="frames",
+            interpolation=None,
+            gif_name="e{}_local.gif".format(e["event_id"].item()),
+            show=False,
+        )
 
-# show_movie(ds.sel(time=slice(T/2, T/2+10)), variable="frames", lims=(0, 0.3), gif_name="data.gif")
-show_movie(
-    std,
-    variable="frames",
-    lims=(0, 1),
-    gif_name="out_std.gif",
-)
-# show_movie(ds_corr, variable="frames", lims=(0, 1), gif_name="out.gif")
-
-# fig, ax = plt.subplots()
-# values = plot_average_blob(ds_corr, refx, refy, ax)
-# plt.savefig("2d_ccf_fit.png", bbox_inches="tight")
-# plt.show()
-
-print(values)
-print("LOL")
+plt.show()
