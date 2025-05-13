@@ -69,11 +69,11 @@ def fit_psd(data_series, dt=None, nperseg=None, cutoff_freq=1e8, ax=None):
         return np.sum((ce.psd(freqs[mask], params[0], lam) - expected[mask]) ** 2)
 
     # Optimization with bounds
-    bounds = [(1e-6, None), (0, None)]  # taud > 0, lamda >= 0
+    bounds = [(0, None), (0, None)]  # taud > 0, lamda >= 0
     result = minimize(
         lambda params: get_error_pdf_fit(params, psd),
         x0=[10, 1],
-        method="L-BFGS-B",
+        method="Nelder-Mead",
         bounds=bounds,
         options={"maxiter": 1000},
     )
