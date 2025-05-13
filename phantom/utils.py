@@ -446,17 +446,20 @@ def get_taumax(v, w, dx, dy, lx, ly, t):
     return (a1 - a2 + a3) / (d1 + d2 - d3)
 
 
-def get_sample_data(shot, window=None, data_folder="data"):
+def get_sample_data(shot, window=None, data_folder="data", preprocessed=True):
     """
     Returns APD data from the specified shot processed by running normalization and 2d interpolation to fill dead pixels.
     :param shot: shot
     :param window: Optionally, total duration time to use
     :param data_folder: Data folder
+    :param preprocessed: bool, if True loads preprocessed data
     :return: xr.DataSet containing the APD data
     """
     import os
 
     file_name = os.path.join(data_folder, f"apd_{shot}.nc")
+    if preprocessed:
+        file_name = os.path.join(data_folder, f"apd_{shot}_preprocessed.nc")
     try:
         if os.path.exists(file_name):
             ds = xr.open_dataset(file_name)
@@ -471,7 +474,7 @@ def get_sample_data(shot, window=None, data_folder="data"):
         t_start, t_end = get_t_start_end(ds)
         print("Data with times from {} to {}".format(t_start, t_end))
 
-        t_start = (t_start + t_end) / 2
+        t_start = (t_start + t_end) / 2 - window / 2
         t_end = t_start + window
         ds = ds.sel(time=slice(t_start, t_end))
 

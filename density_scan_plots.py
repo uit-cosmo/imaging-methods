@@ -7,6 +7,8 @@ from phantom import (
     get_delays,
     get_maximum_amplitude,
     get_3tde_velocities,
+    fit_psd,
+    get_dt,
 )
 import numpy as np
 import matplotlib.pyplot as plt
@@ -16,9 +18,9 @@ import os
 manager = PlasmaDischargeManager()
 manager.load_from_json("plasma_discharges.json")
 
-plot_duration_times = False
+plot_duration_times = True
 plot_movies = False
-preprocess_data = True
+preprocess_data = False
 
 refx, refy = 6, 5
 
@@ -67,3 +69,11 @@ if plot_duration_times:
         lx, ly, theta = plot_event_with_fit(
             average, ax, "average_fig_{}.png".format(shot)
         )
+        fig.clf()
+
+        fig, ax = plt.subplots()
+
+        taud, lam = fit_psd(
+            ds.frames.isel(x=refx, y=refy).values, get_dt(ds), nperseg=10**4, ax=ax
+        )
+        plt.savefig("psd_{}.png".format(shot), bbox_inches="tight")
