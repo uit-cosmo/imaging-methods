@@ -468,6 +468,9 @@ def get_sample_data(shot, window=None, data_folder="data", preprocessed=True):
     except Exception as e:
         print(f"Error reading file {file_name}: {str(e)}")
 
+    if preprocessed:
+        return ds
+
     ds["frames"] = run_norm_ds(ds, 1000)["frames"]
 
     if window is not None:
