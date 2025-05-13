@@ -7,7 +7,6 @@ cosmoplots==0.5.0
 numpy~=1.26.4
 xblobs==1.0.2
 blobmodel~=1.1.0
-phantom~=0.0.0
 nptyping~=2.5.0
 scipy~=1.15.1
 pytest~=8.3.4
