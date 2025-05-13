@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import Optional, List
 import os
 from .utils import get_sample_data
+import numpy as np
 
 
 @dataclass
