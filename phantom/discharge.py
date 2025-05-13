@@ -81,3 +81,91 @@ class PlasmaDischargeManager:
         self, shot, window=None, data_folder: str = "data", preprocessed=True
     ):
         return get_sample_data(shot, window, data_folder, preprocessed)
+
+
+class ShotAnalysis:
+    """
+    A class to store and manage analysis results for a single shot.
+
+    Attributes:
+    -----------
+    shot : int
+        Shot number
+    v : float
+        Radial velocity component (e.g., in m/s).
+    w : float
+        Poloidal velocity component (e.g., in m/s).
+    lx : float
+        Length scale or coordinate in x-direction (e.g., in m).
+    ly : float
+        Length scale or coordinate in y-direction (e.g., in m).
+    theta : float
+        Angle (e.g., in radians).
+    taud : float
+        Duration time parameter from PSD fitting (in seconds).
+    lam : float
+        Asymmetry parameter from PSD fitting, in [0, 1].
+
+    Methods:
+    --------
+    print_results():
+        Print the analysis results in a formatted manner.
+    """
+
+    def __init__(self, shot, v, w, lx, ly, theta, taud, lam):
+        """
+        Initialize a ShotAnalysis instance with the given parameters.
+
+        Parameters:
+        -----------
+        shot, v, w, lx, ly, theta, taud, lam : float
+            Values for the respective attributes. taud must be positive, and lam must be in [0, 1].
+
+        Raises:
+        -------
+        ValueError
+            If taud <= 0 or lam is not in [0, 1].
+        TypeError
+            If any parameter is not a number.
+        """
+        # Validate numeric inputs
+        for param, name in [
+            (v, "v"),
+            (w, "w"),
+            (lx, "lx"),
+            (ly, "ly"),
+            (theta, "theta"),
+            (taud, "taud"),
+            (lam, "lam"),
+        ]:
+            if not isinstance(param, (int, float, np.number)):
+                raise TypeError(f"{name} must be a number")
+
+        # Validate physical constraints
+        if taud <= 0:
+            raise ValueError("taud must be positive")
+        if not 0 <= lam <= 1:
+            raise ValueError("lam must be in [0, 1]")
+
+        self.shot = shot
+        self.v = float(v)
+        self.w = float(w)
+        self.lx = float(lx)
+        self.ly = float(ly)
+        self.theta = float(theta)
+        self.taud = float(taud)
+        self.lam = float(lam)
+
+    def print_results(self):
+        """
+        Print the analysis results in a formatted manner.
+        """
+        print("Shot Analysis Results:")
+        print(f"  shot: {self.shot}")
+        print(f"  v: {self.v:.2f} (m/s or Hz)")
+        print(f"  w: {self.w:.2f} (m/s or Hz)")
+        print(f"  lx: {self.lx:.2f} (m)")
+        print(f"  ly: {self.ly:.2f} (m)")
+        print(f"  theta: {self.theta:.2f} (rad)")
+        print(f"  taud: {self.taud:.2g} (s)")
+        print(f"  lambda: {self.lam:.2g} (dimensionless)")

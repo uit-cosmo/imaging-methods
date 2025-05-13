@@ -469,11 +469,6 @@ def get_sample_data(shot, window=None, data_folder="data", preprocessed=True):
     except Exception as e:
         print(f"Error reading file {file_name}: {str(e)}")
 
-    if preprocessed:
-        return ds
-
-    ds["frames"] = run_norm_ds(ds, 1000)["frames"]
-
     if window is not None:
         t_start, t_end = get_t_start_end(ds)
         print("Data with times from {} to {}".format(t_start, t_end))
@@ -481,6 +476,11 @@ def get_sample_data(shot, window=None, data_folder="data", preprocessed=True):
         t_start = (t_start + t_end) / 2 - window / 2
         t_end = t_start + window
         ds = ds.sel(time=slice(t_start, t_end))
+
+    if preprocessed:
+        return ds
+
+    ds["frames"] = run_norm_ds(ds, 1000)["frames"]
 
     interpolate_nans_3d(ds)
     return ds
