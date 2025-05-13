@@ -53,7 +53,7 @@ if plot_movies:
 
 if plot_duration_times:
     for shot in manager.get_shot_list():
-        ds = manager.read_shot_data(shot, 0.001)
+        ds = manager.read_shot_data(shot, 0.001, preprocessed=False)
         events, average, std = find_events(
             ds,
             refx,
@@ -74,6 +74,7 @@ if plot_duration_times:
         fig, ax = plt.subplots()
 
         taud, lam = fit_psd(
-            ds.frames.isel(x=refx, y=refy).values, get_dt(ds), nperseg=10**4, ax=ax
+            ds.frames.isel(x=refx, y=refy).values, get_dt(ds), nperseg=10**3, ax=ax
         )
         plt.savefig("psd_{}.png".format(shot), bbox_inches="tight")
+        fig.clf()

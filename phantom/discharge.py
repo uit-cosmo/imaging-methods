@@ -77,5 +77,7 @@ class PlasmaDischargeManager:
         """Return a list of all shot numbers."""
         return [discharge.shot_number for discharge in self.discharges]
 
-    def read_shot_data(self, shot, window=None, data_folder: str = "data"):
-        return get_sample_data(shot, window, data_folder)
+    def read_shot_data(
+        self, shot, window=None, data_folder: str = "data", preprocessed=True
+    ):
+        return get_sample_data(shot, window, data_folder, preprocessed)

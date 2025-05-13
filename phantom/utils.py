@@ -320,14 +320,15 @@ def find_maximum_interpolate(x, y):
     return max_time, spline(max_time)
 
 
-def get_maximum_time(e):
+def get_maximum_time(e, refx=None, refy=None):
     """
     Given an event e find the time at which the maximum amplitude is achieved. Data is convolved with a gaussian with
     standard deviation 3.
     :param e:
     :return:
     """
-    refx, refy = int(e["refx"].item()), int(e["refy"].item())
+    if refx is None or refy is None:
+        refx, refy = int(e["refx"].item()), int(e["refy"].item())
     convolved_times, convolved_data = gaussian_convolve(
         e.frames.isel(x=refx, y=refy), e.time, s=3
     )
@@ -345,7 +346,7 @@ def get_maximum_amplitude(e, x, y):
 
 def get_3tde_velocities(e):
     refx, refy = int(e["refx"].item()), int(e["refy"].item())
-    taux, tauy = get_delays(e, refx, refy)
+    taux, tauy = get_delays(e)
 
     deltax = e.R.isel(x=refx + 1, y=refy).item() - e.R.isel(x=refx, y=refy).item()
     deltay = e.Z.isel(x=refx, y=refy + 1).item() - e.Z.isel(x=refx, y=refy).item()
@@ -354,7 +355,7 @@ def get_3tde_velocities(e):
 
 def get_delays(e):
     refx, refy = int(e["refx"].item()), int(e["refy"].item())
-    ref_time = get_maximum_time(e, refx, refy)
+    ref_time = get_maximum_time(e)
     taux_right = get_maximum_time(e, refx + 1, refy) - ref_time
     taux_left = get_maximum_time(e, refx - 1, refy) - ref_time
     tauy_up = get_maximum_time(e, refx, refy + 1) - ref_time
