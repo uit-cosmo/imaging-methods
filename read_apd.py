@@ -34,7 +34,7 @@ def get_error_pdf_fit(params, expected):
     )
 
 
-freqs, psd = signal.welch(data_series, fs=1 / get_dt(ds), nperseg=10**4)
+freqs, psd = signal.welch(data_series, fs=1 / get_dt(ds), nperseg=10**5)
 freqs = 2 * np.pi * freqs
 
 minimization = minimize(

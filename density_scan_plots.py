@@ -11,14 +11,22 @@ from phantom import (
 import numpy as np
 import matplotlib.pyplot as plt
 import velocity_estimation as ve
+import os
 
 manager = PlasmaDischargeManager()
 manager.load_from_json("plasma_discharges.json")
 
-plot_duration_times = True
+plot_duration_times = False
 plot_movies = False
+preprocess_data = True
 
 refx, refy = 6, 5
+
+if preprocess_data:
+    for shot in manager.get_shot_list():
+        ds = manager.read_shot_data(shot, None)
+        file_name = os.path.join("data", f"apd_{shot}_preprocessed.nc")
+        ds.to_netcdf(file_name)
 
 if plot_movies:
     for shot in manager.get_shot_list():
