@@ -1,6 +1,6 @@
 import numpy as np
 from scipy import signal
-from scipy.optimize import minimize
+from scipy.optimize import minimize, differential_evolution, curve_fit
 import matplotlib.pyplot as plt
 import closedexpressions as ce
 import warnings
@@ -69,7 +69,7 @@ def fit_psd(data_series, dt=None, nperseg=None, cutoff_freq=1e8, ax=None):
         return np.sum((ce.psd(freqs[mask], params[0], lam) - expected[mask]) ** 2)
 
     # Optimization with bounds
-    bounds = [(1e-10, None), (0, None)]  # taud > 0, lamda >= 0
+    bounds = [(1e-10, 1e-3), (0, 100)]  # taud in [1e-10, 1e-3] s, lamda >= 0
     result = minimize(
         lambda params: get_error_pdf_fit(params, psd),
         x0=[1e-5, 1],
@@ -77,12 +77,12 @@ def fit_psd(data_series, dt=None, nperseg=None, cutoff_freq=1e8, ax=None):
         bounds=bounds,
         options={"maxiter": 1000},
     )
-
     # Check optimization convergence
     if not result.success:
         warnings.warn(f"Optimization did not converge: {result.message}")
 
     taud, lamda = result.x
+
     fitted_lambda = 1 / (1 + lamda**2)
 
     # Plotting
@@ -92,19 +92,18 @@ def fit_psd(data_series, dt=None, nperseg=None, cutoff_freq=1e8, ax=None):
             raise ValueError("ax must be a matplotlib.axes.Axes object")
 
         # Plot data and fit
-        ax.plot(freqs, psd, label="Data")
-        ax.plot(freqs, ce.psd(freqs, taud, fitted_lambda), ls="--", label="Fit")
-
-        # Add text annotations in a legend-like box
-        ax.text(
-            0.05,
-            0.15,
-            rf"$\tau_d = {taud:.2g}\, \lambda = {fitted_lambda:.2g}$",
-            transform=ax.transAxes,
-            fontsize=10,
-            verticalalignment="top",
-            bbox=dict(facecolor="white", alpha=0.7, edgecolor="black"),
+        line = ax.plot(freqs, psd)
+        label = (rf"$\tau_d = {taud:.2g}\, \lambda = {fitted_lambda:.2g}$",)
+        ax.plot(
+            freqs,
+            ce.psd(freqs, taud, fitted_lambda),
+            ls="--",
+            label=label,
+            color=line[0].get_color(),
         )
+
+        y_max = max(np.max(psd), np.max(ce.psd(freqs, taud, fitted_lambda)))
+        ax.vlines(cutoff_freq, ymin=0, ymax=y_max, color="black", linestyle="--")
 
         ax.set_xscale("log")
         ax.set_yscale("log")

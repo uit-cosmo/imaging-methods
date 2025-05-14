@@ -478,6 +478,7 @@ def get_sample_data(shot, window=None, data_folder="data", preprocessed=True):
         ds = ds.sel(time=slice(t_start, t_end))
 
     if preprocessed:
+        ds = ds.isel(time=slice(2000, -2000))
         return ds
 
     ds["frames"] = run_norm_ds(ds, 1000)["frames"]

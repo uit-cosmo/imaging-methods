@@ -3,6 +3,7 @@ from synthetic_data import *
 from phantom.show_data import show_movie
 from phantom.utils import *
 from blobmodel import BlobShapeEnum
+from phantom import fit_psd
 import matplotlib.pyplot as plt
 import xarray as xr
 from phantom.cond_av import *
@@ -11,14 +12,16 @@ import numpy as np
 import pandas as pd
 
 
-ds = xr.open_dataset("ds_short.nc")
+ds = xr.open_dataset("data/apd_1160616027_preprocessed.nc")
+ds = ds.isel(time=slice(2000, -2000))
+
 
 refx, refy = 6, 5
 
-events, average, std = find_events(ds, refx, refy, threshold=2)
-
 fig, ax = plt.subplots()
 
-im = ax.imshow(average.sel(time=0).frames, origin="lower", interpolation="spline16")
+taud, lam = fit_psd(
+    ds.frames.isel(x=refx, y=refy).values, get_dt(ds), nperseg=10**4, ax=ax
+)
+
 plt.show()
-print("LOL")
