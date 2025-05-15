@@ -11,6 +11,9 @@ from phantom import (
     fit_psd,
     get_dt,
     ScanResults,
+    get_contour_evolution,
+    get_contour_velocity,
+    show_movie_with_contours,
 )
 import numpy as np
 import matplotlib.pyplot as plt
@@ -20,17 +23,17 @@ import os
 manager = PlasmaDischargeManager()
 manager.load_from_json("plasma_discharges.json")
 
-plot_duration_times = True
+plot_duration_times = False
 plot_movies = False
-preprocess_data = False
+preprocess_data = True
 
 refx, refy = 6, 6
 
 if preprocess_data:
     for shot in manager.get_shot_list():
         print("Working on {}".format(shot))
-        ds = manager.read_shot_data(shot, None, preprocessed=False)
-        file_name = os.path.join("data", f"apd_{shot}_preprocessed.nc")
+        ds = manager.read_shot_data(shot, None, preprocessed=True)
+        file_name = os.path.join("data", f"apd_{shot}_preprocessedd.nc")
         ds.to_netcdf(file_name)
 
 if plot_movies:
@@ -59,24 +62,42 @@ results = ScanResults()
 if plot_duration_times:
     for shot in manager.get_shot_list():
         ds = manager.read_shot_data(shot, None)
-        find = False
-        if find:
-            events, average, std = find_events(
-                ds,
-                refx,
-                refy,
-                threshold=2,
-                check_max=1,
-                window_size=60,
-                single_counting=True,
-            )
-            v, w = get_3tde_velocities(average)
+        refx, refy = 2, 2
+        events, average, std = find_events(
+            ds.isel(x=slice(4, 9), y=slice(3, 8)),
+            refx,
+            refy,
+            threshold=2,
+            check_max=1,
+            window_size=40,
+            single_counting=True,
+        )
+        contour_ds = get_contour_evolution(
+            average, 0.5, max_displacement_threshold=None
+        )
+        velocity_ds = get_contour_velocity(contour_ds.center_of_mass, sigma=3)
+        v, w = (
+            velocity_ds.isel(time=slice(10, -10)).mean(dim="time", skipna=True).values
+        )
 
-            fig, ax = plt.subplots()
-            lx, ly, theta = plot_event_with_fit(
-                average, ax, "average_fig_{}.png".format(shot)
-            )
-            fig.clf()
+        show_movie_with_contours(
+            average,
+            refx,
+            refy,
+            contour_ds,
+            "frames",
+            gif_name="average_contour_{}.gif".format(shot),
+            interpolation="spline16",
+            show=False,
+        )
+
+        # v, w = get_3tde_velocities(average)
+
+        fig, ax = plt.subplots()
+        lx, ly, theta = plot_event_with_fit(
+            average, ax, "average_fig_{}.png".format(shot)
+        )
+        fig.clf()
 
         fig, ax = plt.subplots()
 
