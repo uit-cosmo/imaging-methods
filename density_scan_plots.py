@@ -23,17 +23,17 @@ import os
 manager = PlasmaDischargeManager()
 manager.load_from_json("plasma_discharges.json")
 
-plot_duration_times = False
+plot_duration_times = True
 plot_movies = False
-preprocess_data = True
+preprocess_data = False
 
 refx, refy = 6, 6
 
 if preprocess_data:
     for shot in manager.get_shot_list():
         print("Working on {}".format(shot))
-        ds = manager.read_shot_data(shot, None, preprocessed=True)
-        file_name = os.path.join("data", f"apd_{shot}_preprocessedd.nc")
+        ds = manager.read_shot_data(shot, None, preprocessed=False)
+        file_name = os.path.join("data", f"apd_{shot}_preprocessed.nc")
         ds.to_netcdf(file_name)
 
 if plot_movies:
