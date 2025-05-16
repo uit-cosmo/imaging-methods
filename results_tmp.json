@@ -1,0 +1,173 @@
+[
+    {
+        "v": 583.2322835221322,
+        "w": 74.14437908121928,
+        "lx": 0.003748530155776999,
+        "ly": 0.00553350630888457,
+        "theta": -0.5240502862818068,
+        "taud": 1.65604257583572e-05,
+        "lam": 9.999000099990002e-05,
+        "plasma_discharge": {
+            "shot_number": 1160616027,
+            "plasma_current": 0.51,
+            "line_averaged_density": 2.82,
+            "greenwald_fraction": 0.8,
+            "t_start": 1.15,
+            "t_end": 1.45,
+            "duration": 0.3,
+            "mlp_mode": "-"
+        }
+    },
+    {
+        "v": 555.3774403707555,
+        "w": 42.10202571814842,
+        "lx": 0.004177224382015061,
+        "ly": 0.00687351702111423,
+        "theta": -0.5616765662583225,
+        "taud": 1.5966752816571955e-05,
+        "lam": 9.999000099990002e-05,
+        "plasma_discharge": {
+            "shot_number": 1160616026,
+            "plasma_current": 0.51,
+            "line_averaged_density": 2.83,
+            "greenwald_fraction": 0.8,
+            "t_start": 1.15,
+            "t_end": 1.45,
+            "duration": 0.3,
+            "mlp_mode": "-"
+        }
+    },
+    {
+        "v": 554.0317872454966,
+        "w": 56.05829413149319,
+        "lx": 0.0036251856805331164,
+        "ly": 0.005468977815876855,
+        "theta": -0.6458377565705509,
+        "taud": 1.9064411640166106e-05,
+        "lam": 9.999000099990002e-05,
+        "plasma_discharge": {
+            "shot_number": 1160616025,
+            "plasma_current": 0.51,
+            "line_averaged_density": 2.76,
+            "greenwald_fraction": 0.8,
+            "t_start": 1.15,
+            "t_end": 1.45,
+            "duration": 0.3,
+            "mlp_mode": "-"
+        }
+    },
+    {
+        "v": 528.4221173002937,
+        "w": 58.1828967168471,
+        "lx": 0.003248330087672944,
+        "ly": 0.004637034720368409,
+        "theta": -0.5936268315124859,
+        "taud": 2.7880950175224353e-05,
+        "lam": 9.999000099990002e-05,
+        "plasma_discharge": {
+            "shot_number": 1160616022,
+            "plasma_current": 0.52,
+            "line_averaged_density": 2.29,
+            "greenwald_fraction": 0.65,
+            "t_start": 1.15,
+            "t_end": 1.45,
+            "duration": 0.3,
+            "mlp_mode": "scan"
+        }
+    },
+    {
+        "v": 494.42341801352217,
+        "w": 83.0626698720212,
+        "lx": 0.0025859589722772823,
+        "ly": 0.004129548106582654,
+        "theta": -0.6440670614239874,
+        "taud": 2.0218046861001375e-05,
+        "lam": 9.999000099990002e-05,
+        "plasma_discharge": {
+            "shot_number": 1160616018,
+            "plasma_current": 0.53,
+            "line_averaged_density": 1.65,
+            "greenwald_fraction": 0.46,
+            "t_start": 1.15,
+            "t_end": 1.45,
+            "duration": 0.3,
+            "mlp_mode": "dwell"
+        }
+    },
+    {
+        "v": 468.02889015861723,
+        "w": 41.4993638975648,
+        "lx": 0.0026572117750510225,
+        "ly": 0.004104975220013567,
+        "theta": -0.6917672517368613,
+        "taud": 2.047187566420065e-05,
+        "lam": 0.013480813999724308,
+        "plasma_discharge": {
+            "shot_number": 1160616017,
+            "plasma_current": 0.53,
+            "line_averaged_density": 1.56,
+            "greenwald_fraction": 0.44,
+            "t_start": 1.15,
+            "t_end": 1.45,
+            "duration": 0.3,
+            "mlp_mode": "scan"
+        }
+    },
+    {
+        "v": 455.6393661512146,
+        "w": 47.17438762976426,
+        "lx": 0.0025470448641936017,
+        "ly": 0.004129548106582654,
+        "theta": -0.6440670614239874,
+        "taud": 1.97344473483455e-05,
+        "lam": 0.016983021633645193,
+        "plasma_discharge": {
+            "shot_number": 1160616016,
+            "plasma_current": 0.53,
+            "line_averaged_density": 1.6,
+            "greenwald_fraction": 0.45,
+            "t_start": 1.15,
+            "t_end": 1.45,
+            "duration": 0.3,
+            "mlp_mode": "scan"
+        }
+    },
+    {
+        "v": 392.6523006600775,
+        "w": -25.932656259023744,
+        "lx": 0.0024982871264730834,
+        "ly": 0.004100049612706791,
+        "theta": -0.6321518255529306,
+        "taud": 1.4386220325278252e-05,
+        "lam": 0.17427213958124102,
+        "plasma_discharge": {
+            "shot_number": 1160616011,
+            "plasma_current": 0.54,
+            "line_averaged_density": 1.07,
+            "greenwald_fraction": 0.3,
+            "t_start": 1.15,
+            "t_end": 1.45,
+            "duration": 0.3,
+            "mlp_mode": "scan"
+        }
+    },
+    {
+        "v": 392.4737548436677,
+        "w": -15.567445827457796,
+        "lx": 0.0026338258637607836,
+        "ly": 0.00365800729364131,
+        "theta": -0.6362685354096027,
+        "taud": 1.425021361235315e-05,
+        "lam": 0.19127148646143738,
+        "plasma_discharge": {
+            "shot_number": 1160616009,
+            "plasma_current": 0.54,
+            "line_averaged_density": 0.87,
+            "greenwald_fraction": 0.24,
+            "t_start": 1.305,
+            "t_end": 1.45,
+            "duration": 0.145,
+            "mlp_mode": "scan"
+        }
+    }
+]
