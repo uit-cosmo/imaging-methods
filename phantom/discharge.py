@@ -16,6 +16,7 @@ class PlasmaDischarge:
     t_end: float  # in seconds
     duration: float  # T in seconds
     mlp_mode: str  # Mirror Langmuir Probe mode
+    confinement_mode: str
 
     def to_dict(self):
         """Convert the discharge data to a dictionary for JSON serialization."""
@@ -28,6 +29,7 @@ class PlasmaDischarge:
             "t_end": self.t_end,
             "duration": self.duration,
             "mlp_mode": self.mlp_mode,
+            "confinement_more": self.confinement_mode,
         }
 
     @classmethod
@@ -42,6 +44,7 @@ class PlasmaDischarge:
             t_end=data["t_end"],
             duration=data["duration"],
             mlp_mode=data["mlp_mode"],
+            confinement_mode=data["confinement_more"],
         )
 
 

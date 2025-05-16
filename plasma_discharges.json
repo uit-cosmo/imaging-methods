@@ -7,7 +7,8 @@
         "t_start": 1.15,
         "t_end": 1.45,
         "duration": 0.3,
-        "mlp_mode": "-"
+        "mlp_mode": "-",
+        "confinement_more": "L"
     },
     {
         "shot_number": 1160616026,
@@ -17,7 +18,8 @@
         "t_start": 1.15,
         "t_end": 1.45,
         "duration": 0.3,
-        "mlp_mode": "-"
+        "mlp_mode": "-",
+        "confinement_more": "L"
     },
     {
         "shot_number": 1160616025,
@@ -27,7 +29,8 @@
         "t_start": 1.15,
         "t_end": 1.45,
         "duration": 0.3,
-        "mlp_mode": "-"
+        "mlp_mode": "-",
+        "confinement_more": "L"
     },
     {
         "shot_number": 1160616022,
@@ -37,7 +40,8 @@
         "t_start": 1.15,
         "t_end": 1.45,
         "duration": 0.3,
-        "mlp_mode": "scan"
+        "mlp_mode": "scan",
+        "confinement_more": "L"
     },
     {
         "shot_number": 1160616018,
@@ -47,7 +51,8 @@
         "t_start": 1.15,
         "t_end": 1.45,
         "duration": 0.3,
-        "mlp_mode": "dwell"
+        "mlp_mode": "dwell",
+        "confinement_more": "L"
     },
     {
         "shot_number": 1160616017,
@@ -57,7 +62,8 @@
         "t_start": 1.15,
         "t_end": 1.45,
         "duration": 0.3,
-        "mlp_mode": "scan"
+        "mlp_mode": "scan",
+        "confinement_more": "L"
     },
     {
         "shot_number": 1160616016,
@@ -67,7 +73,8 @@
         "t_start": 1.15,
         "t_end": 1.45,
         "duration": 0.3,
-        "mlp_mode": "scan"
+        "mlp_mode": "scan",
+        "confinement_more": "L"
     },
     {
         "shot_number": 1160616011,
@@ -77,7 +84,8 @@
         "t_start": 1.15,
         "t_end": 1.45,
         "duration": 0.3,
-        "mlp_mode": "scan"
+        "mlp_mode": "scan",
+        "confinement_more": "L"
     },
     {
         "shot_number": 1160616009,
@@ -87,6 +95,29 @@
         "t_start": 1.305,
         "t_end": 1.45,
         "duration": 0.145,
-        "mlp_mode": "scan"
+        "mlp_mode": "scan",
+        "confinement_more": "L"
+    },
+    {
+        "shot_number": 1110201016,
+        "plasma_current": 0.9,
+        "line_averaged_density": 3.69,
+        "greenwald_fraction": 0.64,
+        "t_start": 1.06,
+        "t_end": 1.345,
+        "duration": 0.285,
+        "mlp_mode": "none",
+        "confinement_more": "EDA-H"
+    },
+    {
+        "shot_number": 1110201011,
+        "plasma_current": 1.2,
+        "line_averaged_density": 4.32,
+        "greenwald_fraction": 0.56,
+        "t_start": 1.06,
+        "t_end": 1.255,
+        "duration": 0.195,
+        "mlp_mode": "none",
+        "confinement_more": "ELM-free-H"
     }
 ]
