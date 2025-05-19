@@ -23,10 +23,10 @@ import os
 manager = PlasmaDischargeManager()
 manager.load_from_json("plasma_discharges.json")
 
-plot_duration_times = False
+plot_duration_times = True
 plot_movies = False
 preprocess_data = False
-plot_velocities = True
+plot_velocities = False
 
 refx, refy = 6, 6
 
@@ -63,8 +63,12 @@ if plot_movies:
 
 if plot_duration_times:
     results = ScanResults()
-    use_contouring = True
+    use_contouring = False
     for shot in manager.get_shot_list():
+        confinement_more = manager.get_discharge_by_shot(shot).confinement_mode
+        is_hmode = confinement_more == "EDA-H" or confinement_more == "ELM-free-H"
+        #if not is_hmode:
+            # continue
         print("Working on shot {}".format(shot))
         ds = manager.read_shot_data(shot, None)
         refx, refy = 6, 5
@@ -119,7 +123,7 @@ if plot_duration_times:
         taud, lam = fit_psd(
             ds.frames.isel(x=refx, y=refy).values,
             get_dt(ds),
-            nperseg=10**4,
+            nperseg=10**3,
             ax=ax,
             cutoff_freq=1e6,
         )
@@ -139,7 +143,7 @@ if plot_duration_times:
                 manager.get_discharge_by_shot(shot),
             )
         )
-    results.to_json("results_contouring.json")
+#    results.to_json("results_contouring.json")
     results.print_summary()
 
 if plot_velocities:
