@@ -38,22 +38,22 @@ def get_blob(amplitude, vx, vy, posx, posy, lx, ly, t_init, theta, bs=BlobShapeI
     )
 
 
-num_blobs = 50
-T = 200
+num_blobs = 500
+T = 2000
 Lx = 5
 Ly = 5
 lx = 0.2
 ly = 0.6
-nx = 32
-ny = 32
-vx = 0
-vy = -1
-theta = np.pi / 4
+nx = 8
+ny = 8
+vx = 1
+vy = 0
+theta = -np.pi / 4
 bs = BlobShapeImpl(BlobShapeEnum.gaussian, BlobShapeEnum.gaussian)
 
 blobs = [
     get_blob(
-        amplitude=np.random.exponential(),
+        amplitude=1,
         vx=vx,
         vy=vy,
         posx=np.random.uniform(0, Lx),
@@ -72,15 +72,16 @@ bf = DeterministicBlobFactory(blobs)
 
 ds = make_2d_realization(rp, bf)
 
-show_movie(ds.sel(time=slice(10, 20)), lims=(0, 0.3))
+# show_movie(ds.sel(time=slice(10, 20)), lims=(0, 0.3))
 
-refx, refy = 16, 16
+refx, refy = 4, 4
 events, average, std = find_events(
     ds, refx, refy, threshold=0.2, check_max=1, window_size=30, single_counting=True
 )
 e = events[0]
 
-contours_da = get_contour_evolution(events[0])
+contours_da = get_contour_evolution(average, threshold_factor=0.6)
+show_movie_with_contours(average, refx, refy, contours_da, "frames", gif_name="synthetic_2dca_av_8.gif")
 
 for e in events:
     contours_ds = get_contour_evolution(e, max_displacement_threshold=0.2)
