@@ -20,16 +20,16 @@ import velocity_estimation as ve
 
 class RunParameters:
     def __init__(
-        self,
-        nx=32,
-        ny=32,
-        lx=10,
-        ly=10,
-        dt=0.1,
-        T=10,
-        num_blobs=1,
-        periodic_y=False,
-        t_drain=1e100,
+            self,
+            nx=32,
+            ny=32,
+            lx=10,
+            ly=10,
+            dt=0.1,
+            T=10,
+            num_blobs=1,
+            periodic_y=False,
+            t_drain=1e100,
     ):
         self.nx = nx
         self.ny = ny
@@ -47,12 +47,12 @@ class DeterministicBlobFactory(BlobFactory):
         self.blobs = blobs
 
     def sample_blobs(
-        self,
-        Ly: float,
-        T: float,
-        num_blobs: int,
-        blob_shape: AbstractBlobShape,
-        t_drain: Union[float, NDArray],
+            self,
+            Ly: float,
+            T: float,
+            num_blobs: int,
+            blob_shape: AbstractBlobShape,
+            t_drain: Union[float, NDArray],
     ) -> List[Blob]:
         return self.blobs
 
@@ -60,7 +60,7 @@ class DeterministicBlobFactory(BlobFactory):
         return False
 
 
-def make_2d_realization(rp: RunParameters, bf: BlobFactory):
+def run_parameters(rp: RunParameters, bf: BlobFactory):
     model = Model(
         Nx=rp.nx,
         Ny=rp.ny,
@@ -87,3 +87,47 @@ def make_2d_realization(rp: RunParameters, bf: BlobFactory):
             "time": (["time"], ds.t.values),
         },
     )
+
+
+def get_blob(amplitude, vx, vy, posx, posy, lx, ly, t_init, theta, bs=BlobShapeImpl()):
+    return Blob(
+        1,
+        bs,
+        amplitude=amplitude,
+        width_prop=lx,
+        width_perp=ly,
+        v_x=vx,
+        v_y=vy,
+        pos_x=posx,
+        pos_y=posy,
+        t_init=t_init,
+        t_drain=1e100,
+        theta=theta,
+        blob_alignment=True if theta == 0 else False,
+    )
+
+
+def make_2d_realization(Lx, Ly, T, nx, ny, dt, num_blobs, vx, vy, lx, ly, theta, bs):
+    blobs = [
+        get_blob(
+            amplitude=1,
+            vx=vx,
+            vy=vy,
+            posx=np.random.uniform(0, Lx),
+            posy=np.random.uniform(0, Ly),
+            lx=lx,
+            ly=ly,
+            t_init=np.random.uniform(0, T),
+            bs=bs,
+            theta=theta,
+        )
+        for _ in range(num_blobs)
+    ]
+
+    rp = RunParameters(T=T, lx=Lx, ly=Ly, nx=nx, ny=ny, dt=dt)
+    bf = DeterministicBlobFactory(blobs)
+
+    return run_parameters(rp, bf)
+
+
+

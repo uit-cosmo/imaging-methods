@@ -1,16 +1,7 @@
-import numpy as np
-from synthetic_data import *
-from phantom.show_data import show_movie
 from phantom.utils import *
-from blobmodel import BlobShapeEnum
 from phantom import fit_psd
 import matplotlib.pyplot as plt
-import xarray as xr
-from phantom.cond_av import *
 from phantom.contours import *
-import numpy as np
-import pandas as pd
-
 
 ds = xr.open_dataset("data/apd_1160616027_preprocessed.nc")
 ds = ds.isel(time=slice(2000, -2000))

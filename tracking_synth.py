@@ -1,6 +1,6 @@
 import xblobs as xb
 from phantom.show_data import *
-from synthetic_data import *
+from synthetic_testing.synthetic_data import *
 
 
 def get_blob(vx, vy, posx, posy, t_init):

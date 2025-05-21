@@ -1,17 +1,6 @@
-import numpy as np
-from synthetic_data import *
-from phantom.show_data import show_movie
-from phantom.utils import *
 from phantom.cond_av import *
-from blobmodel import BlobShapeEnum
 import matplotlib.pyplot as plt
 import xarray as xr
-import numpy as np
-import pandas as pd
-import warnings
-import velocity_estimation as ve
-from scipy import stats
-
 
 shot = 1160616018
 ds = xr.open_dataset("data18small.nc")

@@ -1,12 +1,8 @@
 from phantom.contours import get_contour_evolution, get_contour_velocity
-from synthetic_data import *
-from phantom.utils import *
 from phantom.show_data import *
 from phantom.cond_av import *
 from phantom.utils import get_sample_data
-from blobmodel import BlobShapeEnum
 import matplotlib.pyplot as plt
-import numpy as np
 
 shot = 1160616025
 ds = get_sample_data(shot, 0.005)

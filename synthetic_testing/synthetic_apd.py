@@ -1,4 +1,4 @@
-from synthetic_data import *
+from synthetic_testing.synthetic_data import *
 from phantom.show_data import show_movie
 from phantom.utils import *
 from blobmodel import BlobShapeEnum
