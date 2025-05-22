@@ -20,16 +20,16 @@ import velocity_estimation as ve
 
 class RunParameters:
     def __init__(
-            self,
-            nx=32,
-            ny=32,
-            lx=10,
-            ly=10,
-            dt=0.1,
-            T=10,
-            num_blobs=1,
-            periodic_y=False,
-            t_drain=1e100,
+        self,
+        nx=32,
+        ny=32,
+        lx=10,
+        ly=10,
+        dt=0.1,
+        T=10,
+        num_blobs=1,
+        periodic_y=False,
+        t_drain=1e100,
     ):
         self.nx = nx
         self.ny = ny
@@ -47,12 +47,12 @@ class DeterministicBlobFactory(BlobFactory):
         self.blobs = blobs
 
     def sample_blobs(
-            self,
-            Ly: float,
-            T: float,
-            num_blobs: int,
-            blob_shape: AbstractBlobShape,
-            t_drain: Union[float, NDArray],
+        self,
+        Ly: float,
+        T: float,
+        num_blobs: int,
+        blob_shape: AbstractBlobShape,
+        t_drain: Union[float, NDArray],
     ) -> List[Blob]:
         return self.blobs
 
@@ -128,6 +128,3 @@ def make_2d_realization(Lx, Ly, T, nx, ny, dt, num_blobs, vx, vy, lx, ly, theta,
     bf = DeterministicBlobFactory(blobs)
 
     return run_parameters(rp, bf)
-
-
-

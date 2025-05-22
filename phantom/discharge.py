@@ -2,7 +2,7 @@ import json
 from dataclasses import dataclass
 from typing import Optional, List
 import os
-from .utils import get_sample_data
+from .data_preprocessing import load_data_and_preprocess
 import numpy as np
 
 
@@ -84,7 +84,7 @@ class PlasmaDischargeManager:
     def read_shot_data(
         self, shot, window=None, data_folder: str = "data", preprocessed=True
     ):
-        return get_sample_data(shot, window, data_folder, preprocessed)
+        return load_data_and_preprocess(shot, window, data_folder, preprocessed)
 
 
 class ShotAnalysis:

@@ -1,3 +1,4 @@
+from phantom import load_data_and_preprocess
 from phantom.show_data import *
 from phantom.utils import *
 from phantom.power_spectral_density import *
@@ -7,7 +8,7 @@ from scipy import signal
 
 shot = 1160616025
 
-ds = get_sample_data(shot, 0.001)
+ds = load_data_and_preprocess(shot, 0.001)
 # ds = xr.open_dataset("data.nc")
 refx, refy = 6, 5
 

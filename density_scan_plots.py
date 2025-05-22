@@ -67,8 +67,8 @@ if plot_duration_times:
     for shot in manager.get_shot_list():
         confinement_more = manager.get_discharge_by_shot(shot).confinement_mode
         is_hmode = confinement_more == "EDA-H" or confinement_more == "ELM-free-H"
-        #if not is_hmode:
-            # continue
+        # if not is_hmode:
+        # continue
         print("Working on shot {}".format(shot))
         ds = manager.read_shot_data(shot, None)
         refx, refy = 6, 5
@@ -143,7 +143,7 @@ if plot_duration_times:
                 manager.get_discharge_by_shot(shot),
             )
         )
-#    results.to_json("results_contouring.json")
+    #    results.to_json("results_contouring.json")
     results.print_summary()
 
 if plot_velocities:

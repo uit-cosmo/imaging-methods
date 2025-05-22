@@ -1,11 +1,11 @@
 from phantom.contours import get_contour_evolution, get_contour_velocity
 from phantom.show_data import *
 from phantom.cond_av import *
-from phantom.utils import get_sample_data
+from phantom.data_preprocessing import load_data_and_preprocess
 import matplotlib.pyplot as plt
 
 shot = 1160616025
-ds = get_sample_data(shot, 0.005)
+ds = load_data_and_preprocess(shot, 0.005)
 ds = ds.isel(x=slice(4, 9), y=slice(3, 8))
 # ds.to_netcdf("ds_imode_long.nc")
 

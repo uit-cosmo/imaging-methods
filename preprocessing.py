@@ -1,7 +1,4 @@
-from phantom.show_data import *
 from phantom.utils import *
-import fppanalysis as fpp
-import matplotlib.pyplot as plt
 
 shot = 1140613026
 

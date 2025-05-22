@@ -314,7 +314,7 @@ def get_contour_velocity_gaussian(com_da, sigma=1.0):
         if np.sum(mask) > 1:  # Need at least 2 non-NaN points
             com_smooth[:, i] = gaussian_filter1d(
                 np.interp(np.arange(n_times), np.where(mask)[0], com[mask, i]),
-                sigma=sigma
+                sigma=sigma,
             )
         else:
             com_smooth[:, i] = com[:, i]  # Copy original if insufficient data
@@ -363,7 +363,7 @@ def get_contour_velocity_gaussian(com_da, sigma=1.0):
 from scipy.signal import windows
 
 
-def get_contour_velocity(com_da, window_size=3, window_type='boxcar'):
+def get_contour_velocity(com_da, window_size=3, window_type="boxcar"):
     """
     Compute the velocity of center of mass positions using a specified smoothing window from scipy.signal.windows.
 
@@ -378,21 +378,27 @@ def get_contour_velocity(com_da, window_size=3, window_type='boxcar'):
     # Input validation
     if not isinstance(com_da, xr.DataArray):
         raise ValueError("Input 'com_da' must be an xarray DataArray")
-    if com_da.dims != ('time', 'coord') or com_da.shape[-1] != 2:
-        raise ValueError("Input must have dimensions (time, coord) with coord=['r', 'z']")
+    if com_da.dims != ("time", "coord") or com_da.shape[-1] != 2:
+        raise ValueError(
+            "Input must have dimensions (time, coord) with coord=['r', 'z']"
+        )
     if "time" not in com_da.coords or "coord" not in com_da.coords:
         raise ValueError("Input must include 'time' and 'coord' coordinates")
     if not np.array_equal(com_da.coord.values, ["r", "z"]):
         raise ValueError("Input coord must be ['r', 'z']")
     if window_size < 1 or not isinstance(window_size, int):
         raise ValueError("window_size must be a positive integer")
-    if window_type not in ['boxcar', 'gaussian', 'hamming', 'blackman', 'triang']:
-        raise ValueError("window_type must be 'boxcar', 'gaussian', 'hamming', 'blackman', or 'triang'")
+    if window_type not in ["boxcar", "gaussian", "hamming", "blackman", "triang"]:
+        raise ValueError(
+            "window_type must be 'boxcar', 'gaussian', 'hamming', 'blackman', or 'triang'"
+        )
     if len(com_da.time) < 2:
         raise ValueError("At least two time points are required")
 
     # Interpolate NaNs
-    com_interp = com_da.interpolate_na(dim='time', method='nearest', fill_value='extrapolate')
+    com_interp = com_da.interpolate_na(
+        dim="time", method="nearest", fill_value="extrapolate"
+    )
     com_np = com_interp.values  # Shape: (n_times, 2)
 
     # Define window parameters
@@ -403,30 +409,36 @@ def get_contour_velocity(com_da, window_size=3, window_type='boxcar'):
 
     # Check if there are enough points
     if start >= end:
-        raise ValueError(f"Not enough time points to compute velocity with window_size={window_size}")
+        raise ValueError(
+            f"Not enough time points to compute velocity with window_size={window_size}"
+        )
 
     # Generate window using scipy.signal.windows
-    if window_type == 'gaussian':
-        window = windows.gaussian(window_size, std=window_size/4, sym=True)
+    if window_type == "gaussian":
+        window = windows.gaussian(window_size, std=window_size / 4, sym=True)
     else:
         window = getattr(windows, window_type)(window_size, sym=True)
     window /= window.sum()  # Normalize
 
     # Compute moving average
-    com_smooth = np.array([np.convolve(com_np[:, i], window, mode='same') for i in range(2)]).T
+    com_smooth = np.array(
+        [np.convolve(com_np[:, i], window, mode="same") for i in range(2)]
+    ).T
 
     # Compute time step
     dt = float(com_da.time[1] - com_da.time[0])
 
     # Compute velocity using central differences
     valid_times = com_da.time[start:end]
-    velocity_values = (com_smooth[start+1:end+1, :] - com_smooth[start-1:end-1, :]) / (2 * dt)
+    velocity_values = (
+        com_smooth[start + 1 : end + 1, :] - com_smooth[start - 1 : end - 1, :]
+    ) / (2 * dt)
 
     # Create output DataArray
     velocity_da = xr.DataArray(
         velocity_values,
-        dims=('time', 'coord'),
-        coords={'time': valid_times, 'coord': com_da.coord},
+        dims=("time", "coord"),
+        coords={"time": valid_times, "coord": com_da.coord},
         attrs={
             "description": "Velocity of the contour center of mass in (r, z) coordinates",
             "method": "Finite difference (central) on smoothed COM data",

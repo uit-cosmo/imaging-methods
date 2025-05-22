@@ -5,14 +5,15 @@ from realizations import make_2d_realization
 from blobmodel import BlobShapeEnum, BlobShapeImpl
 import matplotlib.pyplot as plt
 import numpy as np
+import cosmoplots as cp
 
 num_blobs = 500
 T = 2000
 Lx = 10
 Ly = 10
-aspect_ratio = 1 / 3 # lx/ly
+aspect_ratio = 1  # lx/ly
 lx = np.sqrt(aspect_ratio)
-ly = 1/np.sqrt(aspect_ratio)
+ly = 1 / np.sqrt(aspect_ratio)
 nx = 8
 ny = 8
 dt = 0.1
@@ -30,55 +31,21 @@ events, average, std = find_events(
     ds, refx, refy, threshold=0.2, check_max=1, window_size=30, single_counting=True
 )
 
-contours_da = get_contour_evolution(average, threshold_factor=0.5)
-show_movie_with_contours(average, refx, refy, contours_da, "frames", gif_name="synthetic_2dca_av_8.gif", lims=(0, 0.3))
+contours_ds = get_contour_evolution(average, threshold_factor=0.5)
+# show_movie_with_contours(average, refx, refy, contours_ds, "frames", lims=(0, 0.3))
 
 
-if use_contouring:
-    contour_ds = get_contour_evolution(
-        average, 0.75, max_displacement_threshold=None
-    )
-    velocity_ds = get_contour_velocity(contour_ds.center_of_mass, sigma=3)
-    v, w = (
-        velocity_ds.isel(time=slice(10, -10))
-        .mean(dim="time", skipna=True)
-        .values
-    )
-    v, w = v / 100, w / 100
+velocity_ds = get_contour_velocity(contours_ds.center_of_mass, window_size=11)
+fig, ax = cp.figure_multiple_rows_columns(1, 1)
+ax = ax[0]
 
-    area = contour_ds.area.mean(dim="time").item()
-    area = area / 100 ** 2
-    lx, ly, theta = area, 0, 0
+ax.plot(velocity_ds.time, velocity_ds.values[:, 0], label=r"$v_c$")
+tmin, tmax = velocity_ds.time.max().item(), velocity_ds.time.min().item()
+ax.hlines(vx, tmin, tmax, label=r"$v$", ls="--")
+ax.plot(velocity_ds.time, velocity_ds.values[:, 1], label=r"$w_c$")
+ax.hlines(vy, tmin, tmax, label=r"$w$", ls="--")
+ax.legend()
+ax.set_xlabel(r"$t$")
+ax.set_ylabel(r"$v, w$")
 
-    show_movie_with_contours(
-        average,
-        refx,
-        refy,
-        contour_ds,
-        "frames",
-        gif_name="average_contour_{}.gif".format(shot),
-        interpolation="spline16",
-        show=False,
-    )
-else:
-    v, w = get_3tde_velocities(average)
-    v, w = v / 100, w / 100
-
-    fig, ax = plt.subplots()
-    lx, ly, theta = plot_event_with_fit(
-        average, ax, "average_fig_{}.png".format(shot)
-    )
-    lx, ly = lx / 100, ly / 100
-    fig.clf()
-
-fig, ax = plt.subplots()
-
-taud, lam = fit_psd(
-    ds.frames.isel(x=refx, y=refy).values,
-    get_dt(ds),
-    nperseg=10 ** 3,
-    ax=ax,
-    cutoff_freq=1e6,
-)
-
-
+plt.show()

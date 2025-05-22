@@ -66,7 +66,10 @@ def fit_psd(data_series, dt=None, nperseg=None, cutoff_freq=1e8, ax=None):
         if not np.any(mask):
             raise ValueError("No frequencies below cutoff_freq")
         lam = 1 / (1 + params[1] ** 2)
-        return np.sum(((ce.psd(freqs[mask], params[0], lam) - expected[mask])/expected[mask]) ** 2)
+        return np.sum(
+            ((ce.psd(freqs[mask], params[0], lam) - expected[mask]) / expected[mask])
+            ** 2
+        )
 
     # Optimization with bounds
     bounds = [(1e-10, 1e-3), (0, 100)]  # taud in [1e-10, 1e-3] s, lamda >= 0

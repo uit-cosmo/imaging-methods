@@ -1,3 +1,4 @@
+from phantom.data_preprocessing import load_data_and_preprocess
 from phantom.utils import *
 from phantom.cond_av import *
 import matplotlib.pyplot as plt
@@ -9,7 +10,7 @@ from scipy import stats
 
 shot = 1160616018
 shot = 1140613026
-ds = get_sample_data(shot, 0.2)
+ds = load_data_and_preprocess(shot, 0.2)
 # ds.to_netcdf("data1426large.nc")
 ds = xr.open_dataset("data1426large.nc")
 
