@@ -27,7 +27,7 @@ ds = make_2d_realization(Lx, Ly, T, nx, ny, dt, num_blobs, vx, vy, lx, ly, theta
 # show_movie(ds.sel(time=slice(10, 20)), lims=(0, 0.3))
 
 refx, refy = 4, 4
-events, average, std = find_events(
+events, average, std = find_events_and_2dca(
     ds, refx, refy, threshold=0.2, check_max=1, window_size=30, single_counting=True
 )
 

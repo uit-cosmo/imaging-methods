@@ -11,7 +11,7 @@ ds = ds.isel(x=slice(4, 9), y=slice(3, 8))
 
 
 refx, refy = 2, 2
-events, average, std = find_events(
+events, average, std = find_events_and_2dca(
     ds, refx, refy, threshold=2, check_max=0, window_size=20, single_counting=True
 )
 fig, ax = plt.subplots()

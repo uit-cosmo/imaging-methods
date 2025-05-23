@@ -32,7 +32,7 @@ for n in number_of_pixels:
     refx, refy = int(n / 2), int(n / 2)
     pixel_size = Lx / n
     ds = make_2d_realization(Lx, Ly, T, n, n, dt, num_blobs, vx, vy, lx, ly, theta, bs)
-    events, average, std = find_events(
+    events, average, std = find_events_and_2dca(
         ds, refx, refy, threshold=0.2, check_max=1, window_size=30, single_counting=True
     )
     contours_ds = get_contour_evolution(average, threshold_factor=0.5)

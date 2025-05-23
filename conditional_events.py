@@ -16,7 +16,7 @@ ds = xr.open_dataset("data1426large.nc")
 
 refx, refy = 6, 5
 
-events, average = find_events(
+events, average = find_events_and_2dca(
     ds, refx, refy, threshold=2.5, check_max=1, single_counting=True
 )
 

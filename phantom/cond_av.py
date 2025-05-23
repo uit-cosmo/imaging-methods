@@ -2,7 +2,7 @@ import numpy as np
 import xarray as xr
 
 
-def find_events(
+def find_events_and_2dca(
     ds,
     refx,
     refy,

@@ -2,7 +2,7 @@ from phantom import (
     PlasmaDischargeManager,
     PlasmaDischarge,
     ShotAnalysis,
-    find_events,
+    find_events_and_2dca,
     show_movie,
     plot_event_with_fit,
     get_delays,
@@ -42,7 +42,7 @@ if preprocess_data:
 if plot_movies:
     for shot in manager.get_shot_list():
         ds = manager.read_shot_data(shot, 0.001)
-        events, average, std = find_events(
+        events, average, std = find_events_and_2dca(
             ds,
             refx,
             refy,
@@ -72,7 +72,7 @@ if plot_duration_times:
         print("Working on shot {}".format(shot))
         ds = manager.read_shot_data(shot, None)
         refx, refy = 6, 5
-        events, average, std = find_events(
+        events, average, std = find_events_and_2dca(
             ds,
             refx,
             refy,
@@ -152,7 +152,7 @@ if plot_velocities:
         print("Working on shot {}".format(shot))
         ds = manager.read_shot_data(shot, None)
         refx, refy = 6, 5
-        events, average, std = find_events(
+        events, average, std = find_events_and_2dca(
             ds,
             refx,
             refy,

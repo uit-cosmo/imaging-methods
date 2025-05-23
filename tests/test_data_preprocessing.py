@@ -3,6 +3,8 @@ import numpy as np
 import phantom.data_preprocessing
 from numpy.testing import assert_array_equal
 
+from phantom import load_data_and_preprocess
+
 # Create test data
 x = np.arange(0, np.pi, 0.1)
 y = np.arange(0, np.pi, 0.1)
