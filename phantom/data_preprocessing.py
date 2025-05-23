@@ -1,35 +1,30 @@
 import fppanalysis as fppa
-import velocity_estimation as ve
 import xarray as xr
 import numpy as np
 from scipy.interpolate import LinearNDInterpolator, NearestNDInterpolator
-import matplotlib.pyplot as plt
 
 from phantom import get_t_start_end
 
 
-def interpolate_nans_3d(ds, time_dim="time"):
+def interpolate_nans_3d(ds):
     """
     Replace NaN values in a 3D xarray dataset with linear interpolation along spatial dimensions
-    using LinearNDInterpolator. Optimized for cases where NaN pixels are constant across time.
+    using LinearNDInterpolator.
 
     Parameters:
         ds (xr.Dataset): Input dataset with 'frames' variable (dims: y, x, time).
-        time_dim (str): Name of the time dimension (default: 'time').
 
     Returns:
         xr.Dataset: Dataset with NaNs interpolated.
     """
     # Input validation
-    if "frames" not in ds or ds["frames"].dims != ("y", "x", time_dim):
-        raise ValueError(f"ds must contain 'frames' with dims ('y', 'x', {time_dim})")
+    if "frames" not in ds or ds["frames"].dims != ("y", "x", "time"):
+        raise ValueError(f"ds must contain 'frames' with dims ('y', 'x', 'time')")
     if ds["frames"].isnull().all():
         raise ValueError("All frame values are NaN")
     if not ds["frames"].isnull().any():
         return ds.copy()
 
-    # Create a copy of the dataset
-    ds = ds.copy()
     frames = ds["frames"].values  # Shape: (ny, nx, nt)
     ny, nx, nt = frames.shape
 
@@ -43,7 +38,7 @@ def interpolate_nans_3d(ds, time_dim="time"):
     points = np.vstack((y_indices.ravel(), x_indices.ravel())).T  # Shape: (ny*nx, 2)
     valid_mask = ~nan_mask
     valid_points = points[valid_mask.ravel()]  # Coordinates of non-NaN points
-    nan_points = points[nan_mask.ravel()]      # Coordinates of NaN points
+    nan_points = points[nan_mask.ravel()]  # Coordinates of NaN points
 
     # Process each time step
     for t in range(nt):
@@ -51,13 +46,17 @@ def interpolate_nans_3d(ds, time_dim="time"):
         valid_values = frame[valid_mask]  # Values at non-NaN points
 
         # Set up LinearNDInterpolator with valid points and values
-        interpolator = LinearNDInterpolator(valid_points, valid_values, fill_value=np.nan)
+        interpolator = LinearNDInterpolator(
+            valid_points, valid_values, fill_value=np.nan
+        )
         interpolated_values = interpolator(nan_points)
 
         # Fallback to nearest interpolation for any remaining NaNs
         if np.any(np.isnan(interpolated_values)):
             nearest_interp = NearestNDInterpolator(valid_points, valid_values)
-            interpolated_values[np.isnan(interpolated_values)] = nearest_interp(nan_points[np.isnan(interpolated_values)])
+            interpolated_values[np.isnan(interpolated_values)] = nearest_interp(
+                nan_points[np.isnan(interpolated_values)]
+            )
 
         # Replace NaN values in the frame
         frame[nan_mask] = interpolated_values
@@ -68,7 +67,7 @@ def interpolate_nans_3d(ds, time_dim="time"):
         frames,
         dims=ds["frames"].dims,
         coords=ds["frames"].coords,
-        attrs=ds["frames"].attrs
+        attrs=ds["frames"].attrs,
     )
     return ds
 
@@ -110,7 +109,9 @@ def run_norm_ds(ds, radius):
     return ds_normalized
 
 
-def load_data_and_preprocess_new(shot, window=None, data_folder="data", preprocessed=True, radius=1000):
+def load_data_and_preprocess(
+    shot, window=None, data_folder="data", preprocessed=True, radius=1000
+):
     """
     Load and preprocess APD data for a given shot.
     Parameters:
@@ -125,7 +126,9 @@ def load_data_and_preprocess_new(shot, window=None, data_folder="data", preproce
     """
     import os
 
-    file_name = os.path.join(data_folder, f"apd_{shot}_preprocessed.nc" if preprocessed else f"apd_{shot}.nc")
+    file_name = os.path.join(
+        data_folder, f"apd_{shot}_preprocessed.nc" if preprocessed else f"apd_{shot}.nc"
+    )
     try:
         ds = xr.open_dataset(file_name)
     except FileNotFoundError:
