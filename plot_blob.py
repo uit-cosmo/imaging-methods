@@ -1,10 +1,6 @@
-import numpy as np
 import argparse
 import sys
-import xarray as xr
-from phantom.show_data import *
 from phantom.utils import *
-import os
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Plot blob")

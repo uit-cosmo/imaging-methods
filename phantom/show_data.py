@@ -1,6 +1,5 @@
 """This module provides functions to create and display animations of model output."""
 
-import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import xarray as xr
 from matplotlib import animation
@@ -348,7 +347,6 @@ def show_movie_with_contours(
     - This function chooses between a 1D and 2D visualizations based on the dimensionality of the dataset.
 
     """
-    from skimage import measure
 
     t_dim = "t" if "t" in dataset._coord_names else "time"
     if fig is None:
