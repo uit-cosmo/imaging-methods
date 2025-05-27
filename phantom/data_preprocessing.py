@@ -100,9 +100,12 @@ def run_norm_ds(ds, radius):
     )
 
     ds_normalized = xr.Dataset(
-        data_vars={"frames": (["y", "x", "time"], normalization[0].data)},
-        coords={"time": normalization[1].data[0, 0, :]},
-        attrs=ds.attrs.copy(),
+        {"frames": (["y", "x", "time"], normalization[0].data)},
+        coords={
+            "R": (["y", "x"], ds.R.values),
+            "Z": (["y", "x"], ds.Z.values),
+            "time": (["time"], normalization[1].data[0, 0, :]),
+        },
     )
     ds_normalized["frames"].attrs = ds["frames"].attrs.copy()
 

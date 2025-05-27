@@ -6,7 +6,9 @@ import closedexpressions as ce
 import warnings
 
 
-def fit_psd(data_series, dt=None, nperseg=None, cutoff_freq=1e8, ax=None):
+def fit_psd(
+    data_series, dt=None, nperseg=None, cutoff_freq=1e8, ax=None, relative=True
+):
     """
     Compute the power spectral density (PSD) of a data series using Welch's method,
     fit an analytical model derived from a Filtered Poisson Process (FPP) with
@@ -35,6 +37,7 @@ def fit_psd(data_series, dt=None, nperseg=None, cutoff_freq=1e8, ax=None):
         Frequency cutoff for fitting (default: 1e8 rad/s).
     ax : matplotlib.axes.Axes, optional
         Axes object for plotting. If None, no plot is generated.
+    relative : bool, if True the relative mean square error is minimized otherwise absolute error.
 
     Returns:
     --------
@@ -66,16 +69,21 @@ def fit_psd(data_series, dt=None, nperseg=None, cutoff_freq=1e8, ax=None):
         if not np.any(mask):
             raise ValueError("No frequencies below cutoff_freq")
         lam = 1 / (1 + params[1] ** 2)
-        return np.sum(
-            ((ce.psd(freqs[mask], params[0], lam) - expected[mask]) / expected[mask])
-            ** 2
-        )
+        if relative:
+            return np.sum(
+                (
+                    (ce.psd(freqs[mask], params[0], lam) - expected[mask])
+                    / expected[mask]
+                )
+                ** 2
+            )
+        return np.sum((ce.psd(freqs[mask], params[0], lam) - expected[mask]) ** 2)
 
     # Optimization with bounds
-    bounds = [(1e-10, 1e-3), (0, 100)]  # taud in [1e-10, 1e-3] s, lamda >= 0
+    bounds = [(1e-10, 1e3), (0, 100)]  # taud in [1e-10, 1e-3] s, lamda >= 0
     result = minimize(
         lambda params: get_error_pdf_fit(params, psd),
-        x0=[1e-5, 1],
+        x0=[1, 1],
         method="Nelder-Mead",
         bounds=bounds,
         options={"maxiter": 1000},

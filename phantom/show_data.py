@@ -1,6 +1,7 @@
 """This module provides functions to create and display animations of model output."""
 
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+import matplotlib.pyplot as plt
 import xarray as xr
 from matplotlib import animation
 from typing import Union, Any
@@ -427,3 +428,5 @@ def show_movie_with_contours(
         ani.save(gif_name, writer="ffmpeg", fps=fps)
     if show:
         plt.show()
+    else:
+        fig.clf()

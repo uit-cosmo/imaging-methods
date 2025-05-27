@@ -145,6 +145,8 @@ example.gif
 # png files
 *.png
 *.eps
+*.pdf
+*.pdf_tex
 
 /data
 
