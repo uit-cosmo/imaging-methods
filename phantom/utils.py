@@ -2,11 +2,6 @@ import fppanalysis as fppa
 import velocity_estimation as ve
 import xarray as xr
 import numpy as np
-from scipy.optimize import differential_evolution
-import matplotlib.pyplot as plt
-
-from phantom import rotated_blob, ellipse_parameters
-from phantom.parameter_estimation import fit_ellipse
 
 
 class PhantomDataInterface(ve.ImagingDataInterface):
@@ -144,51 +139,6 @@ def get_2d_corr(ds, x, y, delta):
     return ds_corr.sel(time=trajectory_times)
 
 
-def plot_2d_ccf(ds, x, y, delta, ax):
-    corr_data = get_2d_corr(ds, x, y, delta)
-    rx, ry = corr_data.R.isel(x=x, y=y).values, corr_data.Z.isel(x=x, y=y).values
-    data = corr_data.sel(tau=0).frames.values
-
-    def model(params):
-        blob = rotated_blob(params, rx, ry, corr_data.R.values, corr_data.Z.values)
-        return np.sum((blob - data) ** 2)
-
-    # Initial guesses for lx, ly, and t
-    # Rough estimation
-    bounds = [
-        (0, 5),  # lx: 0 to 5
-        (0, 5),  # ly: 0 to 5
-        (-np.pi / 4, np.pi / 4),  # t: 0 to 2π
-    ]
-
-    result = differential_evolution(
-        model,
-        bounds,
-        seed=42,  # Optional: for reproducibility
-        popsize=15,  # Optional: population size multiplier
-        maxiter=1000,  # Optional: maximum number of iterations
-    )
-
-    if ax is not None:
-        im = ax.imshow(
-            corr_data.sel(tau=0).frames, origin="lower", interpolation="spline16"
-        )
-        ax.scatter(rx, ry, color="black")
-        rmin, rmax, zmin, zmax = (
-            corr_data.R[0, 0] - 0.05,
-            corr_data.R[0, -1] + 0.05,
-            corr_data.Z[0, 0] - 0.05,
-            corr_data.Z[-1, 0] + 0.05,
-        )
-
-        alphas = np.linspace(0, 2 * np.pi, 200)
-        elipsx, elipsy = zip(*[ellipse_parameters(result.x, rx, ry, a) for a in alphas])
-        ax.plot(elipsx, elipsy)
-        im.set_extent((rmin, rmax, zmin, zmax))
-
-    return result.x
-
-
 def get_taumax(v, w, dx, dy, lx, ly, t):
     lx_fit, ly_fit = lx, ly
     t_fit = t
@@ -199,3 +149,37 @@ def get_taumax(v, w, dx, dy, lx, ly, t):
     d2 = (lx_fit**2 * v**2 + ly_fit**2 * w**2) * np.sin(t_fit) ** 2
     d3 = 2 * (lx_fit**2 - ly_fit**2) * v * w * np.cos(t_fit) * np.sin(t_fit)
     return (a1 - a2 + a3) / (d1 + d2 - d3)
+
+
+def validate_dataset(ds):
+    """
+    Check for expected dataset structure
+    :param ds: Dataset
+    """
+    if not isinstance(ds, (xr.Dataset, xr.DataArray)):
+        raise ValueError("Input 'event' must be an xarray Dataset or DataArray")
+    if "frames" not in ds and not isinstance(ds, xr.DataArray):
+        raise ValueError("Input must contain 'frames' or be a DataArray")
+    if "R" not in ds.coords or "Z" not in ds.coords:
+        raise ValueError("Input must include 'R' and 'Z' coordinates")
+
+
+def validate_dataarray(da, coords=False):
+    """
+    Check for expected dataarray structure
+    :param da: DataArray
+    :param coords: bool, if True, checks for coords dimension ('r' and 'z')
+    """
+    if not isinstance(da, xr.DataArray):
+        raise ValueError("Input 'com_da' must be an xarray DataArray")
+    if "time" not in da.dims:
+        raise ValueError("Input must have time dimensions")
+    if "time" not in da.coords:
+        raise ValueError("Input must include 'time' coordinates")
+    if coords:
+        if "coord" not in da.dims or da.shape[-1] != 2:
+            raise ValueError("Input must have coord dimension with coord=['r', 'z']")
+        if "coord" not in da.coords:
+            raise ValueError("Input must include 'coord' coordinates")
+        if not np.array_equal(da.coord.values, ["r", "z"]):
+            raise ValueError("Input coord must be ['r', 'z']")

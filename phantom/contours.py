@@ -3,6 +3,9 @@ import numpy as np
 from skimage import measure
 from shapely.geometry import Polygon, Point
 from scipy.spatial import ConvexHull
+from scipy.signal import windows
+
+from phantom import validate_dataarray, validate_dataset
 
 
 def compute_contour_mass(contour, frame, R, Z):
@@ -102,15 +105,8 @@ def get_contour_evolution(event, threshold_factor=0.5, max_displacement_threshol
         Returns None if max_displacement > max_displacement_threshold or if fewer than two time points
         with a non-None threshold.
     """
-    # Input validation
-    if not isinstance(event, (xr.Dataset, xr.DataArray)):
-        raise ValueError("Input 'event' must be an xarray Dataset or DataArray")
-    if "frames" not in event and not isinstance(event, xr.DataArray):
-        raise ValueError("Input must contain 'frames' or be a DataArray")
-    if "R" not in event.coords or "Z" not in event.coords:
-        raise ValueError("Input must include 'R' and 'Z' coordinates")
-    if max_displacement_threshold is not None and max_displacement_threshold < 0:
-        raise ValueError("max_displacement_threshold must be non-negative")
+    validate_dataset(event)
+
     # Extract time coordinate and data
     time_coords = event.time.values
     contours = []
@@ -262,107 +258,6 @@ def get_contour_evolution(event, threshold_factor=0.5, max_displacement_threshol
     return contour_ds
 
 
-from scipy.ndimage import gaussian_filter1d
-
-
-def get_contour_velocity_gaussian(com_da, sigma=1.0):
-    """
-    Compute the velocity of a structure from its center of mass coordinates with Gaussian smoothing.
-
-    Parameters
-    ----------
-    com_da : xr.DataArray
-        Center of mass coordinates with dimensions (time, coord), where coord=["r", "z"].
-        Typically obtained from get_contour_evolution output as ds.center_of_mass.
-    sigma : float, optional
-        Standard deviation for Gaussian smoothing kernel (in time steps). Default is 1.0.
-
-    Returns
-    -------
-    xr.DataArray
-        Velocity of the center of mass in (r, z) coordinates with dimensions (time, coord).
-        Units are com_da units per time unit (e.g., cm/s if com_da is in cm and time in seconds).
-    """
-    # Input validation
-    if not isinstance(com_da, xr.DataArray):
-        raise ValueError("Input 'com_da' must be an xarray DataArray")
-    if com_da.dims != ("time", "coord") or com_da.shape[-1] != 2:
-        raise ValueError(
-            "Input must have dimensions (time, coord) with coord=['r', 'z']"
-        )
-    if "time" not in com_da.coords or "coord" not in com_da.coords:
-        raise ValueError("Input must include 'time' and 'coord' coordinates")
-    if not np.array_equal(com_da.coord.values, ["r", "z"]):
-        raise ValueError("Input coord must be ['r', 'z']")
-    if sigma < 0:
-        raise ValueError("Smoothing sigma must be non-negative")
-
-    # Extract time and COM data
-    time = com_da.time.values
-    com = com_da.values  # Shape: (time, 2) for (r, z)
-    n_times = len(time)
-
-    # Handle insufficient time points
-    if n_times < 2:
-        raise ValueError("At least two time points are required to compute velocity")
-
-    # Smooth COM data (r and z separately)
-    com_smooth = np.zeros_like(com)
-    for i in range(com.shape[1]):  # Loop over r, z
-        # Handle NaNs by interpolating before smoothing
-        mask = ~np.isnan(com[:, i])
-        if np.sum(mask) > 1:  # Need at least 2 non-NaN points
-            com_smooth[:, i] = gaussian_filter1d(
-                np.interp(np.arange(n_times), np.where(mask)[0], com[mask, i]),
-                sigma=sigma,
-            )
-        else:
-            com_smooth[:, i] = com[:, i]  # Copy original if insufficient data
-
-    # Initialize velocity array
-    velocity = np.zeros_like(com_smooth)  # Shape: (time, 2)
-
-    # Forward difference for first point
-    dt = time[1] - time[0]
-    velocity[0] = (
-        (com_smooth[1] - com_smooth[0]) / dt
-        if not np.any(np.isnan(com_smooth[0]))
-        else np.array([np.nan, np.nan])
-    )
-
-    # Central difference for interior points
-    for i in range(1, n_times - 1):
-        if np.any(np.isnan(com_smooth[i])):
-            velocity[i] = np.array([np.nan, np.nan])
-        else:
-            velocity[i] = (com_smooth[i + 1] - com_smooth[i - 1]) / (2 * dt)
-
-    # Backward difference for last point
-    velocity[-1] = (
-        (com_smooth[-1] - com_smooth[-2]) / dt
-        if not np.any(np.isnan(com_smooth[-1]))
-        else np.array([np.nan, np.nan])
-    )
-
-    # Create velocity DataArray
-    velocity_da = xr.DataArray(
-        velocity,
-        dims=("time", "coord"),
-        coords={"time": time, "coord": ["r", "z"]},
-        attrs={
-            "description": "Velocity of the contour center of mass in (r, z) coordinates",
-            "method": "Finite difference (central for interior, forward/backward for endpoints) on Gaussian-smoothed COM data",
-            "smoothing": f"Gaussian filter with sigma={sigma} time steps",
-            "units": "Same as com_da units per time unit",
-        },
-    )
-
-    return velocity_da
-
-
-from scipy.signal import windows
-
-
 def get_contour_velocity(com_da, window_size=3, window_type="boxcar"):
     """
     Compute the velocity of center of mass positions using a specified smoothing window from scipy.signal.windows.
@@ -375,17 +270,7 @@ def get_contour_velocity(com_da, window_size=3, window_type="boxcar"):
     Returns:
     - velocity_da (xr.DataArray): Velocity with dims ('time', 'coord'), cropped to valid time points.
     """
-    # Input validation
-    if not isinstance(com_da, xr.DataArray):
-        raise ValueError("Input 'com_da' must be an xarray DataArray")
-    if com_da.dims != ("time", "coord") or com_da.shape[-1] != 2:
-        raise ValueError(
-            "Input must have dimensions (time, coord) with coord=['r', 'z']"
-        )
-    if "time" not in com_da.coords or "coord" not in com_da.coords:
-        raise ValueError("Input must include 'time' and 'coord' coordinates")
-    if not np.array_equal(com_da.coord.values, ["r", "z"]):
-        raise ValueError("Input coord must be ['r', 'z']")
+    validate_dataarray(com_da, coords=True)
     if window_size < 1 or not isinstance(window_size, int):
         raise ValueError("window_size must be a positive integer")
     if window_type not in ["boxcar", "gaussian", "hamming", "blackman", "triang"]:
