@@ -4,10 +4,21 @@ from scipy.optimize import minimize, differential_evolution, curve_fit
 import matplotlib.pyplot as plt
 import closedexpressions as ce
 import warnings
+from blobmodel import BlobShapeEnum
+from enum import Enum
+
+
+class AnalyticalExpressions(Enum):
+    TwoSided = 1
+
+
+analytical_expressions = {
+    AnalyticalExpressions.TwoSided: ce.psd,
+}
 
 
 def fit_psd(
-    data_series, dt=None, nperseg=None, cutoff_freq=1e8, ax=None, relative=True
+    data_series, dt=None, nperseg=None, cutoff_freq=1e8, ax=None, relative=True, expression="two_sided"
 ):
     """
     Compute the power spectral density (PSD) of a data series using Welch's method,
@@ -80,14 +91,16 @@ def fit_psd(
         return np.sum((ce.psd(freqs[mask], params[0], lam) - expected[mask]) ** 2)
 
     # Optimization with bounds
-    bounds = [(1e-10, 1e3), (0, 100)]  # taud in [1e-10, 1e-3] s, lamda >= 0
+    bounds = [(1e-1, 10), (0, 10)]  # taud in [1e-10, 1e-6] s, lamda in [0, 10]
+
     result = minimize(
-        lambda params: get_error_pdf_fit(params, psd),
-        x0=[1, 1],
-        method="Nelder-Mead",
-        bounds=bounds,
-        options={"maxiter": 1000},
+       lambda params: get_error_pdf_fit(params, psd),
+       x0=[1, 1],
+       method="Nelder-Mead",
+       bounds=bounds,
+       options={"maxiter": 1000},
     )
+
     # Check optimization convergence
     if not result.success:
         warnings.warn(f"Optimization did not converge: {result.message}")
@@ -123,4 +136,4 @@ def fit_psd(
         ax.set_xlim(min(freqs), max(freqs))
         ax.legend()
 
-    return taud, fitted_lambda
+    return taud, fitted_lambda, freqs
