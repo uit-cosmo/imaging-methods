@@ -6,15 +6,73 @@ import closedexpressions as ce
 import warnings
 from blobmodel import BlobShapeEnum
 from enum import Enum
+import fppanalysis as fppa
 
 
 class AnalyticalExpressions(Enum):
-    TwoSided = 1
+    OneSided = 1
+    TwoSided = 2
 
 
 analytical_expressions = {
+    AnalyticalExpressions.OneSided: ce.psd,
     AnalyticalExpressions.TwoSided: ce.psd,
 }
+
+
+class DurationTimeEstimator():
+    def __init__(self, statistic, obj_fun):
+        self.statistic = statistic
+        self.obj_fun = obj_fun
+
+    def estimate_duration_time(self, data_series, dt, nperseg, cutoff_freq):
+        bounds = [(1e-2, 10), (0, 10)]
+
+        if self.statistic == "psd":
+            freqs, psd = signal.welch(data_series, fs=1 / dt, nperseg=nperseg)
+            freqs = 2 * np.pi * freqs  # Convert to angular frequency (rad/s)
+
+            mask = freqs < cutoff_freq
+            result = minimize(
+                lambda params: self._obj_fun_psd_two_sided(params, freqs[mask], psd[mask]),
+                x0=[1, 1],
+                method="Nelder-Mead",
+                bounds=bounds,
+                options={"maxiter": 1000},
+            )
+
+            if not result.success:
+                warnings.warn(f"Optimization did not converge: {result.message}")
+        if self.statistic == "acf":
+            acf_times, acf = fppa.corr_fun(data_series, data_series, dt)
+            mask = np.abs(acf_times) < 100
+
+            result = minimize(
+                lambda params: self._obj_fun_acf_two_sided(params, acf_times[mask], acf[mask]),
+                x0=[1, 1],
+                method="Nelder-Mead",
+                bounds=bounds,
+                options={"maxiter": 1000},
+            )
+
+        # Check optimization convergence
+        if not result.success:
+            warnings.warn(f"Optimization did not converge: {result.message}")
+
+        taud, lamda = result.x
+        fitted_lambda = 1 / (1 + lamda**2)
+        return taud, fitted_lambda
+
+    def _obj_fun_psd_two_sided(self, params, freqs, expected):
+        lam = 1 / (1 + params[1] ** 2)
+        return np.sum((ce.psd(freqs, params[0], lam) - expected) ** 2)
+
+    def _obj_fun_acf_two_sided(self, params, times, expected):
+        lam = 1 / (1 + params[1] ** 2)
+        return np.sum((ce.acorr(times, params[0], lam) - expected) ** 2)
+
+    def _obj_fun_psd_one_sided(self, taud, freqs, expected):
+        return np.sum((ce.psd(freqs, taud, 0) - expected) ** 2)
 
 
 def fit_psd(
@@ -74,40 +132,7 @@ def fit_psd(
     freqs, psd = signal.welch(data_series, fs=1 / dt, nperseg=nperseg)
     freqs = 2 * np.pi * freqs  # Convert to angular frequency (rad/s)
 
-    # Error function for optimization
-    def get_error_pdf_fit(params, expected):
-        mask = freqs < cutoff_freq
-        if not np.any(mask):
-            raise ValueError("No frequencies below cutoff_freq")
-        lam = 1 / (1 + params[1] ** 2)
-        if relative:
-            return np.sum(
-                (
-                    (ce.psd(freqs[mask], params[0], lam) - expected[mask])
-                    / expected[mask]
-                )
-                ** 2
-            )
-        return np.sum((ce.psd(freqs[mask], params[0], lam) - expected[mask]) ** 2)
-
-    # Optimization with bounds
-    bounds = [(1e-1, 10), (0, 10)]  # taud in [1e-10, 1e-6] s, lamda in [0, 10]
-
-    result = minimize(
-       lambda params: get_error_pdf_fit(params, psd),
-       x0=[1, 1],
-       method="Nelder-Mead",
-       bounds=bounds,
-       options={"maxiter": 1000},
-    )
-
-    # Check optimization convergence
-    if not result.success:
-        warnings.warn(f"Optimization did not converge: {result.message}")
-
-    taud, lamda = result.x
-
-    fitted_lambda = 1 / (1 + lamda**2)
+    taud, fitted_lambda = DurationTimeEstimator("acf", "two_sided").estimate_duration_time(data_series, dt, nperseg, cutoff_freq)
 
     # Plotting
     if ax is not None:
