@@ -6,3 +6,4 @@ from .discharge import *
 from .power_spectral_density import *
 from .parameter_estimation import *
 from .data_preprocessing import *
+from .second_order_statistics import *
