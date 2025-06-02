@@ -86,29 +86,31 @@ class DurationTimeEstimator:
 
         if self.analytics == Analytics.OneSided:
             if bounds is None:
-                bounds = [(dt, len(data_series) * dt)]
+                bounds = [(0.05 * dt, len(data_series) * dt)]
             x0 = [np.sqrt(len(data_series)) * dt]  # Geometrical mean of bounds
         elif self.analytics == Analytics.TwoSided:
             if bounds is None:
-                bounds = [(dt, len(data_series) * dt), (0, 1e3)]
+                bounds = [(0.05 * dt, len(data_series) * dt), (0, 1e3)]
             x0 = [np.sqrt(len(data_series)) * dt, 1]  # Geometrical mean of bounds
 
-        result = minimize(
-            lambda params: self._obj_fun(params, base, values),
-            x0=x0,
-            method="Nelder-Mead",
-            bounds=bounds,
-            options={"maxiter": 1000},
-        )
-
-        result = differential_evolution(
-            lambda params: self._obj_fun(params, base, values),
-            bounds=bounds,
-            seed=42,  # For reproducibility
-            popsize=10,  # Population size multiplier
-            maxiter=500,  # Maximum iterations
-            disp=False,  # Suppress verbose output
-        )
+        use_minimize = False
+        if use_minimize:
+            result = minimize(
+                lambda params: self._obj_fun(params, base, values),
+                x0=x0,
+                method="Nelder-Mead",
+                bounds=bounds,
+                options={"maxiter": 1000},
+            )
+        else:
+            result = differential_evolution(
+                lambda params: self._obj_fun(params, base, values),
+                bounds=bounds,
+                seed=42,  # For reproducibility
+                popsize=10,  # Population size multiplier
+                maxiter=500,  # Maximum iterations
+                disp=False,  # Suppress verbose output
+            )
 
         # Check optimization convergence
         if not result.success:

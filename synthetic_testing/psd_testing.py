@@ -31,7 +31,7 @@ run_norm_radius = 1000
 
 refx, refy = 4, 4
 
-size_scan = False
+size_scan = True
 
 
 def get_realization(duration, T=1e4, noise=0):
@@ -55,29 +55,66 @@ def get_realization(duration, T=1e4, noise=0):
     return times, signal
 
 
+def make_realization_and_estimate_duration_time(duration, T):
+    times, signal = get_realization(duration, T)
+    taud, _ = ph.DurationTimeEstimator(
+        ph.SecondOrderStatistic.ACF, ph.Analytics.TwoSided
+    ).estimate_duration_time(
+        signal,
+        dt,
+        cutoff=None,
+        nperseg=1000,
+    )
+    return taud
+
+
+def run_realizations_and_estimate_bias_and_std(duration, T, num_realizations=10):
+    tauds = np.array(
+        [
+            make_realization_and_estimate_duration_time(duration, T)
+            for _ in np.arange(num_realizations)
+        ]
+    )
+    return (tauds.mean() - duration) / duration, tauds.std()
+
+
+fromm = -2
+to = 2
+parameters = np.logspace(fromm, to, num=6)
+
+results = np.array(
+    [run_realizations_and_estimate_bias_and_std(p, 1e3) for p in parameters]
+)
+results = np.vstack(results)
+
+fig, ax = cp.figure_multiple_rows_columns(1, 1)
+ax = ax[0]
+ax.scatter(
+    parameters / dt, results[:, 0], color="blue", label=r"$(\widehat{\tau}-\tau)/\tau$"
+)
+ax.scatter(parameters / dt, results[:, 1], color="green", label=r"$\sigma_\tau$")
+
+ax.legend()
+ax.set_xlabel(r"$\tau_\text{d}/dt$")
+
+ax.set_xscale("log")
+plt.savefig("taud_estimate.png", bbox_inches="tight")
+plt.show()
+
+quit()
+
+
+tauds = np.logspace(-1, 1, num=10)
 if size_scan:
     size_factors = np.logspace(-1, 1, num=10)
     tauds = np.zeros_like(size_factors)
     for i in range(len(size_factors)):
         s = size_factors[i]
-        print(s)
-        ds = make_2d_realization(
-            Lx, Ly, T, nx, ny, dt, num_blobs, vx, vy, s * lx, s * ly, theta, bs
-        )
-        ds = ph.run_norm_ds(ds, run_norm_radius)
 
-        taud, lam = ph.DurationTimeEstimator(
-            ph.SecondOrderStatistic.ACF, ph.Analytics.TwoSided
-        ).estimate_duration_time(
-            ds.frames.isel(x=refx, y=refy).values,
-            get_dt(ds),
-            cutoff=100,
-            nperseg=1000,
-        )
+        print("Input duration {:.2f}, estimated duration {:.2f}".format(s, taud))
         tauds[i] = taud
 
-    print(tauds)
-
+quit()
 s = 1
 
 use_blobmodel = True
