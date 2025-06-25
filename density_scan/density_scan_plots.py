@@ -7,8 +7,8 @@ import os
 manager = ph.PlasmaDischargeManager()
 manager.load_from_json("plasma_discharges.json")
 
-plot_duration_times = False
-plot_movies = True
+analysis = True
+plot_movies = False
 plot_velocities = False
 
 refx, refy = 6, 6
@@ -30,17 +30,15 @@ if plot_movies:
         )
 
 
-if plot_duration_times:
+if analysis:
     results = ph.ScanResults()
     use_contouring = False
     for shot in manager.get_shot_list():
         confinement_more = manager.get_discharge_by_shot(shot).confinement_mode
         is_hmode = confinement_more == "EDA-H" or confinement_more == "ELM-free-H"
-        # if not is_hmode:
-        # continue
         print("Working on shot {}".format(shot))
-        ds = manager.read_shot_data(shot, None)
         average_ds = get_average(shot)
+        gpi_ds = manager.read_shot_data(shot, data_folder="../data")
 
         if use_contouring:
             contour_ds = ph.get_contour_evolution(
@@ -69,24 +67,26 @@ if plot_duration_times:
                 show=False,
             )
         else:
-            v, w = ph.get_3tde_velocities(average_ds.cond_av)
+            v, w = ph.get_3tde_velocities(average_ds.cond_av, average_ds["refx"], average_ds["refy"])
             v, w = v / 100, w / 100
 
             fig, ax = plt.subplots()
             lx, ly, theta = ph.plot_event_with_fit(
-                average_ds.cond_av, ax, "average_fig_{}.png".format(shot)
+                average_ds.cond_av, refx, refy, ax, "average_fig_{}.png".format(shot)
             )
             lx, ly = lx / 100, ly / 100
             fig.clf()
 
         fig, ax = plt.subplots()
 
-        taud, lam = ph.fit_psd(
-            ds.frames.isel(x=refx, y=refy).values,
-            ph.get_dt(ds),
-            nperseg=10**3,
-            ax=ax,
-            cutoff_freq=1e6,
+        taud, lam, freqs = ph.DurationTimeEstimator(
+            ph.SecondOrderStatistic.PSD, ph.Analytics.TwoSided
+        ).plot_and_fit(
+            gpi_ds.frames.isel(x=refx, y=refy).values,
+            ph.get_dt(average_ds),
+            ax,
+            cutoff=1e6,
+            nperseg=1e3,
         )
 
         plt.savefig("psd_{}.png".format(shot), bbox_inches="tight")

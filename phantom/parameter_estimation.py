@@ -61,7 +61,7 @@ def fit_ellipse(data, rx, ry, size_penalty_factor=0, aspect_ratio_penalty_factor
         aspect_ratio_penalty = (
             blob_sum * (1 - params[0] / params[1]) ** 2 * aspect_ratio_penalty_factor
         )
-        return np.sum((blob - data.frames.values) ** 2) + penalty + aspect_ratio_penalty
+        return np.sum((blob - data.values) ** 2) + penalty + aspect_ratio_penalty
 
     # Initial guesses for lx, ly, and t
     # Rough estimation
@@ -129,7 +129,7 @@ def get_maximum_time(e, refx=None, refy=None):
     if refx is None or refy is None:
         refx, refy = int(e["refx"].item()), int(e["refy"].item())
     convolved_times, convolved_data = gaussian_convolve(
-        e.frames.isel(x=refx, y=refy), e.time, s=3
+        e.isel(x=refx, y=refy), e.time, s=3
     )
     tau, _ = find_maximum_interpolate(convolved_times, convolved_data)
     return tau
@@ -137,24 +137,22 @@ def get_maximum_time(e, refx=None, refy=None):
 
 def get_maximum_amplitude(e, x, y):
     convolved_times, convolved_data = gaussian_convolve(
-        e.frames.isel(x=x, y=y), e.time, s=3
+        e.isel(x=x, y=y), e.time, s=3
     )
     _, amp = find_maximum_interpolate(convolved_times, convolved_data)
     return amp
 
 
-def get_3tde_velocities(e):
-    refx, refy = int(e["refx"].item()), int(e["refy"].item())
-    taux, tauy = get_delays(e)
+def get_3tde_velocities(e, refx, refy):
+    taux, tauy = get_delays(e, refx, refy)
 
     deltax = e.R.isel(x=refx + 1, y=refy).item() - e.R.isel(x=refx, y=refy).item()
     deltay = e.Z.isel(x=refx, y=refy + 1).item() - e.Z.isel(x=refx, y=refy).item()
     return ve.get_2d_velocities_from_time_delays(taux, tauy, deltax, 0, 0, deltay)
 
 
-def get_delays(e):
-    refx, refy = int(e["refx"].item()), int(e["refy"].item())
-    ref_time = get_maximum_time(e)
+def get_delays(e, refx, refy):
+    ref_time = get_maximum_time(e, refx, refy)
     taux_right = get_maximum_time(e, refx + 1, refy) - ref_time
     taux_left = get_maximum_time(e, refx - 1, refy) - ref_time
     tauy_up = get_maximum_time(e, refx, refy + 1) - ref_time
@@ -162,13 +160,12 @@ def get_delays(e):
     return (taux_right - taux_left) / 2, (tauy_up - tauy_down) / 2
 
 
-def plot_event_with_fit(e, ax, fig_name=None):
-    refx, refy = int(e["refx"].item()), int(e["refy"].item())
+def plot_event_with_fit(e, refx, refy, ax, fig_name=None):
     rx, ry = e.R.isel(x=refx, y=refy).item(), e.Z.isel(x=refx, y=refy).item()
     lx, ly, theta = fit_ellipse(
         e.sel(time=0), rx, ry, size_penalty_factor=5, aspect_ratio_penalty_factor=1
     )
-    im = ax.imshow(e.sel(time=0).frames, origin="lower", interpolation="spline16")
+    im = ax.imshow(e.sel(time=0), origin="lower", interpolation="spline16")
     alphas = np.linspace(0, 2 * np.pi, 200)
     elipsx, elipsy = zip(
         *[ellipse_parameters((lx, ly, theta), rx, ry, a) for a in alphas]
