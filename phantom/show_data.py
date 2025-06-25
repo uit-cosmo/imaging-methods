@@ -18,8 +18,7 @@ def get_rz(x, y, data):
 
 
 def get_dt(data) -> float:
-    times = data["time"] if "time" in data._coord_names else data["tau"]
-    return float(times[1].values - times[0].values)
+    return float(data.time[1].values - data.time[0].values)
 
 
 def show_movie(
@@ -33,6 +32,7 @@ def show_movie(
     fig=None,
     ax=None,
     show=True,
+    t_dim="time",
 ) -> None:
     """
     Creates an animation that shows the evolution of a specific variable over time.
@@ -61,11 +61,8 @@ def show_movie(
     """
     has_limiter = "rlimt" in dataset.coords.keys()
     has_lcfs = "rlcfs" in dataset
-    t_dim = "time" if "time" in dataset._coord_names else "tau"
     if fig is None:
         fig = plt.figure()
-
-    dt = get_dt(dataset)
 
     def animate_2d(i: int) -> Any:
         """
