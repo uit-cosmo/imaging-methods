@@ -156,10 +156,20 @@ def find_events_and_2dca(
 
     # Combine all events along new dimension and compute mean
     if len(processed) != 0:
-        average = xr.concat(processed, dim="event").mean(dim="event")
-        mean2 = xr.apply_ufunc(
-            lambda x: x**2, xr.concat(processed, dim="event")
-        ).mean(dim="event")
-        return processed, average, average**2 / mean2
+        conditional_average = xr.concat(processed, dim="event").mean(dim="event").frames
+        mean2 = (
+            xr.apply_ufunc(lambda x: x**2, xr.concat(processed, dim="event"))
+            .mean(dim="event")
+            .frames
+        )
+        cond_av_ds = xr.Dataset(
+            {
+                "cond_av": conditional_average,
+                "cond_repr": conditional_average**2 / mean2,
+            }
+        )
+        cond_av_ds["refx"] = refx
+        cond_av_ds["refy"] = refy
+        return processed, cond_av_ds
 
-    return processed, None, None
+    return processed, None

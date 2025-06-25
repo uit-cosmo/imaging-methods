@@ -119,7 +119,8 @@ def load_data_and_preprocess(
     Load and preprocess APD data for a given shot.
     Parameters:
         shot (int): Shot number.
-        window (float, optional): Duration (in seconds) to trim data, centered on mean time.
+        window (float, optional): Duration (in seconds) to trim data, centered on mean time. If None the complete
+            dataset is returned
         data_folder (str): Directory containing data files (default: 'data').
         preprocessed (bool): If True, load preprocessed data; else, apply preprocessing.
         radius (int): Radius for running normalization (window size = 2*radius+1).

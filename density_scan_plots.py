@@ -8,7 +8,7 @@ from phantom import (
     get_delays,
     get_maximum_amplitude,
     get_3tde_velocities,
-    fit_psd,
+    power_spectral_density,
     get_dt,
     ScanResults,
     get_contour_evolution,
