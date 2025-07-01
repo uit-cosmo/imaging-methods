@@ -4,6 +4,7 @@ import os
 import numpy as np
 import phantom as ph
 import cosmoplots as cp
+from method_parameters import method_parameters
 
 
 def get_average(shot, suffix):
@@ -35,9 +36,14 @@ def plot_velocities(suffix):
         ds = manager.read_shot_data(shot, None)
         average_ds = get_average(shot, suffix)
         contour_ds = ph.get_contour_evolution(
-            average_ds.cond_av, 0.75, max_displacement_threshold=None
+            average_ds.cond_av,
+            method_parameters["contouring"]["threshold_factor"],
+            max_displacement_threshold=None,
         )
-        velocity_ds = ph.get_contour_velocity(contour_ds.center_of_mass, sigma=1)
+        velocity_ds = ph.get_contour_velocity(
+            contour_ds.center_of_mass,
+            window_size=method_parameters["contouring"]["com_smoothing"],
+        )
         ax.plot(
             velocity_ds.time.values, velocity_ds.values[:, 0], label="{}".format(shot)
         )
@@ -47,6 +53,14 @@ def plot_velocities(suffix):
 
 
 def analysis(file_suffix=None):
+    results_file_name = os.path.join("results", f"results_{file_suffix}.json")
+    if os.path.exists(results_file_name):
+        print(
+            results_file_name
+            + " exists, remove if you want to run new analysis, returning..."
+        )
+        return
+
     manager = ph.PlasmaDischargeManager()
     manager.load_from_json("plasma_discharges.json")
     results = ph.ScanResults()
@@ -61,9 +75,14 @@ def analysis(file_suffix=None):
         refx, refy = average_ds["refx"].item(), average_ds["refy"].item()
 
         contour_ds = ph.get_contour_evolution(
-            average_ds.cond_av, 0.3, max_displacement_threshold=None
+            average_ds.cond_av,
+            method_parameters["contouring"]["threshold_factor"],
+            max_displacement_threshold=None,
         )
-        velocity_ds = ph.get_contour_velocity(contour_ds.center_of_mass, window_size=3)
+        velocity_ds = ph.get_contour_velocity(
+            contour_ds.center_of_mass,
+            window_size=method_parameters["contouring"]["com_smoothing"],
+        )
         v_c, w_c = (
             velocity_ds.isel(time=slice(10, -10)).mean(dim="time", skipna=True).values
         )
@@ -96,8 +115,21 @@ def analysis(file_suffix=None):
 
         fig, ax = plt.subplots()
         fit_file_name = os.path.join("fits", f"fit_{shot}_{file_suffix}.eps")
+        fit_params = method_parameters["gauss_fit"]
+        ps, pe, pt = (
+            fit_params["size_penalty"],
+            fit_params["aspect_penalty"],
+            fit_params["tilt_penalty"],
+        )
         lx, ly, theta = ph.plot_event_with_fit(
-            average_ds.cond_av, refx, refy, ax, fit_file_name
+            average_ds.cond_av,
+            refx,
+            refy,
+            ax=ax,
+            fig_name=fit_file_name,
+            size_penalty_factor=ps,
+            aspect_ratio_penalty_factor=pe,
+            theta_penalty_factor=pt,
         )
         lx, ly = lx / 100, ly / 100
         plt.close(fig)
@@ -111,8 +143,8 @@ def analysis(file_suffix=None):
             gpi_ds.frames.isel(x=refx, y=refy).values,
             ph.get_dt(average_ds),
             ax,
-            cutoff=1e6,
-            nperseg=1e3,
+            cutoff=method_parameters["taud_estimation"]["cutoff"],
+            nperseg=method_parameters["taud_estimation"]["nperseg"],
         )
 
         plt.savefig(psd_file_name, bbox_inches="tight")
@@ -133,7 +165,6 @@ def analysis(file_suffix=None):
         )
         results.add_shot(manager.get_discharge_by_shot(shot), bp)
 
-    results_file_name = os.path.join("results", f"results_{file_suffix}.json")
     results.to_json(results_file_name)
 
 
@@ -159,6 +190,7 @@ def plot_vertical_conditional_average(file_suffix):
         ax.plot(poloidal_coord, vertical_points / np.max(vertical_points), label=label)
 
     ax.legend()
+    ax.set_xlabel(r"$(Z-Z^*)/\text{cm}$")
     fig_name = os.path.join("result_plots", f"vertical_{file_suffix}.eps")
     plt.savefig(fig_name, bbox_inches="tight")
     plt.close(fig)
@@ -246,11 +278,40 @@ def plot_contour_figure(suffix):
         print("Working on shot {}".format(shot))
         axe = ax[int(ax_indx / 3), ax_indx % 3]
         average_ds = get_average(shot, suffix)
+        refx, refy = average_ds["refx"].item(), average_ds["refy"].item()
 
         contour_ds = ph.get_contour_evolution(
-            average_ds.cond_av, 0.3, max_displacement_threshold=None
+            average_ds.cond_av,
+            method_parameters["contouring"]["threshold_factor"],
+            max_displacement_threshold=None,
         )
-        ph.plot_contour_at_zero(average_ds.cond_av, contour_ds, axe)
+        area = ph.plot_contour_at_zero(average_ds.cond_av, contour_ds, axe)
+
+        fit_params = method_parameters["gauss_fit"]
+        ps, pe, pt = (
+            fit_params["size_penalty"],
+            fit_params["aspect_penalty"],
+            fit_params["tilt_penalty"],
+        )
+        lx, ly, theta = ph.plot_event_with_fit(
+            average_ds.cond_av,
+            refx,
+            refy,
+            ax=axe,
+            size_penalty_factor=ps,
+            aspect_ratio_penalty_factor=pe,
+            theta_penalty_factor=pt,
+        )
+
+        text = (
+            r"$a={:.2f}$".format(area)
+            + "\n"
+            + r"$\ell_x={:.2f}\, \ell_y={:.2f}\, \theta={:.2f}$".format(lx, ly, theta)
+            + "\n"
+            + r"$Ne={}$".format(average_ds["number_events"].item())
+        )
+        axe.text(0.1, 0.8, text, fontsize=4, transform=axe.transAxes, color="white")
+
         axe.set_title(
             r"$f_{{GW}}$={:.2f}".format(
                 manager.get_discharge_by_shot(shot).greenwald_fraction
@@ -269,63 +330,5 @@ def plot_contour_figure(suffix):
         ax_indx = ax_indx + 1
 
     fig_name = os.path.join("result_plots", f"contours_{suffix}.eps")
-    plt.savefig(fig_name, bbox_inches="tight")
-    plt.close(fig)
-
-
-def plot_fit_figure(suffix):
-    fig, ax = plt.subplots(3, 3, figsize=(7, 7))
-    plt.tight_layout(pad=2.0, w_pad=3.0, h_pad=3.0)
-    subfigure_labels = [chr(97 + i) for i in range(9)]
-    ax_indx = 0
-
-    manager = ph.PlasmaDischargeManager()
-    manager.load_from_json("plasma_discharges.json")
-    for shot in manager.get_shot_list():
-        confinement_more = manager.get_discharge_by_shot(shot).confinement_mode
-        is_hmode = confinement_more == "EDA-H" or confinement_more == "ELM-free-H"
-        if is_hmode:
-            continue
-        axe = ax[int(ax_indx / 3), ax_indx % 3]
-        average_ds = get_average(shot, suffix)
-        refx, refy = average_ds["refx"].item(), average_ds["refy"].item()
-        im = axe.imshow(
-            average_ds.cond_av.sel(time=0), origin="lower", interpolation="spline16"
-        )
-        rmin, rmax, zmin, zmax = (
-            average_ds.R[0, 0] - 0.05,
-            average_ds.R[0, -1] + 0.05,
-            average_ds.Z[0, 0] - 0.05,
-            average_ds.Z[-1, 0] + 0.05,
-        )
-        im.set_extent((rmin, rmax, zmin, zmax))
-        lx, ly, theta = ph.plot_event_with_fit(average_ds.cond_av, refx, refy, axe)
-
-        axe.text(
-            0.1,
-            0.9,
-            r"$\ell_x={:.2f}\, \ell_y={:.2f}\, \theta={:.2f}$".format(lx, ly, theta),
-            fontsize=4,
-            transform=axe.transAxes,
-        )
-
-        axe.set_title(
-            r"$f_{{GW}}$={:.2f}".format(
-                manager.get_discharge_by_shot(shot).greenwald_fraction
-            )
-        )
-        axe.text(
-            -0.2,
-            1.1,
-            f"({subfigure_labels[ax_indx]})",
-            transform=axe.transAxes,
-            fontsize=10,
-            va="top",
-            ha="left",
-        )
-
-        ax_indx = ax_indx + 1
-
-    fig_name = os.path.join("result_plots", f"fits_{suffix}.eps")
     plt.savefig(fig_name, bbox_inches="tight")
     plt.close(fig)

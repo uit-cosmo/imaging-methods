@@ -82,9 +82,16 @@ class PlasmaDischargeManager:
         return [discharge.shot_number for discharge in self.discharges]
 
     def read_shot_data(
-        self, shot, window=None, data_folder: str = "data", preprocessed=True
+        self,
+        shot,
+        window=None,
+        data_folder: str = "data",
+        preprocessed=True,
+        radius=1000,
     ):
-        return load_data_and_preprocess(shot, window, data_folder, preprocessed)
+        return load_data_and_preprocess(
+            shot, window, data_folder, preprocessed, radius=radius
+        )
 
 
 @dataclass

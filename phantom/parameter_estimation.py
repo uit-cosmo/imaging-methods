@@ -8,6 +8,15 @@ def rotated_blob(params, rx, ry, x, y):
     """
     Compute a rotated 2D Gaussian blob centered at (rx, ry).
 
+    .. math::
+        blob(\ell_x, \ell_y, \theta; x, y) = \exp \left( -\frac{(x'-rx)^2}{\ell_x^2}-\frac{(y'-ry)^2}{\ell_y^2} \right)
+
+    where
+
+    .. math::
+        x' = (x-rx)\cos\theta + (y-ry)\sin\theta
+        y' = -(x-rx)\sin\theta + (y-ry)\cos\theta
+
     Parameters:
         params (array-like): Parameters [lx, ly, theta] (semi-major/minor axes, rotation angle).
         rx, ry (float): Center pixel indices.
@@ -49,7 +58,12 @@ def fit_ellipse(
     theta_penalty_factor=0,
 ):
     """
-    Fit an ellipse to imaging data at pixel (rx, ry) using a Gaussian model.
+    Fit an ellipse to imaging data at pixel (rx, ry) using a Gaussian model. The function tries to minimize:
+
+    .. math::
+        E(lx, ly, theta) = \sum (blob(\ell_x, \ell_y, \theta; x, y) - data(x, y))^2 + blob(\ell_x, \ell_y, \theta; x, y)^2(P_s + P_\theta \theta^2+P_\epsilon(1-\ell_x/\ell_y)^2)
+
+    where the mathematical expression of blob is given in the docstring of `rotated_blob`.
 
     Parameters:
         data (xr.Dataset): Dataset with 'frames' (2D, shape: ny, nx), 'R', 'Z' (2D coordinate grids).
@@ -167,22 +181,31 @@ def get_delays(e, refx, refy):
     return (taux_right - taux_left) / 2, (tauy_up - tauy_down) / 2
 
 
-def plot_event_with_fit(e, refx, refy, ax, fig_name=None):
+def plot_event_with_fit(
+    e,
+    refx,
+    refy,
+    ax,
+    fig_name=None,
+    size_penalty_factor=5,
+    aspect_ratio_penalty_factor=0.1,
+    theta_penalty_factor=0.1,
+):
     rx, ry = e.R.isel(x=refx, y=refy).item(), e.Z.isel(x=refx, y=refy).item()
     lx, ly, theta = fit_ellipse(
         e.sel(time=0),
         rx,
         ry,
-        size_penalty_factor=5,
-        aspect_ratio_penalty_factor=1,
-        theta_penalty_factor=1,
+        size_penalty_factor=size_penalty_factor,
+        aspect_ratio_penalty_factor=aspect_ratio_penalty_factor,
+        theta_penalty_factor=theta_penalty_factor,
     )
     im = ax.imshow(e.sel(time=0), origin="lower", interpolation="spline16")
     alphas = np.linspace(0, 2 * np.pi, 200)
     elipsx, elipsy = zip(
         *[ellipse_parameters((lx, ly, theta), rx, ry, a) for a in alphas]
     )
-    ax.plot(elipsx, elipsy, color="black", ls="--")
+    ax.plot(elipsx, elipsy, color="blue", ls="--")
 
     rmin, rmax, zmin, zmax = (
         e.R[0, 0] - 0.05,
