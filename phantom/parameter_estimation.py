@@ -91,7 +91,7 @@ def fit_ellipse(
     bounds = [
         (0, 5),  # lx: 0 to 5
         (0, 5),  # ly: 0 to 5
-        (-np.pi / 4, np.pi / 4),  # t: 0 to 2π
+        (0, np.pi / 2),  # t: 0 to 2π
     ]
 
     result = differential_evolution(

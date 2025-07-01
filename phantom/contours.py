@@ -126,7 +126,6 @@ def get_contour_evolution(event, threshold_factor=0.5, max_displacement_threshol
         )
 
         # Find contours using threshold = max_amplitude * threshold_factor
-        threshold = np.max(frame) * threshold_factor
         threshold = max_amplitude * threshold_factor
         contour_list = measure.find_contours(frame, threshold)
 

@@ -155,7 +155,7 @@ def analysis(file_suffix=None):
             vy_c=w_c,
             area_c=area_c,
             vx_tde=v_f,
-            vy_tde=v_f,
+            vy_tde=w_f,
             lx_f=lx,
             ly_f=ly,
             theta_f=theta,
@@ -203,10 +203,12 @@ def plot_results(file_suffix):
     gf = np.array([r.discharge.greenwald_fraction for r in results.shots])
     tauds = np.array([r.blob_params.taud_psd for r in results.shots])
     v_tde = np.array([r.blob_params.vx_tde for r in results.shots])
+    w_tde = np.array([r.blob_params.vy_tde for r in results.shots])
     lx = np.array([r.blob_params.lx_f for r in results.shots])
     ly = np.array([r.blob_params.ly_f for r in results.shots])
 
     v_c = np.array([r.blob_params.vx_c for r in results.shots])
+    w_c = np.array([r.blob_params.vy_c for r in results.shots])
     area = np.array([r.blob_params.area_c for r in results.shots])
     lx_c = np.sqrt(area / np.pi)
 
@@ -231,18 +233,20 @@ def plot_results(file_suffix):
     fig, ax = cp.figure_multiple_rows_columns(1, 2)
 
     ax[0].scatter(gf, v_c, label=r"$v_\text{C}$", color="black")
+    ax[0].scatter(gf, w_c, label=r"$w_\text{C}$", color="blue")
     ax[0].scatter(gf, v_tde, label=r"$v_\text{TDE}$", color="green")
+    ax[0].scatter(gf, w_tde, label=r"$w_\text{TDE}$", color="red")
     ax[0].legend()
     ax[0].set_xlabel(r"$f_g$")
-    ax[0].set_ylabel(r"$v$")
-    ax[0].set_ylim(0, 1000)
+    ax[0].set_ylabel(r"$v(\text{m}/\text{s})$")
+    ax[0].set_ylim(-500, 1000)
 
-    ax[1].scatter(gf, lx_c, label=r"$\ell_\text{C}$", color="black")
-    ax[1].scatter(gf, lx, label=r"$\ell_x$", color="green")
-    ax[1].scatter(gf, ly, label=r"$\ell_y$", color="blue")
+    ax[1].scatter(gf, 100 * lx_c, label=r"$\ell_\text{C}$", color="black")
+    ax[1].scatter(gf, 100 * lx, label=r"$\ell_x$", color="green")
+    ax[1].scatter(gf, 100 * ly, label=r"$\ell_y$", color="blue")
     ax[1].legend()
     ax[1].set_xlabel(r"$f_g$")
-    ax[1].set_ylabel(r"$\ell$")
+    ax[1].set_ylabel(r"$\ell (\text{cm})$")
 
     vel_size_file_name = os.path.join("result_plots", f"vel_size_{file_suffix}.eps")
     plt.savefig(vel_size_file_name, bbox_inches="tight")
