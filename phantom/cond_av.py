@@ -170,6 +170,7 @@ def find_events_and_2dca(
         )
         cond_av_ds["refx"] = refx
         cond_av_ds["refy"] = refy
+        cond_av_ds["number_events"] = len(processed)
         return processed, cond_av_ds
 
     return processed, None

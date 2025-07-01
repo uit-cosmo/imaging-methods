@@ -73,7 +73,7 @@ def estimate_blob_parameters(ds, id):
     fig.clf()
 
     vx_c, vy_c = velocity_ds.sel(time=0).values
-    area = contours_ds.area.sel(time=0).item()
+    area = contours_ds.area_c.sel(time=0).item()
     size = np.sqrt(area)
 
     # PSD

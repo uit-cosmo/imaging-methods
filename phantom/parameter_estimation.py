@@ -40,7 +40,14 @@ def ellipse_parameters(params, rx, ry, alpha):
     return xvals, yvals
 
 
-def fit_ellipse(data, rx, ry, size_penalty_factor=0, aspect_ratio_penalty_factor=0):
+def fit_ellipse(
+    data,
+    rx,
+    ry,
+    size_penalty_factor=0,
+    aspect_ratio_penalty_factor=0,
+    theta_penalty_factor=0,
+):
     """
     Fit an ellipse to imaging data at pixel (rx, ry) using a Gaussian model.
 
@@ -49,17 +56,19 @@ def fit_ellipse(data, rx, ry, size_penalty_factor=0, aspect_ratio_penalty_factor
         rx, ry (int): Pixel indices for the ellipse center.
         size_penalty_factor (float): Penalty factor for blob size.
         aspect_ratio_penalty_factor (float): Penalty factor for aspect ratio deviation.
+        theta_penalty_factor (float): Penalty factor for theta deviation.
 
     Returns:
         - lx, ly, theta: Fitted semi-major/minor axes and rotation angle.
     """
 
     def objective_function(params):
+        lx, ly, theta = params
         blob = rotated_blob(params, rx, ry, data.R.values, data.Z.values)
         blob_sum = np.sum(blob**2)
-        penalty = blob_sum * size_penalty_factor
+        penalty = blob_sum * (size_penalty_factor + theta_penalty_factor * theta**2)
         aspect_ratio_penalty = (
-            blob_sum * (1 - params[0] / params[1]) ** 2 * aspect_ratio_penalty_factor
+            blob_sum * (1 - lx / ly) ** 2 * aspect_ratio_penalty_factor
         )
         return np.sum((blob - data.values) ** 2) + penalty + aspect_ratio_penalty
 
@@ -136,9 +145,7 @@ def get_maximum_time(e, refx=None, refy=None):
 
 
 def get_maximum_amplitude(e, x, y):
-    convolved_times, convolved_data = gaussian_convolve(
-        e.isel(x=x, y=y), e.time, s=3
-    )
+    convolved_times, convolved_data = gaussian_convolve(e.isel(x=x, y=y), e.time, s=3)
     _, amp = find_maximum_interpolate(convolved_times, convolved_data)
     return amp
 
@@ -163,14 +170,19 @@ def get_delays(e, refx, refy):
 def plot_event_with_fit(e, refx, refy, ax, fig_name=None):
     rx, ry = e.R.isel(x=refx, y=refy).item(), e.Z.isel(x=refx, y=refy).item()
     lx, ly, theta = fit_ellipse(
-        e.sel(time=0), rx, ry, size_penalty_factor=5, aspect_ratio_penalty_factor=1
+        e.sel(time=0),
+        rx,
+        ry,
+        size_penalty_factor=5,
+        aspect_ratio_penalty_factor=1,
+        theta_penalty_factor=1,
     )
     im = ax.imshow(e.sel(time=0), origin="lower", interpolation="spline16")
     alphas = np.linspace(0, 2 * np.pi, 200)
     elipsx, elipsy = zip(
         *[ellipse_parameters((lx, ly, theta), rx, ry, a) for a in alphas]
     )
-    ax.plot(elipsx, elipsy)
+    ax.plot(elipsx, elipsy, color="black", ls="--")
 
     rmin, rmax, zmin, zmax = (
         e.R[0, 0] - 0.05,
@@ -179,8 +191,27 @@ def plot_event_with_fit(e, refx, refy, ax, fig_name=None):
         e.Z[-1, 0] + 0.05,
     )
     im.set_extent((rmin, rmax, zmin, zmax))
-    ax.set_title(r"$\ell_x={:.2f} \ell_y={:.2f} \theta={:.2f}".format(lx, ly, theta))
     if fig_name is not None:
         plt.savefig(fig_name, bbox_inches="tight")
 
     return lx, ly, theta
+
+
+def plot_contour_at_zero(e, contour_ds, ax, fig_name=None):
+    im = ax.imshow(e.sel(time=0), origin="lower", interpolation="spline16")
+
+    c = contour_ds.contours.sel(time=0).data
+    ax.plot(c[:, 0], c[:, 1], ls="--", color="black")
+
+    rmin, rmax, zmin, zmax = (
+        e.R[0, 0] - 0.05,
+        e.R[0, -1] + 0.05,
+        e.Z[0, 0] - 0.05,
+        e.Z[-1, 0] + 0.05,
+    )
+    im.set_extent((rmin, rmax, zmin, zmax))
+    area = contour_ds.area.sel(time=0).item()
+    if fig_name is not None:
+        plt.savefig(fig_name, bbox_inches="tight")
+
+    return area

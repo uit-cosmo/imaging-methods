@@ -116,7 +116,7 @@ def get_contour_evolution(event, threshold_factor=0.5, max_displacement_threshol
     areas = []
 
     # Process each time step
-    max_amplitude = np.max(event.frames.values)
+    max_amplitude = np.max(event.values)
     for t in time_coords:
         # Extract 2D frame
         frame = (
@@ -125,7 +125,7 @@ def get_contour_evolution(event, threshold_factor=0.5, max_displacement_threshol
             else event.sel(time=t).values
         )
 
-        # Find contours using threshold = max(frame) * threshold_factor
+        # Find contours using threshold = max_amplitude * threshold_factor
         threshold = np.max(frame) * threshold_factor
         threshold = max_amplitude * threshold_factor
         contour_list = measure.find_contours(frame, threshold)

@@ -307,8 +307,6 @@ def plot_average_blob(average, refx, refy, ax):
 
 def show_movie_with_contours(
     dataset: xr.Dataset,
-    refx,
-    refy,
     contours_ds,
     variable: str = "n",
     interval: int = 100,
@@ -352,6 +350,7 @@ def show_movie_with_contours(
 
     dt = get_dt(dataset)
     R, Z = dataset.R.values, dataset.Z.values
+    refx, refy = int(dataset["refx"].item()), int(dataset["refy"].item())
 
     def indexes_to_coordinates(R, Z, indexes):
         dx = R[0, 1] - R[0, 0]

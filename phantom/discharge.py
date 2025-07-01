@@ -1,6 +1,6 @@
 import json
 from dataclasses import dataclass
-from typing import Optional, List
+from typing import Optional, List, Dict, Tuple
 import os
 from .data_preprocessing import load_data_and_preprocess
 import numpy as np
@@ -87,114 +87,242 @@ class PlasmaDischargeManager:
         return load_data_and_preprocess(shot, window, data_folder, preprocessed)
 
 
-class ShotAnalysis:
+@dataclass
+class BlobParameters:
     """
-    A class to store and manage analysis results for a single shot.
+    Class describing the output blob parameters obtained with two-dimensional conditional averaging (2DCA)
+    for GPI-APD data analysis. Stores velocity, area, shape, lifetime, and spatial scale parameters,
+    with methods for validation, derived quantities, and data export.
+
+    vx_c, vy_c and area_c are obtained with contouring methods.
+    lx_f, ly_f, theta_f are obtained with a Gaussian fit.
+    vx_tde, vy_tde are obtained with a 3-point TDE method.
+    taud_psd and lambda_psd are obtained from fitting power spectral density.
+
+    Attributes:
+        vx_c (float): Center-of-mass velocity in x-direction (pixels/time step or m/s).
+        vy_c (float): Center-of-mass velocity in y-direction (pixels/time step or m/s).
+        area_c (float): Blob area (pixels² or m²).
+        vx_tde (float): Velocity from time-dependent ellipse fitting in x-direction.
+        vy_tde (float): Velocity from time-dependent ellipse fitting in y-direction.
+        lx_f (float): Semi-major axis from Gaussian fit (pixels or m).
+        ly_f (float): Semi-minor axis from Gaussian fit (pixels or m).
+        theta_f (float): Ellipse rotation angle from Gaussian fit (radians).
+        taud_psd (float): Blob lifetime from PSD analysis (time steps or ps).
+        lambda_psd (float): Characteristic spatial scale from PSD analysis (pixels or m).
+        number_events (int): Number of detected events.
+    """
+
+    vx_c: float
+    vy_c: float
+    area_c: float
+    vx_tde: float
+    vy_tde: float
+    lx_f: float
+    ly_f: float
+    theta_f: float
+    taud_psd: float
+    lambda_psd: float
+    number_events: float
+
+    @property
+    def velocity_c(self) -> Tuple[float, float]:
+        """Return center-of-mass velocity vector (vx_c, vy_c)."""
+        return (self.vx_c, self.vy_c)
+
+    @property
+    def velocity_tde(self) -> Tuple[float, float]:
+        """Return time-dependent ellipse velocity vector (vx_tde, vy_tde)."""
+        return (self.vx_tde, self.vy_tde)
+
+    @property
+    def total_velocity_c(self) -> float:
+        """Compute magnitude of center-of-mass velocity."""
+        return np.sqrt(self.vx_c**2 + self.vy_c**2)
+
+    @property
+    def total_velocity_tde(self) -> float:
+        """Compute magnitude of time-dependent ellipse velocity."""
+        return np.sqrt(self.vx_tde**2 + self.vy_tde**2)
+
+    @property
+    def aspect_ratio(self) -> float:
+        """Compute aspect ratio of the fitted ellipse (lx_f / ly_f)."""
+        return self.lx_f / self.ly_f if self.ly_f > 0 else np.inf
+
+    @property
+    def eccentricity(self) -> float:
+        """Compute eccentricity of the fitted ellipse."""
+        if self.lx_f >= self.ly_f:
+            a, b = self.lx_f, self.ly_f
+        else:
+            a, b = self.ly_f, self.lx_f
+        return np.sqrt(1 - (b / a) ** 2) if a > b else 0.0
+
+    def to_dict(self) -> Dict[str, float]:
+        """Convert parameters to a dictionary for serialization."""
+        return {
+            "vx_c": self.vx_c,
+            "vy_c": self.vy_c,
+            "area_c": self.area_c,
+            "vx_tde": self.vx_tde,
+            "vy_tde": self.vy_tde,
+            "lx_f": self.lx_f,
+            "ly_f": self.ly_f,
+            "theta_f": self.theta_f,
+            "taud_psd": self.taud_psd,
+            "lambda_psd": self.lambda_psd,
+            "number_events": self.number_events,
+        }
+
+    def __str__(self) -> str:
+        """String representation of the blob parameters."""
+        return (
+            f"BlobParameters(vx_c={self.vx_c:.2f}, vy_c={self.vy_c:.2f}, "
+            f"area_c={self.area_c:.2f}, vx_tde={self.vx_tde:.2f}, vy_tde={self.vy_tde:.2f}, "
+            f"lx_f={self.lx_f:.2f}, ly_f={self.ly_f:.2f}, theta_f={self.theta_f:.2f}, "
+            f"taud_psd={self.taud_psd:.2f}, lambda_psd={self.lambda_psd:.2f}, number_events={self.number_events})"
+        )
+
+
+@dataclass
+class ShotData:
+    """
+    A class to encapsulate a PlasmaDischarge and BlobParameters for a single shot.
 
     Attributes:
     -----------
-    v : float
-        Radial velocity component (in m/s).
-    w : float
-        Poloidal velocity component (in m/s).
-    lx : float
-        Length scale or coordinate in x-direction (in meters).
-    ly : float
-        Length scale or coordinate in y-direction (in meters).
-    theta : float
-        Angle (e.g., in radians).
-    taud : float
-        Decay time parameter from PSD fitting (in seconds).
-    lam : float
-        Weighting factor from PSD fitting, in [0, 1].
-    plasma_discharge : PlasmaDischarge
+    discharge : PlasmaDischarge
         Experimental parameters for the plasma discharge.
+    blob_params : BlobParameters
+        Blob parameters obtained from analysis.
 
     Methods:
     --------
-    print_results():
-        Print the analysis results in a formatted manner.
-    to_json(filename=None):
-        Save the analysis results to a JSON file or return as a JSON string.
-    from_json(cls, json_data, filename=None):
-        Create a ShotAnalysis instance from a JSON file or string.
+    to_dict():
+        Convert the shot data to a dictionary for JSON serialization.
+    from_dict(cls, data):
+        Create a ShotData instance from a dictionary.
     """
 
-    def __init__(self, v, w, lx, ly, theta, taud, lam, plasma_discharge):
+    discharge: PlasmaDischarge
+    blob_params: BlobParameters
+
+    def __post_init__(self):
+        """Validate the types of discharge and blob_params."""
+        if not isinstance(self.discharge, PlasmaDischarge):
+            raise TypeError("discharge must be a PlasmaDischarge instance")
+        if not isinstance(self.blob_params, BlobParameters):
+            raise TypeError("blob_params must be a BlobParameters instance")
+
+    def to_dict(self) -> Dict[str, Dict]:
+        """Convert the shot data to a dictionary for JSON serialization."""
+        return {
+            "plasma_discharge": self.discharge.to_dict(),
+            "blob_parameters": self.blob_params.to_dict(),
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Dict]) -> "ShotData":
+        """Create a ShotData instance from a dictionary."""
+        required_keys = {"plasma_discharge", "blob_parameters"}
+        if not all(key in data for key in required_keys):
+            missing = required_keys - set(data.keys())
+            raise KeyError(f"Missing required keys in JSON data: {missing}")
+        discharge = PlasmaDischarge.from_dict(data["plasma_discharge"])
+        blob_params = BlobParameters(**data["blob_parameters"])
+        return cls(discharge=discharge, blob_params=blob_params)
+
+
+class ScanResults:
+    """
+    A class to manage a collection of ShotData instances for multiple shots.
+
+    Attributes:
+    -----------
+    shots : List[ShotData]
+        List of ShotData instances, each containing a PlasmaDischarge and BlobParameters.
+
+    Methods:
+    --------
+    add_shot(discharge, blob_params):
+        Add a ShotData instance to the collection.
+    print_summary():
+        Print a summary of all shots in the collection.
+    to_json(filename=None):
+        Save the collection to a JSON file or return as a JSON string.
+    from_json(cls, json_data=None, filename=None):
+        Create a ScanResults instance from a JSON file or string.
+    """
+
+    def __init__(self, shots: Optional[List[ShotData]] = None):
         """
-        Initialize a ShotAnalysis instance with the given parameters.
+        Initialize a ScanResults instance.
 
         Parameters:
         -----------
-        v, w, lx, ly, theta, taud, lam : float
-            Values for the respective attributes. taud must be positive, and lam must be in [0, 1].
-        plasma_discharge : PlasmaDischarge
-            Experimental parameters for the plasma discharge.
+        shots : List[ShotData], optional
+            Initial list of ShotData instances. If None, starts with an empty list.
 
         Raises:
         -------
-        ValueError
-            If taud <= 0 or lam is not in [0, 1].
         TypeError
-            If any parameter is not a number or plasma_discharge is not a PlasmaDischarge instance.
+            If any element in shots is not a ShotData instance.
         """
-        # Validate numeric inputs
-        for param, name in [
-            (v, "v"),
-            (w, "w"),
-            (lx, "lx"),
-            (ly, "ly"),
-            (theta, "theta"),
-            (taud, "taud"),
-            (lam, "lam"),
-        ]:
-            if not isinstance(param, (int, float, np.number)):
-                raise TypeError(f"{name} must be a number")
+        self.shots = []
+        if shots is not None:
+            for shot in shots:
+                if not isinstance(shot, ShotData):
+                    raise TypeError("All elements in shots must be ShotData instances")
+                self.shots.append(shot)
 
-        # Validate physical constraints
-        if taud <= 0:
-            raise ValueError("taud must be positive")
-        if not 0 <= lam <= 1:
-            raise ValueError("lam must be in [0, 1]")
-        if not isinstance(plasma_discharge, PlasmaDischarge):
-            raise TypeError("plasma_discharge must be a PlasmaDischarge instance")
-
-        self.v = float(v)
-        self.w = float(w)
-        self.lx = float(lx)
-        self.ly = float(ly)
-        self.theta = float(theta)
-        self.taud = float(taud)
-        self.lam = float(lam)
-        self.plasma_discharge = plasma_discharge
-
-    def print_results(self):
+    def add_shot(self, discharge: PlasmaDischarge, blob_params: BlobParameters):
         """
-        Print the analysis results in a formatted manner.
-        """
-        print("Shot Analysis Results:")
-        print(f"  v: {self.v:.2f} (m/s)")
-        print(f"  w: {self.w:.2f} (m/s)")
-        print(f"  lx: {self.lx:.2f} (m)")
-        print(f"  ly: {self.ly:.2f} (m)")
-        print(f"  theta: {self.theta:.2f} (rad)")
-        print(f"  taud: {self.taud:.2g} (s)")
-        print(f"  lambda: {self.lam:.2g} (dimensionless)")
-        print("  Plasma Discharge Parameters:")
-        print(f"    Shot Number: {self.plasma_discharge.shot_number}")
-        print(f"    Plasma Current: {self.plasma_discharge.plasma_current:.2f} (MA)")
-        print(
-            f"    Line-Averaged Density: {self.plasma_discharge.line_averaged_density:.2f} (10^20 m^-3)"
-        )
-        print(f"    Greenwald Fraction: {self.plasma_discharge.greenwald_fraction:.2f}")
-        print(f"    Start Time: {self.plasma_discharge.t_start:.2f} (s)")
-        print(f"    End Time: {self.plasma_discharge.t_end:.2f} (s)")
-        print(f"    Duration: {self.plasma_discharge.duration:.2f} (s)")
-        print(f"    MLP Mode: {self.plasma_discharge.mlp_mode}")
+        Add a ShotData instance to the collection.
 
-    def to_json(self, filename=None):
+        Parameters:
+        -----------
+        discharge : PlasmaDischarge
+            The PlasmaDischarge instance to add.
+        blob_params : BlobParameters
+            The BlobParameters instance to add.
+
+        Raises:
+        -------
+        TypeError
+            If discharge is not a PlasmaDischarge instance or blob_params is not a BlobParameters instance.
         """
-        Save the analysis results to a JSON file or return as a JSON string.
+        shot_data = ShotData(discharge=discharge, blob_params=blob_params)
+        self.shots.append(shot_data)
+
+    def print_summary(self):
+        """
+        Print a summary of all shots in the collection.
+        """
+        if not self.shots:
+            print("No shots in the collection.")
+            return
+        print(f"Scan Results Summary ({len(self.shots)} shots):")
+        for i, shot in enumerate(self.shots, 1):
+            print(f"\nShot {i}:")
+            print("  Plasma Discharge Parameters:")
+            print(f"    Shot Number: {shot.discharge.shot_number}")
+            print(f"    Plasma Current: {shot.discharge.plasma_current:.2f} (MA)")
+            print(
+                f"    Line-Averaged Density: {shot.discharge.line_averaged_density:.2f} (10^20 m^-3)"
+            )
+            print(f"    Greenwald Fraction: {shot.discharge.greenwald_fraction:.2f}")
+            print(f"    Start Time: {shot.discharge.t_start:.2f} (s)")
+            print(f"    End Time: {shot.discharge.t_end:.2f} (s)")
+            print(f"    Duration: {shot.discharge.duration:.2f} (s)")
+            print(f"    MLP Mode: {shot.discharge.mlp_mode}")
+            print(f"    Confinement Mode: {shot.discharge.confinement_mode}")
+            print("  Blob Parameters:")
+            print(f"    {shot.blob_params}")
+
+    def to_json(self, filename: Optional[str] = None) -> Optional[str]:
+        """
+        Save the collection to a JSON file or return as a JSON string.
 
         Parameters:
         -----------
@@ -211,38 +339,29 @@ class ShotAnalysis:
         OSError
             If writing to the file fails.
         """
-        data = {
-            "v": self.v,
-            "w": self.w,
-            "lx": self.lx,
-            "ly": self.ly,
-            "theta": self.theta,
-            "taud": self.taud,
-            "lam": self.lam,
-            "plasma_discharge": self.plasma_discharge.to_dict(),
-        }
+        data = [shot.to_dict() for shot in self.shots]
         if filename:
             with open(filename, "w") as f:
                 json.dump(data, f, indent=4)
-        else:
-            return json.dumps(data, indent=4)
+            return None
+        return json.dumps(data, indent=4)
 
     @classmethod
-    def from_json(cls, json_data=None, filename=None):
+    def from_json(cls, json_data: Optional[str] = None, filename: Optional[str] = None):
         """
-        Create a ShotAnalysis instance from a JSON file or string.
+        Create a ScanResults instance from a JSON file or string.
 
         Parameters:
         -----------
         json_data : str, optional
-            JSON string containing the analysis results. Ignored if filename is provided.
+            JSON string containing the collection data. Ignored if filename is provided.
         filename : str, optional
-            Path to a JSON file containing the analysis results.
+            Path to a JSON file containing the collection data.
 
         Returns:
         --------
-        ShotAnalysis
-            A new ShotAnalysis instance with the loaded parameters.
+        ScanResults
+            A new ScanResults instance with the loaded shots.
 
         Raises:
         -------
@@ -251,7 +370,7 @@ class ShotAnalysis:
         OSError
             If reading the file fails.
         KeyError
-            If required keys are missing from the JSON data.
+            If required keys are missing from the JSON data for any shot.
         """
         if filename:
             with open(filename, "r") as f:
@@ -261,164 +380,8 @@ class ShotAnalysis:
         else:
             raise ValueError("Either json_data or filename must be provided")
 
-        # Validate required keys
-        required_keys = {
-            "v",
-            "w",
-            "lx",
-            "ly",
-            "theta",
-            "taud",
-            "lam",
-            "plasma_discharge",
-        }
-        if not all(key in data for key in required_keys):
-            missing = required_keys - set(data.keys())
-            raise KeyError(f"Missing required keys in JSON data: {missing}")
-
-        plasma_discharge = PlasmaDischarge.from_dict(data["plasma_discharge"])
-        return cls(
-            v=data["v"],
-            w=data["w"],
-            lx=data["lx"],
-            ly=data["ly"],
-            theta=data["theta"],
-            taud=data["taud"],
-            lam=data["lam"],
-            plasma_discharge=plasma_discharge,
-        )
-
-
-class ScanResults:
-    """
-    A class to manage a collection of ShotAnalysis instances for multiple shots.
-
-    Attributes:
-    -----------
-    shots : list
-        List of ShotAnalysis instances representing individual shots.
-
-    Methods:
-    --------
-    add_shot(shot):
-        Add a ShotAnalysis instance to the collection.
-    print_summary():
-        Print a summary of all shots in the collection.
-    to_json(filename=None):
-        Save the collection to a JSON file or return as a JSON string.
-    from_json(cls, json_data=None, filename=None):
-        Create a ShotCollection instance from a JSON file or string.
-    """
-
-    def __init__(self, shots=None):
-        """
-        Initialize a ShotCollection instance.
-
-        Parameters:
-        -----------
-        shots : list, optional
-            Initial list of ShotAnalysis instances. If None, starts with an empty list.
-
-        Raises:
-        -------
-        TypeError
-            If any element in shots is not a ShotAnalysis instance.
-        """
-        self.shots = []
-        if shots is not None:
-            for shot in shots:
-                if not isinstance(shot, ShotAnalysis):
-                    raise TypeError(
-                        "All elements in shots must be ShotAnalysis instances"
-                    )
-                self.shots.append(shot)
-
-    def add_shot(self, shot):
-        """
-        Add a ShotAnalysis instance to the collection.
-
-        Parameters:
-        -----------
-        shot : ShotAnalysis
-            The ShotAnalysis instance to add.
-
-        Raises:
-        -------
-        TypeError
-            If shot is not a ShotAnalysis instance.
-        """
-        if not isinstance(shot, ShotAnalysis):
-            raise TypeError("shot must be a ShotAnalysis instance")
-        self.shots.append(shot)
-
-    def print_summary(self):
-        """
-        Print a summary of all shots in the collection.
-        """
-        if not self.shots:
-            print("No shots in the collection.")
-            return
-        print(f"Shot Collection Summary ({len(self.shots)} shots):")
-        for i, shot in enumerate(self.shots, 1):
-            print(f"\nShot {i}:")
-            shot.print_results()
-
-    def to_json(self, filename=None):
-        """
-        Save the collection to a JSON file or return as a JSON string.
-
-        Parameters:
-        -----------
-        filename : str, optional
-            If provided, save the results to this file. If None, return a JSON string.
-
-        Returns:
-        --------
-        str or None
-            JSON string if filename is None, otherwise None.
-
-        Raises:
-        -------
-        OSError
-            If writing to the file fails.
-        """
-        data = [json.loads(shot.to_json()) for shot in self.shots]
-        if filename:
-            with open(filename, "w") as f:
-                json.dump(data, f, indent=4)
-        else:
-            return json.dumps(data, indent=4)
-
-    @classmethod
-    def from_json(cls, filename):
-        """
-        Create a ShotCollection instance from a JSON file or string.
-
-        Parameters:
-        -----------
-        filename : str
-            Path to a JSON file containing the collection data.
-
-        Returns:
-        --------
-        ShotCollection
-            A new ShotCollection instance with the loaded shots.
-
-        Raises:
-        -------
-        OSError
-            If reading the file fails.
-        KeyError
-            If required keys are missing from the JSON data for any shot.
-        """
-        if filename:
-            with open(filename, "r") as f:
-                data = json.load(f)
-        else:
-            raise ValueError("Either json_data or filename must be provided")
-
         if not isinstance(data, list):
             raise ValueError("JSON data must be a list of shot dictionaries")
 
-        shots = [ShotAnalysis.from_json(json_data=json.dumps(shot)) for shot in data]
+        shots = [ShotData.from_dict(item) for item in data]
         return cls(shots=shots)
