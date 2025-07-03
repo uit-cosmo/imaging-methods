@@ -89,9 +89,11 @@ class PlasmaDischargeManager:
         preprocessed=True,
         radius=1000,
     ):
-        return load_data_and_preprocess(
+        ds_full = load_data_and_preprocess(
             shot, window, data_folder, preprocessed, radius=radius
         )
+        t_start, t_end = self.get_discharge_by_shot(shot).t_start, self.get_discharge_by_shot(shot).t_end
+        return ds_full.sel(time=slice(t_start, t_end))
 
 
 @dataclass
