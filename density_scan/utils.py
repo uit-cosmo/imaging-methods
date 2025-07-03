@@ -212,8 +212,7 @@ def plot_results(file_suffix):
     area = np.array([r.blob_params.area_c for r in results.shots])
     lx_c = np.sqrt(area / np.pi)
 
-    fig, ax = cp.figure_multiple_rows_columns(1, 1)
-    ax = ax[0]
+    fig, ax = plt.subplots(constrained_layout=True)
 
     ax.scatter(
         gf, v_c * tauds / lx_c, label=r"$v_\text{C} \tau_d / \ell_c$", color="black"
@@ -225,12 +224,13 @@ def plot_results(file_suffix):
     ax.set_ylabel(r"$v \tau_d / \ell$")
 
     ax.legend()
+    ax.set_ylim(0, 1.1 * max((v_c * tauds / lx_c).max(), (v_tde * tauds / lx).max()))
     ax.plot()
     ratios_file_name = os.path.join("result_plots", f"ratios_{file_suffix}.eps")
     plt.savefig(ratios_file_name, bbox_inches="tight")
     plt.close(fig)
 
-    fig, ax = cp.figure_multiple_rows_columns(1, 2)
+    fig, ax = plt.subplots(1, 2, constrained_layout=True)
 
     ax[0].scatter(gf, v_c, label=r"$v_\text{C}$", color="black")
     ax[0].scatter(gf, w_c, label=r"$w_\text{C}$", color="blue")
@@ -252,15 +252,14 @@ def plot_results(file_suffix):
     plt.savefig(vel_size_file_name, bbox_inches="tight")
     plt.close(fig)
 
-    fig, ax = cp.figure_multiple_rows_columns(1, 1)
-    ax = ax[0]
+    fig, ax = plt.subplots(constrained_layout=True)
 
     ax.scatter(gf, tauds, label=r"$\tau_\text{d}$", color="black")
     ax.set_xlabel(r"$f_g$")
     ax.set_ylabel(r"$\tau_d$")
 
     ax.legend()
-    ax.plot()
+    ax.set_ylim(0, 1.1 * np.max(tauds))
     psd_file_name = os.path.join("result_plots", f"psd_{file_suffix}.eps")
     plt.savefig(psd_file_name, bbox_inches="tight")
     plt.close(fig)

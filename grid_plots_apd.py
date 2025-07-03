@@ -10,18 +10,19 @@ manager = PlasmaDischargeManager()
 manager.load_from_json("density_scan/plasma_discharges.json")
 ds = manager.read_shot_data(shot)
 
+
 def plot_pdf_grid(ds):
     nx, ny = 9, 10
-    fig, ax = plt.subplots(ny, nx, figsize=(4*ny, 4*nx))
+    fig, ax = plt.subplots(ny, nx, figsize=(4 * ny, 4 * nx))
     for x in np.arange(nx):
         for y in np.arange(ny):
             R, Z = ds.R.isel(x=x, y=y).item(), ds.Z.isel(x=x, y=y).item()
-            axe = ax[ny-y-1][x]
+            axe = ax[ny - y - 1][x]
             data = ds.frames.isel(x=x, y=y).values
             if np.any(np.isnan(data)):
                 continue
             hist, bin_edges = np.histogram(data, bins=100, density=True)
-            bin_centers = (bin_edges[:-1] + bin_edges[1:])/2
+            bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
             axe.plot(bin_centers, hist, color="blue")
             axe.set_title(r"$R={:.2f}, Z={:.2f}$".format(R, Z))
 
@@ -31,11 +32,11 @@ def plot_pdf_grid(ds):
 
 def plot_acf_grid(ds):
     nx, ny = 9, 10
-    fig, ax = plt.subplots(ny, nx, figsize=(4*ny, 4*nx))
+    fig, ax = plt.subplots(ny, nx, figsize=(4 * ny, 4 * nx))
     for x in np.arange(nx):
         for y in np.arange(ny):
             R, Z = ds.R.isel(x=x, y=y).item(), ds.Z.isel(x=x, y=y).item()
-            axe = ax[ny-y-1][x]
+            axe = ax[ny - y - 1][x]
             data = ds.frames.isel(x=x, y=y).values
             if np.any(np.isnan(data)):
                 continue

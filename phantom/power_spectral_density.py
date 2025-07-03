@@ -107,7 +107,7 @@ class DurationTimeEstimator:
                 lambda params: self._obj_fun(params, base, values),
                 bounds=bounds,
                 seed=42,  # For reproducibility
-                popsize=10,  # Population size multiplier
+                popsize=100,  # Population size multiplier
                 maxiter=500,  # Maximum iterations
                 disp=False,  # Suppress verbose output
             )
@@ -175,6 +175,7 @@ class DurationTimeEstimator:
                 raise TypeError("must provide nperseg for psd estimation")
 
             base, values = signal.welch(data_series, fs=1 / dt, nperseg=nperseg)
+            base, values = base[1:], values[1:]  # Remove zero-frequency
             base = 2 * np.pi * base  # Convert to angular frequency (rad/s)
 
         else:
