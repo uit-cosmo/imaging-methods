@@ -5,10 +5,12 @@ from utils import *
 from method_parameters import method_parameters
 
 
-def preprocess_data(refx, refy):
+def preprocess_data():
     for shot in manager.get_shot_list():
-        confinement_more = manager.get_discharge_by_shot(shot).confinement_mode
-        print("Working on {}".format(shot))
+        file_name = os.path.join("../data", f"apd_{shot}_preprocessed.nc")
+        if os.path.exists(file_name):
+            continue
+        print("Preprocessing data for shot {}".format(shot))
         ds = manager.read_shot_data(
             shot,
             None,
@@ -16,7 +18,6 @@ def preprocess_data(refx, refy):
             data_folder="../data",
             radius=method_parameters["preprocessing"]["radius"],
         )
-        file_name = os.path.join("../data", f"apd_{shot}_preprocessed.nc")
         ds.to_netcdf(file_name)
 
 
@@ -46,12 +47,14 @@ def compute_and_store_conditional_averages(refx, refy, file_suffix=None):
 
 
 if __name__ == "__main__":
+    manager = ph.PlasmaDischargeManager()
+    manager.load_from_json("plasma_discharges.json")
+    preprocess_data()
+
     refx, refy = method_parameters["2dca"]["refx"], method_parameters["2dca"]["refy"]
     suffix = f"{refx}{refy}"
     print(f"Refx: {refx}, Refy: {refy}")
 
-    manager = ph.PlasmaDischargeManager()
-    manager.load_from_json("plasma_discharges.json")
     print("Computes 2D averages")
     compute_and_store_conditional_averages(refx, refy, file_suffix=suffix)
     print("Analyzing averages...")

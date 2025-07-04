@@ -3,8 +3,8 @@ import xarray as xr
 import os
 import numpy as np
 import phantom as ph
-import cosmoplots as cp
 from method_parameters import method_parameters
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 
 def get_average(shot, suffix):
@@ -266,7 +266,7 @@ def plot_results(file_suffix):
 
 
 def plot_contour_figure(suffix):
-    fig, ax = plt.subplots(3, 3, figsize=(7, 7))
+    fig, ax = plt.subplots(3, 3, figsize=(12, 12))
     plt.tight_layout(pad=2.0, w_pad=3.0, h_pad=3.0)
     subfigure_labels = [chr(97 + i) for i in range(9)]
     ax_indx = 0
@@ -306,14 +306,7 @@ def plot_contour_figure(suffix):
             theta_penalty_factor=pt,
         )
 
-        text = (
-            r"$a={:.2f}$".format(area)
-            + "\n"
-            + r"$\ell_x={:.2f}\, \ell_y={:.2f}\, \theta={:.2f}$".format(lx, ly, theta)
-            + "\n"
-            + r"$Ne={}$".format(average_ds["number_events"].item())
-        )
-        axe.text(0.1, 0.8, text, fontsize=4, transform=axe.transAxes, color="white")
+
 
         axe.set_title(
             r"$f_{{GW}}$={:.2f}".format(
@@ -330,6 +323,36 @@ def plot_contour_figure(suffix):
             ha="left",
         )
 
+        inset_ax = inset_axes(axe, width=1, height=1, loc='lower left')
+#                              bbox_to_anchor=(0.1, 0.1, 0.4, 0.4),
+
+        gpi_ds = manager.read_shot_data(shot, data_folder="../data")
+        taud, lam, freqs = ph.DurationTimeEstimator(
+            ph.SecondOrderStatistic.PSD, ph.Analytics.TwoSided
+        ).plot_and_fit(
+            gpi_ds.frames.isel(x=refx, y=refy).values,
+            ph.get_dt(average_ds),
+            inset_ax,
+            cutoff=method_parameters["taud_estimation"]["cutoff"],
+            nperseg=method_parameters["taud_estimation"]["nperseg"],
+        )
+        inset_ax.get_legend().remove()
+        inset_ax.set_xlabel("")
+        inset_ax.set_ylabel("")
+        inset_ax.set_xticks([])
+        inset_ax.set_yticks([])
+
+
+        text = (
+                r"$a={:.2f}$".format(area)
+                + "\n"
+                + r"$\ell_x={:.2f}\, \ell_y={:.2f}\, \theta={:.2f}$".format(lx, ly, theta)
+                + "\n"
+                + r"$\tau_d={:.2e}\, \lambda={:.2f}$".format(taud, lam)
+                + "\n"
+                + r"$Ne={}$".format(average_ds["number_events"].item())
+        )
+        axe.text(0.1, 0.8, text, fontsize=6, transform=axe.transAxes, color="white")
         ax_indx = ax_indx + 1
 
     fig_name = os.path.join("result_plots", f"contours_{suffix}.eps")
