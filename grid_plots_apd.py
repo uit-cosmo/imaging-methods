@@ -11,6 +11,7 @@ manager = PlasmaDischargeManager()
 manager.load_from_json("density_scan/plasma_discharges.json")
 ds = manager.read_shot_data(shot)
 
+
 def plot_multi_grid(ds):
     nx, ny = 9, 10
     fig, ax = plt.subplots(ny, nx, figsize=(4 * ny, 4 * nx))
@@ -22,15 +23,15 @@ def plot_multi_grid(ds):
             if np.any(np.isnan(data)):
                 continue
 
-            axe.spines[['top', 'bottom', 'left', 'right']].set_visible(False)
+            axe.spines[["top", "bottom", "left", "right"]].set_visible(False)
             axe.set_xticks([])
             axe.set_yticks([])
             axe.set_title(r"$R={:.2f}, Z={:.2f}$".format(R, Z))
 
-            inset_ax1 = inset_axes(axe, width=1, height=1, loc='upper left')
-            inset_ax2 = inset_axes(axe, width=1, height=1, loc='upper right')
-            inset_ax3 = inset_axes(axe, width=1, height=1, loc='lower left')
-            inset_ax4 = inset_axes(axe, width=1, height=1, loc='lower right')
+            inset_ax1 = inset_axes(axe, width=1, height=1, loc="upper left")
+            inset_ax2 = inset_axes(axe, width=1, height=1, loc="upper right")
+            inset_ax3 = inset_axes(axe, width=1, height=1, loc="lower left")
+            inset_ax4 = inset_axes(axe, width=1, height=1, loc="lower right")
 
             hist, bin_edges = np.histogram(data, bins=100, density=True)
             bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
@@ -51,6 +52,7 @@ def plot_multi_grid(ds):
 
     plt.savefig("multi_plot.eps".format(shot), bbox_inches="tight")
     plt.close(fig)
+
 
 def plot_pdf_grid(ds):
     nx, ny = 9, 10

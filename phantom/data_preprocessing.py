@@ -108,8 +108,20 @@ def run_norm_ds(ds, radius):
         },
     )
     ds_normalized["frames"].attrs = ds["frames"].attrs.copy()
+    new_frames = xr.DataArray(
+        normalization[0].data,
+        dims=ds["frames"].dims,
+        coords={
+            "R": (["y", "x"], ds.R.values),
+            "Z": (["y", "x"], ds.Z.values),
+            "time": (["time"], normalization[1].data[0, 0, :]),
+        },
+        attrs=ds["frames"].attrs,
+    )
+    ds = ds.drop_vars("frames").drop_dims("time")
+    ds["frames"] = new_frames
 
-    return ds_normalized
+    return ds
 
 
 def load_data_and_preprocess(
@@ -154,6 +166,6 @@ def load_data_and_preprocess(
     ds = interpolate_nans_3d(ds)
 
     # Optionally save preprocessed data
-    # ds.to_netcdf(os.path.join(data_folder, f"apd_{shot}_preprocessed.nc"))
+    ds.to_netcdf(os.path.join(data_folder, f"apd_{shot}_preprocessed.nc"))
 
     return ds

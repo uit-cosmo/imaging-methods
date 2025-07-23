@@ -28,7 +28,6 @@ def find_events_and_2dca(
     Returns:
     events: List of xarray.Dataset objects containing extracted windows
     average: xarray.Dataset containing average event across all input events
-    cond_repr: xarray.Dataset containing the conditional reproducibility of the signal <f>^2/<f^2>
     """
     # Assuming the data is on cmod_functions format, in xarray and with frames name
     ref_ts = ds.frames.isel(x=refx, y=refy)

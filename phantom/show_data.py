@@ -59,7 +59,7 @@ def show_movie(
     - This function chooses between a 1D and 2D visualizations based on the dimensionality of the dataset.
 
     """
-    has_limiter = "rlimt" in dataset.coords.keys()
+    has_limiter = "rlimit" in dataset.coords.keys()
     has_lcfs = "rlcfs" in dataset
     if fig is None:
         fig = plt.figure()
@@ -112,7 +112,7 @@ def show_movie(
 
     if has_lcfs:
         rlcfs, zlcfs = calculate_splinted_LCFS(
-            t_init,
+            dataset["efit_time"].values.mean(),
             dataset["efit_time"].values,
             dataset["rlcfs"].values,
             dataset["zlcfs"].values,

@@ -306,8 +306,6 @@ def plot_contour_figure(suffix):
             theta_penalty_factor=pt,
         )
 
-
-
         axe.set_title(
             r"$f_{{GW}}$={:.2f}".format(
                 manager.get_discharge_by_shot(shot).greenwald_fraction
@@ -323,8 +321,8 @@ def plot_contour_figure(suffix):
             ha="left",
         )
 
-        inset_ax = inset_axes(axe, width=1, height=1, loc='lower left')
-#                              bbox_to_anchor=(0.1, 0.1, 0.4, 0.4),
+        inset_ax = inset_axes(axe, width=1, height=1, loc="lower left")
+        #                              bbox_to_anchor=(0.1, 0.1, 0.4, 0.4),
 
         gpi_ds = manager.read_shot_data(shot, data_folder="../data")
         taud, lam, freqs = ph.DurationTimeEstimator(
@@ -342,15 +340,14 @@ def plot_contour_figure(suffix):
         inset_ax.set_xticks([])
         inset_ax.set_yticks([])
 
-
         text = (
-                r"$a={:.2f}$".format(area)
-                + "\n"
-                + r"$\ell_x={:.2f}\, \ell_y={:.2f}\, \theta={:.2f}$".format(lx, ly, theta)
-                + "\n"
-                + r"$\tau_d={:.2e}\, \lambda={:.2f}$".format(taud, lam)
-                + "\n"
-                + r"$Ne={}$".format(average_ds["number_events"].item())
+            r"$a={:.2f}$".format(area)
+            + "\n"
+            + r"$\ell_x={:.2f}\, \ell_y={:.2f}\, \theta={:.2f}$".format(lx, ly, theta)
+            + "\n"
+            + r"$\tau_d={:.2e}\, \lambda={:.2f}$".format(taud, lam)
+            + "\n"
+            + r"$Ne={}$".format(average_ds["number_events"].item())
         )
         axe.text(0.1, 0.8, text, fontsize=6, transform=axe.transAxes, color="white")
         ax_indx = ax_indx + 1
