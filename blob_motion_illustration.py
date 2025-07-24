@@ -6,16 +6,16 @@ from phantom.contours import *
 from phantom import *
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
-shot = 1160616027
+shot = 1160616011
 manager = PlasmaDischargeManager()
 manager.load_from_json("density_scan/plasma_discharges.json")
 ds = manager.read_shot_data(shot, preprocessed=True)
 
 refx, refy = 6, 5
-events, average = find_events_and_2dca(
-    ds, refx, refy, threshold=2, check_max=0, window_size=60, single_counting=True
-)
-average.to_netcdf("tmp.nc")
+# events, average = find_events_and_2dca(
+#    ds, refx, refy, threshold=2, check_max=0, window_size=60, single_counting=True
+# )
+# average.to_netcdf("tmp.nc")
 average = xr.open_dataset("tmp.nc")
 
 # show_movie(average, "cond_av")
@@ -49,5 +49,5 @@ for i in np.arange(10):
     t = average["time"].isel(time=int(t_indexes[i])).item()
     axe.set_title(r"$t={:.2f}\,\text{{us}}$".format(t * 1e6))
 
-plt.savefig("blob_motion_27.pdf", bbox_inches="tight")
+plt.savefig("blob_motion_{}.eps".format(shot), bbox_inches="tight")
 plt.show()

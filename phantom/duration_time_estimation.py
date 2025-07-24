@@ -1,10 +1,8 @@
 import numpy as np
 from scipy import signal
-from scipy.optimize import minimize, differential_evolution, curve_fit
+from scipy.optimize import minimize, differential_evolution
 import matplotlib.pyplot as plt
-import closedexpressions as ce
 import warnings
-from blobmodel import BlobShapeEnum
 from enum import Enum
 import fppanalysis as fppa
 from .second_order_statistics import autocorrelation, power_spectral_density
@@ -73,6 +71,11 @@ class DurationTimeEstimator:
             cutoff for fitting (frequency cutoff in case of PSD, maximum time lag in case of ACF).
         kwargs : If statistic = PSD, an nperseg argument must be provided for the Welch method.
 
+        Notes: When using PSD fit, nperseg is a key argument to obtain a good estimate. nperseg is the length of each
+        segment used on the Welch algorithm and it determines the minimum frequency that can be estimated. If the data
+        has been run-normalized, a good starting point is to set nperseg to the window length of the running
+        normalization.
+
         Returns:
         --------
         taud : float
@@ -108,8 +111,7 @@ class DurationTimeEstimator:
                 bounds=bounds,
                 seed=42,  # For reproducibility
                 popsize=100,  # Population size multiplier
-                maxiter=500,  # Maximum iterations
-                disp=False,  # Suppress verbose output
+                maxiter=1500,  # Maximum iterations
             )
 
         # Check optimization convergence
@@ -122,6 +124,14 @@ class DurationTimeEstimator:
         else:
             taud, lamda = result.x
             lam = 1 / (1 + lamda**2)
+
+        if self.statistic == SecondOrderStatistic.PSD:
+            nperseg = kwargs["nperseg"]
+            if taud > nperseg * dt:
+                warnings.warn(
+                    f"Duration time larger than Welch segment, wrong estimate!"
+                )
+
         return taud, lam
 
     def plot_and_fit(self, data_series, dt, ax, bounds=None, cutoff=None, **kwargs):
@@ -174,7 +184,10 @@ class DurationTimeEstimator:
             else:
                 raise TypeError("must provide nperseg for psd estimation")
 
-            base, values = signal.welch(data_series, fs=1 / dt, nperseg=nperseg)
+            signal_normalized = (
+                data_series - data_series.mean()
+            ) / data_series.std()  # Normalize signal before welch
+            base, values = signal.welch(signal_normalized, fs=1 / dt, nperseg=nperseg)
             base, values = base[1:], values[1:]  # Remove zero-frequency
             base = 2 * np.pi * base  # Convert to angular frequency (rad/s)
 
