@@ -48,6 +48,8 @@ def get_blob(
         t_init=t_init,
         t_drain=1e100,
         theta=theta,
+        prop_shape_parameters={"lam": 0.5},
+        perp_shape_parameters={"lam": 0.5},
         blob_alignment=True if theta == 0 else False,
     )
 
@@ -95,8 +97,8 @@ def make_2d_realization(Lx, Ly, T, nx, ny, dt, num_blobs, vx, vy, lx, ly, theta,
     model = Model(
         Nx=nx,
         Ny=ny,
-        Lx=lx,
-        Ly=ly,
+        Lx=Lx,
+        Ly=Ly,
         dt=dt,
         T=T,
         num_blobs=num_blobs,
