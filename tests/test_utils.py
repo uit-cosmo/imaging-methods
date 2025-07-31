@@ -4,6 +4,10 @@ import numpy as np
 from nptyping import NDArray
 import xarray as xr
 import superposedpulses as sp
+import matplotlib.pyplot as plt
+import os
+import phantom as ph
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 from blobmodel import (
     Model,
@@ -120,3 +124,164 @@ def make_2d_realization(Lx, Ly, T, nx, ny, dt, num_blobs, vx, vy, lx, ly, theta,
             "time": (["time"], ds.t.values),
         },
     )
+
+
+def plot_frames(ds, t_indexes, variable="frames"):
+    fig, ax = plt.subplots(2, 5, figsize=(10, 5))
+    for i in np.arange(10):
+        axe = ax[i // 5][i % 5]
+        im = axe.imshow(
+            ds[variable].isel(time=int(t_indexes[i])).values,
+            origin="lower",
+            interpolation="spline16",
+        )
+        im.set_extent((ds.R[0, 0], ds.R[0, -1], ds.Z[0, 0], ds.Z[-1, 0]))
+        im.set_clim(0, 2)
+        axe.set_ylim((ds.Z[0, 0], ds.Z[-1, 0]))
+        axe.set_xlim((ds.R[0, 0], ds.R[0, -1]))
+        t = ds["time"].isel(time=int(t_indexes[i])).item()
+        axe.set_title(r"$t={:.2f}\,\tau_\text{{d}}$".format(t))
+
+    return fig
+
+
+def plot_frames_with_contour(average, contours, t_indexes, variable="cond_av"):
+    fig, ax = plt.subplots(2, 5, figsize=(10, 5))
+    for i in np.arange(10):
+        axe = ax[i // 5][i % 5]
+        im = axe.imshow(
+            average[variable].isel(time=int(t_indexes[i])).values,
+            origin="lower",
+            interpolation="spline16",
+        )
+        c = contours.contours.isel(time=int(t_indexes[i])).data
+        axe.plot(c[:, 0], c[:, 1], ls="--", color="black")
+        im.set_extent(
+            (average.R[0, 0], average.R[0, -1], average.Z[0, 0], average.Z[-1, 0])
+        )
+        im.set_clim(0, 2)
+        axe.set_ylim((average.Z[0, 0], average.Z[-1, 0]))
+        axe.set_xlim((average.R[0, 0], average.R[0, -1]))
+        t = average["time"].isel(time=int(t_indexes[i])).item()
+        axe.set_title(r"$t={:.2f}\,\tau_\text{{d}}$".format(t))
+
+    return fig
+
+
+def full_analysis(
+    ds, method_parameters, suffix, figures_dir="integrated_tests_figures"
+):
+    dt = ph.get_dt(ds)
+    t_indexes = np.linspace(100, 110, num=10) / dt
+    fig = plot_frames(ds, t_indexes)
+    plt.savefig(
+        os.path.join(figures_dir, "data_portion_{}.eps".format(suffix)),
+        bbox_inches="tight",
+    )
+
+    tdca_params = method_parameters["2dca"]
+    events, average_ds = ph.find_events_and_2dca(
+        ds,
+        tdca_params["refx"],
+        tdca_params["refy"],
+        threshold=tdca_params["threshold"],
+        check_max=tdca_params["check_max"],
+        window_size=tdca_params["window"],
+        single_counting=tdca_params["single_counting"],
+    )
+
+    contour_ds = ph.get_contour_evolution(
+        average_ds.cond_av,
+        method_parameters["contouring"]["threshold_factor"],
+        max_displacement_threshold=None,
+    )
+
+    t_indexes = np.linspace(-tdca_params["window"], tdca_params["window"], num=10)
+    plot_frames_with_contour(average_ds, contour_ds, t_indexes)
+    plt.savefig(
+        os.path.join(figures_dir, "cond_av_{}.eps".format(suffix)), bbox_inches="tight"
+    )
+
+    contour_file_name = os.path.join(figures_dir, "contours_{}.gif".format(suffix))
+    ph.show_movie_with_contours(
+        average_ds,
+        contour_ds,
+        "cond_av",
+        lims=(0, 3),
+        gif_name=contour_file_name,
+        interpolation="spline16",
+        show=False,
+    )
+
+    fig, ax = plt.subplots(figsize=(5, 5))
+
+    velocity_ds = ph.get_contour_velocity(
+        contour_ds.center_of_mass,
+        method_parameters["contouring"]["com_smoothing"],
+    )
+    v_c, w_c = (
+        velocity_ds.isel(time=slice(10, -10)).mean(dim="time", skipna=True).values
+    )
+
+    area = ph.plot_contour_at_zero(average_ds.cond_av, contour_ds, ax)
+
+    fit_params = method_parameters["gauss_fit"]
+    lx, ly, theta = ph.plot_event_with_fit(
+        average_ds.cond_av,
+        tdca_params["refx"],
+        tdca_params["refy"],
+        ax=ax,
+        size_penalty_factor=fit_params["size_penalty"],
+        aspect_ratio_penalty_factor=fit_params["aspect_penalty"],
+        theta_penalty_factor=fit_params["tilt_penalty"],
+    )
+    inset_ax = inset_axes(ax, width=1, height=1, loc="lower left")
+    v_f, w_f = ph.get_3tde_velocities(
+        average_ds.cond_av, tdca_params["refx"], tdca_params["refy"]
+    )
+
+    taud, lam, freqs = ph.DurationTimeEstimator(
+        ph.SecondOrderStatistic.PSD, ph.Analytics.TwoSided
+    ).plot_and_fit(
+        ds.frames.isel(x=tdca_params["refx"], y=tdca_params["refy"]).values,
+        ph.get_dt(average_ds),
+        inset_ax,
+        cutoff=method_parameters["taud_estimation"]["cutoff"],
+        nperseg=method_parameters["taud_estimation"]["nperseg"],
+    )
+    inset_ax.get_legend().remove()
+    inset_ax.set_xlabel("")
+    inset_ax.set_ylabel("")
+    inset_ax.set_xticks([])
+    inset_ax.set_yticks([])
+
+    text = (
+        r"$a={:.2f}$".format(area)
+        + "\n"
+        + r"$\ell_x={:.2f}\, \ell_y={:.2f}\, \theta={:.2f}$".format(lx, ly, theta)
+        + "\n"
+        + r"$\tau_d={:.2e}\, \lambda={:.2f}$".format(taud, lam)
+        + "\n"
+        + r"$Ne={}$".format(average_ds["number_events"].item())
+    )
+    ax.text(0.1, 0.8, text, fontsize=6, transform=ax.transAxes, color="white")
+
+    results_file_name = os.path.join(figures_dir, "results_{}.eps".format(suffix))
+    plt.savefig(results_file_name, bbox_inches="tight")
+    plt.close(fig)
+
+    bp = ph.BlobParameters(
+        vx_c=v_c,
+        vy_c=w_c,
+        area_c=area,
+        vx_tde=v_f,
+        vy_tde=w_f,
+        lx_f=lx,
+        ly_f=ly,
+        theta_f=theta,
+        taud_psd=taud,
+        lambda_psd=lam,
+        number_events=average_ds["number_events"].item(),
+    )
+
+    return bp
