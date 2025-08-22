@@ -167,8 +167,6 @@ def test_case_d():
     )
     ds = ph.run_norm_ds(ds, method_parameters["preprocessing"]["radius"])
 
-    sigma = 1
-    ds = ds.assign(frames=ds["frames"] + sigma * np.random.random(ds.frames.shape))
     bp = full_analysis(ds, method_parameters, "d")
     print(bp)
 
