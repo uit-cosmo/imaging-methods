@@ -98,6 +98,19 @@ class PlasmaDischargeManager:
         )
         return ds_full.sel(time=slice(t_start, t_end))
 
+    def get_data_from_tree(self, shot, data_folder="data"):
+        try:
+            print(f"Retrieving APD data for shot number: {shot}")
+            import cmod_functions as cmod
+
+            ds = cmod.generate_raw_apd_dataset(
+                shot_number=shot, subtract_background=True
+            )
+            file_name = os.path.join(data_folder, f"apd_{shot}.nc")
+            ds.to_netcdf(file_name)
+        except Exception as e:
+            print(f"Error retrieving APD data for shot {shot}: {str(e)}")
+
 
 @dataclass
 class BlobParameters:
