@@ -196,7 +196,7 @@ def full_analysis(
         max_displacement_threshold=None,
     )
 
-    t_indexes = np.linspace(-tdca_params["window"], tdca_params["window"], num=10)
+    t_indexes = np.linspace(0, tdca_params["window"], num=10)
     plot_frames_with_contour(average_ds, contour_ds, t_indexes)
     plt.savefig(
         os.path.join(figures_dir, "cond_av_{}.eps".format(suffix)), bbox_inches="tight"

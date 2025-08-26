@@ -1,15 +1,13 @@
 from phantom import load_data_and_preprocess
 from phantom.show_data import *
 from phantom.utils import *
-from phantom.power_spectral_density import *
 from velocity_estimation.correlation import corr_fun
 from scipy.optimize import minimize
 from scipy import signal
 
-shot = 1160616025
+shot = 1140613026
 
-ds = load_data_and_preprocess(shot, 0.001)
-# ds = xr.open_dataset("data.nc")
+ds = xr.open_dataset("data/apd_{}.nc".format(shot))
 refx, refy = 6, 5
 
 fig, ax = plt.subplots()
