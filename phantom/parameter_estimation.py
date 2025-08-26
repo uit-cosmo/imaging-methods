@@ -200,20 +200,12 @@ def plot_event_with_fit(
         aspect_ratio_penalty_factor=aspect_ratio_penalty_factor,
         theta_penalty_factor=theta_penalty_factor,
     )
-    im = ax.imshow(e.sel(time=0), origin="lower", interpolation="spline16")
     alphas = np.linspace(0, 2 * np.pi, 200)
     elipsx, elipsy = zip(
         *[ellipse_parameters((lx, ly, theta), rx, ry, a) for a in alphas]
     )
     ax.plot(elipsx, elipsy, color="blue", ls="--")
 
-    rmin, rmax, zmin, zmax = (
-        e.R[0, 0] - 0.05,
-        e.R[0, -1] + 0.05,
-        e.Z[0, 0] - 0.05,
-        e.Z[-1, 0] + 0.05,
-    )
-    im.set_extent((rmin, rmax, zmin, zmax))
     if fig_name is not None:
         plt.savefig(fig_name, bbox_inches="tight")
 
@@ -226,11 +218,16 @@ def plot_contour_at_zero(e, contour_ds, ax, fig_name=None):
     c = contour_ds.contours.sel(time=0).data
     ax.plot(c[:, 0], c[:, 1], ls="--", color="black")
 
+    # Set extent so that the middle of each pixel falls at the coordinates of said pixel.
+    pixel = e.R[0, 1] - e.R[0, 0]
+    ny, nx = e.R.shape
+    minR = np.min(e.R.values)
+    minZ = np.min(e.Z.values)
     rmin, rmax, zmin, zmax = (
-        e.R[0, 0] - 0.05,
-        e.R[0, -1] + 0.05,
-        e.Z[0, 0] - 0.05,
-        e.Z[-1, 0] + 0.05,
+        minR - pixel / 2,
+        minR + (nx - 1 / 2) * pixel,
+        minZ - pixel / 2,
+        minZ + (ny - 1 / 2) * pixel,
     )
     im.set_extent((rmin, rmax, zmin, zmax))
     area = contour_ds.area.sel(time=0).item()

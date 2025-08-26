@@ -82,10 +82,10 @@ def make_0d_realization(duration, T=1e4, noise=0, dt=0.1, waiting_time=1):
 def make_2d_realization(Lx, Ly, T, nx, ny, dt, num_blobs, vx, vy, lx, ly, theta, bs):
     blobs = [
         get_blob(
-            amplitude=1,
+            amplitude=np.random.exponential(),
             vx=vx,
             vy=vy,
-            posx=np.random.uniform(0, Lx),
+            posx=0,
             posy=np.random.uniform(0, Ly),
             lx=lx,
             ly=ly,

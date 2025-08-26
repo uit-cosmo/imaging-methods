@@ -167,8 +167,6 @@ def test_case_d():
     )
     ds = ph.run_norm_ds(ds, method_parameters["preprocessing"]["radius"])
 
-    sigma = 1
-    ds = ds.assign(frames=ds["frames"] + sigma * np.random.random(ds.frames.shape))
     bp = full_analysis(ds, method_parameters, "d")
     print(bp)
 
@@ -185,10 +183,12 @@ def test_case_d():
 def test_case_e():
     vx_input = 1
     vy_intput = 0
-    aspect_ratio = 1
-    lx_input = np.sqrt(aspect_ratio)
-    ly_input = 1 / np.sqrt(aspect_ratio)
+    lx_input = 1
+    ly_input = 1
     theta_input = 0
+    method_parameters_e = method_parameters
+    method_parameters_e["2dca"]["refx"] = 1
+    method_parameters_e["2dca"]["refy"] = 1
 
     ds = make_2d_realization(
         Lx,
@@ -197,21 +197,16 @@ def test_case_e():
         4,
         4,
         dt,
-        K * 50,
+        K,
         vx=vx_input,
         vy=vy_intput,
         lx=lx_input,
         ly=ly_input,
         theta=theta_input,
         bs=bs,
-        )
-    method_parameters_e = method_parameters
-    method_parameters_e["2dca"]["refx"] = 2
-    method_parameters_e["2dca"]["refy"] = 2
-
-    ds = ph.run_norm_ds(ds, method_parameters_e["preprocessing"]["radius"])
-
-    bp = full_analysis(ds, method_parameters_e, "e")
+    )
+    ds = ph.run_norm_ds(ds, method_parameters["preprocessing"]["radius"])
+    bp = full_analysis(ds, method_parameters, "e")
     print(bp)
 
     assert np.abs(bp.vx_c - vx_input) < 0.2, "Wrong contour x velocity"

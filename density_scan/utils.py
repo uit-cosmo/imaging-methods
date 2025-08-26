@@ -321,6 +321,16 @@ def plot_contour_figure(suffix):
             ha="left",
         )
 
+        pixel = average_ds.R[0, 1] - average_ds.R[0, 0]
+        rmin, rmax, zmin, zmax = (
+            average_ds.R[0, 0] - pixel / 2,
+            average_ds.R[0, -1] + pixel / 2,
+            average_ds.Z[0, 0] - pixel / 2,
+            average_ds.Z[-1, 0] + pixel / 2,
+        )
+        axe.set_xlim(rmin, rmax)
+        axe.set_ylim(zmin, zmax)
+
         inset_ax = inset_axes(axe, width=1, height=1, loc="lower left")
         #                              bbox_to_anchor=(0.1, 0.1, 0.4, 0.4),
 
