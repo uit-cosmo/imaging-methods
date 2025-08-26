@@ -427,5 +427,16 @@
         "duration": NaN,
         "mlp_mode": "none",
         "confinement_more": "EDA-H"
+    },
+    {
+        "shot_number": 1140613026,
+        "plasma_current": NaN,
+        "line_averaged_density": NaN,
+        "greenwald_fraction": NaN,
+        "t_start": 0.7,
+        "t_end": 1.2,
+        "duration": NaN,
+        "mlp_mode": "none",
+        "confinement_more": "I-mode"
     }
 ]
