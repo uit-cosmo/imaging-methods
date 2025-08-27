@@ -12,14 +12,15 @@ manager = PlasmaDischargeManager()
 manager.load_from_json("density_scan/plasma_discharges.json")
 ds = manager.read_shot_data(shot, preprocessed=True)
 
-row = 6
+row = 4
 
 params = plt.rcParams
 cp.set_rcparams_dynamo(params, 2)
 # plt.rcParams["text.usetex"] = False
 plt.rcParams.update(params)
 
-fig, ax = cp.figure_multiple_rows_columns(2, 4, [None for _ in range(10)])
+# fig, ax = cp.figure_multiple_rows_columns(2, 4, [None for _ in range(10)])
+fig, ax = plt.subplots(2, 4, figsize=(4 * 2.08, 2 * 2.08), gridspec_kw={"hspace": 0.4})
 
 limit_spline = interpolate.interp1d(ds["zlimit"], ds["rlimit"], kind="cubic")
 zfine = np.linspace(-8, 1, 100)
@@ -32,10 +33,13 @@ rlcfs, zlcfs = calculate_splinted_LCFS(
 )
 
 for refx in np.arange(1, 9):
-    axe = ax[refx - 1]
-    events, average = find_events_and_2dca(
-        ds, refx, row, threshold=2, check_max=0, window_size=60, single_counting=True
-    )
+    # axe = ax[refx - 1]
+    axe = ax[(refx - 1) // 4][(refx - 1) % 4]
+    # events, average = find_events_and_2dca(
+    #    ds, refx, row, threshold=2, check_max=0, window_size=60, single_counting=True
+    # )
+    # average.to_netcdf("tmp_{}_{}.nc".format(row, refx))
+    average = xr.open_dataset("tmp_{}_{}.nc".format(row, refx))
 
     data = average["cond_av"].sel(time=0).values
     im = axe.imshow(
@@ -44,14 +48,16 @@ for refx in np.arange(1, 9):
         interpolation="spline16",
     )
 
-    im.set_extent((ds.R[0, 0], ds.R[0, -1], ds.Z[0, 0], ds.Z[-1, 0]))
+    # Make extent slightly larger so that it fits the 88 tick mark
+    im.set_extent((np.min(ds.R.values) - 0.02, ds.R[0, -1], ds.Z[0, 0], ds.Z[-1, 0]))
     im.set_clim(0, np.max(data))
     axe.plot(limit_spline(zfine), zfine, color="black", ls="--")
     axe.plot(rlcfs, zlcfs, color="black")
     axe.set_ylim((ds.Z[0, 0], ds.Z[-1, 0]))
-    axe.set_xlim((ds.R[0, 0], ds.R[0, -1]))
-    axe.set_title(r"$R={:.2f} $cm".format(ds.R[row, refx]))
+    axe.set_xlim((np.min(ds.R.values), ds.R[0, -1]))
+    axe.set_xticks([88, 89, 90, 91])
+    axe.set_title(r"$R_*={:.2f} $cm".format(ds.R[row, refx]))
 
 
-plt.savefig("blob_motion_{}.pdf".format(shot), bbox_inches="tight")
+plt.savefig("blob_motion_{}_{}.pdf".format(row, shot), bbox_inches="tight")
 plt.show()

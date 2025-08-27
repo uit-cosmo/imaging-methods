@@ -2,12 +2,12 @@ from test_utils import *
 from blobmodel import BlobShapeEnum, BlobShapeImpl
 import numpy as np
 
-T = 500
+T = 1000
 Lx = 8
 Ly = 8
 nx = 8
 ny = 8
-dt = 0.025
+dt = 0.01
 bs = BlobShapeImpl(BlobShapeEnum.gaussian, BlobShapeEnum.gaussian)
 K = T * Ly
 
@@ -18,7 +18,7 @@ method_parameters = {
         "refx": 4,
         "refy": 4,
         "threshold": 2,
-        "window": 150,
+        "window": 300,
         "check_max": 1,
         "single_counting": True,
     },
@@ -56,8 +56,8 @@ def test_case_a():
     bp = full_analysis(ds, method_parameters, "a")
     print(bp)
 
-    assert np.abs(bp.vx_c - vx_input) < 0.2, "Wrong contour x velocity"
-    assert np.abs(bp.vy_c - vy_intput) < 0.2, "Wrong contour y velocity"
+    assert np.abs(bp.vx_c - vx_input) < 0.05, "Wrong contour x velocity"
+    assert np.abs(bp.vy_c - vy_intput) < 0.05, "Wrong contour y velocity"
 
     assert np.abs(bp.vx_tde - vx_input) < 0.2, "Wrong TDE x velocity"
     assert np.abs(bp.vy_tde - vy_intput) < 0.2, "Wrong TDE y velocity"
@@ -93,8 +93,8 @@ def test_case_b():
     bp = full_analysis(ds, method_parameters, "b")
     print(bp)
 
-    assert np.abs(bp.vx_c - vx_input) < 0.2, "Wrong contour x velocity"
-    assert np.abs(bp.vy_c - vy_intput) < 0.2, "Wrong contour y velocity"
+    assert np.abs(bp.vx_c - vx_input) < 0.05, "Wrong contour x velocity"
+    assert np.abs(bp.vy_c - vy_intput) < 0.05, "Wrong contour y velocity"
 
     # No TDE velocity asserts as TDE will be wrong due to barberpole effects.
 
