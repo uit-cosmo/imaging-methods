@@ -20,6 +20,9 @@ dependencies = [
     "netcdf4",
     "black",
     "mypy",
+    "fppanalysis",
+    "velocity-estimation",
+    "shapely",
 ]
 
 [tool.setuptools]
