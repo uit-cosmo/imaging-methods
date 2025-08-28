@@ -70,9 +70,6 @@ discharges = [
         1110201027, 0.73, np.nan, np.nan, 1.05, 1.35, np.nan, "none", "EDA-H"
     ),
     PlasmaDischarge(
-        1110201030, 0.73, np.nan, np.nan, 1.05, 1.35, np.nan, "none", "EDA-H"
-    ),
-    PlasmaDischarge(
         1110201034, 0.51, np.nan, np.nan, 1.11, 1.35, np.nan, "none", "EDA-H"
     ),
     PlasmaDischarge(

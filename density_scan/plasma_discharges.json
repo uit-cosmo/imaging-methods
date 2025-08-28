@@ -407,17 +407,6 @@
         "confinement_more": "EDA-H"
     },
     {
-        "shot_number": 1110201030,
-        "plasma_current": 0.73,
-        "line_averaged_density": NaN,
-        "greenwald_fraction": NaN,
-        "t_start": 1.05,
-        "t_end": 1.35,
-        "duration": NaN,
-        "mlp_mode": "none",
-        "confinement_more": "EDA-H"
-    },
-    {
         "shot_number": 1110201034,
         "plasma_current": 0.51,
         "line_averaged_density": NaN,
