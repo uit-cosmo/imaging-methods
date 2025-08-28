@@ -2,6 +2,7 @@ import numpy as np
 from scipy.optimize import differential_evolution
 import matplotlib.pyplot as plt
 import velocity_estimation as ve
+import warnings
 
 
 def rotated_blob(params, rx, ry, x, y):
@@ -155,6 +156,8 @@ def get_maximum_time(e, refx=None, refy=None):
         e.isel(x=refx, y=refy), e.time, s=3
     )
     tau, _ = find_maximum_interpolate(convolved_times, convolved_data)
+    if tau <= np.min(convolved_times) or tau >= np.max(convolved_times):
+        warnings.warn("Time delay found at the window edge, consider running 2DCA with a larger window")
     return tau
 
 
