@@ -157,7 +157,9 @@ def get_maximum_time(e, refx=None, refy=None):
     )
     tau, _ = find_maximum_interpolate(convolved_times, convolved_data)
     if tau <= np.min(convolved_times) or tau >= np.max(convolved_times):
-        warnings.warn("Time delay found at the window edge, consider running 2DCA with a larger window")
+        warnings.warn(
+            "Time delay found at the window edge, consider running 2DCA with a larger window"
+        )
     return tau
 
 

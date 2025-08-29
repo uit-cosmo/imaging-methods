@@ -79,7 +79,11 @@ class PlasmaDischargeManager:
 
     def get_shot_list(self) -> List[int]:
         """Return a list of all shot numbers."""
-        return [discharge.shot_number for discharge in self.discharges]
+        return [
+            discharge.shot_number
+            for discharge in self.discharges
+            if discharge.confinement_mode == "L"
+        ]
 
     def read_shot_data(
         self,

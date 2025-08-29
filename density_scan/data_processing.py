@@ -58,7 +58,7 @@ if __name__ == "__main__":
     print("Computes 2D averages")
     compute_and_store_conditional_averages(refx, refy, file_suffix=suffix)
     print("Analyzing averages...")
-    analysis(suffix)
+    analysis(suffix, force_redo=True)
     print("Plotting results...")
     plot_results(suffix)
     plot_contour_figure(suffix)

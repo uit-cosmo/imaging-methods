@@ -52,9 +52,9 @@ def plot_velocities(suffix):
     fig.show()
 
 
-def analysis(file_suffix=None):
+def analysis(file_suffix=None, force_redo=False):
     results_file_name = os.path.join("results", f"results_{file_suffix}.json")
-    if os.path.exists(results_file_name):
+    if os.path.exists(results_file_name) and not force_redo:
         print(
             results_file_name
             + " exists, remove if you want to run new analysis, returning..."
@@ -148,6 +148,50 @@ def analysis(file_suffix=None):
         )
 
         plt.savefig(psd_file_name, bbox_inches="tight")
+        plt.close(fig)
+
+        fig, ax = plt.subplots()
+        lr_lz_figname = os.path.join("fwhm", f"fwhm_{shot}_{file_suffix}.eps")
+
+        poloidal_var = average_ds.cond_av.isel(x=refx).sel(time=0).values
+        poloidal_pos = (
+            average_ds.Z.isel(x=refx).values - average_ds.Z.isel(x=refx, y=refy).values
+        )
+        radial_var = average_ds.cond_av.isel(y=refy).sel(time=0).values
+        radial_pos = (
+            average_ds.R.isel(y=refy).values - average_ds.R.isel(x=refx, y=refy).values
+        )
+
+        delta_z = poloidal_pos[refy] - poloidal_pos[refy - 1]
+        delta_r = radial_pos[refx] - radial_pos[refx - 1]
+        ref_val = poloidal_var[refy]
+
+        zp_fwhm = delta_z * ref_val / (2 * (ref_val - poloidal_var[refy + 1]))
+        zn_fwhm = delta_z * ref_val / (2 * (ref_val - poloidal_var[refy - 1]))
+
+        poloidal_var_p = poloidal_var[refy:]
+        poloidal_pos_p = poloidal_pos[refy:]
+        mask = poloidal_var_p > ref_val / 4
+        zp_fwhm = np.interp(
+            ref_val / 2, poloidal_var_p[mask][::-1], poloidal_pos_p[mask][::-1]
+        )
+        poloidal_var_n = poloidal_var[: (refy + 1)]
+        poloidal_pos_n = poloidal_pos[: (refy + 1)]
+        mask = poloidal_var_n > ref_val / 4
+        zn_fwhm = np.interp(ref_val / 2, poloidal_var_n[mask], poloidal_pos_n[mask])
+
+        rp_fwhm = delta_r * ref_val / (2 * (ref_val - radial_var[refx + 1]))
+        rn_fwhm = delta_r * ref_val / (2 * (ref_val - radial_var[refx - 1]))
+
+        ax.plot(poloidal_pos, poloidal_var, label=r"$\Phi(Z-Z_*)$", color="blue")
+        ax.plot(radial_pos, radial_var, label=r"$\Phi(R-R_*)$", color="green")
+
+        ax.vlines([zp_fwhm, zn_fwhm], 0, ref_val, ls="--", color="blue")
+        ax.vlines([rp_fwhm, rn_fwhm], 0, ref_val, ls="--", color="green")
+        ax.set_xlabel(r"$R-R_*, Z-Z_*$")
+        ax.legend()
+
+        plt.savefig(lr_lz_figname, bbox_inches="tight")
         plt.close(fig)
 
         bp = ph.BlobParameters(
