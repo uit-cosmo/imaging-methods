@@ -304,12 +304,12 @@ class ScanResults:
         TypeError
             If any element in shots is not a ShotData instance.
         """
-        self.shots = []
+        self.shots = {}
         if shots is not None:
             for shot in shots:
                 if not isinstance(shot, ShotData):
                     raise TypeError("All elements in shots must be ShotData instances")
-                self.shots.append(shot)
+                self.shots[shot.discharge.shot_number] = shot
 
     def add_shot(self, discharge: PlasmaDischarge, blob_params: BlobParameters):
         """
@@ -328,7 +328,7 @@ class ScanResults:
             If discharge is not a PlasmaDischarge instance or blob_params is not a BlobParameters instance.
         """
         shot_data = ShotData(discharge=discharge, blob_params=blob_params)
-        self.shots.append(shot_data)
+        self.shots[discharge.shot_number] = shot_data
 
     def print_summary(self):
         """
@@ -356,30 +356,14 @@ class ScanResults:
             print(f"    {shot.blob_params}")
 
     def to_json(self, filename: Optional[str] = None) -> Optional[str]:
-        """
-        Save the collection to a JSON file or return as a JSON string.
+        class CustomEncoder(json.JSONEncoder):
+            def default(self, obj):
+                if hasattr(obj, 'to_dict'):
+                    return obj.to_dict()
+                return super().default(obj)
 
-        Parameters:
-        -----------
-        filename : str, optional
-            If provided, save the results to this file. If None, return a JSON string.
-
-        Returns:
-        --------
-        str or None
-            JSON string if filename is None, otherwise None.
-
-        Raises:
-        -------
-        OSError
-            If writing to the file fails.
-        """
-        data = [shot.to_dict() for shot in self.shots]
-        if filename:
-            with open(filename, "w") as f:
-                json.dump(data, f, indent=4)
-            return None
-        return json.dumps(data, indent=4)
+        with open(filename, "w") as f:
+            json.dump(self.shots, f, cls=CustomEncoder, indent=4)
 
     @classmethod
     def from_json(cls, json_data: Optional[str] = None, filename: Optional[str] = None):
@@ -415,8 +399,5 @@ class ScanResults:
         else:
             raise ValueError("Either json_data or filename must be provided")
 
-        if not isinstance(data, list):
-            raise ValueError("JSON data must be a list of shot dictionaries")
-
-        shots = [ShotData.from_dict(item) for item in data]
+        shots = [ShotData.from_dict(item) for item in data.values()]
         return cls(shots=shots)

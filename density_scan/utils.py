@@ -186,6 +186,10 @@ def analysis(file_suffix=None, force_redo=False):
         rn_fwhm = get_fwhm(
             radial_var[: (refx + 1)][::-1], radial_pos[: (refx + 1)][::-1]
         )
+        assert zp_fwhm >= 0
+        assert zn_fwhm <= 0
+        assert rp_fwhm >= 0
+        assert rn_fwhm <= 0
 
         ax.plot(poloidal_pos, poloidal_var, label=r"$\Phi(Z-Z_*)$", color="blue")
         ax.plot(radial_pos, radial_var, label=r"$\Phi(R-R_*)$", color="green")
@@ -206,8 +210,8 @@ def analysis(file_suffix=None, force_redo=False):
             vy_tde=w_f,
             lx_f=lx,
             ly_f=ly,
-            lr=(rp_fwhm + rn_fwhm) / 100,
-            lz=(zp_fwhm + zn_fwhm) / 100,
+            lr=(rp_fwhm - rn_fwhm) / 100,
+            lz=(zp_fwhm - zn_fwhm) / 100,
             theta_f=theta,
             taud_psd=taud,
             lambda_psd=lam,
@@ -250,16 +254,16 @@ def plot_results(file_suffix):
     results_file_name = os.path.join("results", f"results_{file_suffix}.json")
     results = ph.ScanResults.from_json(filename=results_file_name)
 
-    gf = np.array([r.discharge.greenwald_fraction for r in results.shots])
-    tauds = np.array([r.blob_params.taud_psd for r in results.shots])
-    v_tde = np.array([r.blob_params.vx_tde for r in results.shots])
-    w_tde = np.array([r.blob_params.vy_tde for r in results.shots])
-    lx = np.array([r.blob_params.lx_f for r in results.shots])
-    ly = np.array([r.blob_params.ly_f for r in results.shots])
+    gf = np.array([r.discharge.greenwald_fraction for r in results.shots.values()])
+    tauds = np.array([r.blob_params.taud_psd for r in results.shots.values()])
+    v_tde = np.array([r.blob_params.vx_tde for r in results.shots.values()])
+    w_tde = np.array([r.blob_params.vy_tde for r in results.shots.values()])
+    lx = np.array([r.blob_params.lx_f for r in results.shots.values()])
+    ly = np.array([r.blob_params.ly_f for r in results.shots.values()])
 
-    v_c = np.array([r.blob_params.vx_c for r in results.shots])
-    w_c = np.array([r.blob_params.vy_c for r in results.shots])
-    area = np.array([r.blob_params.area_c for r in results.shots])
+    v_c = np.array([r.blob_params.vx_c for r in results.shots.values()])
+    w_c = np.array([r.blob_params.vy_c for r in results.shots.values()])
+    area = np.array([r.blob_params.area_c for r in results.shots.values()])
     lx_c = np.sqrt(area / np.pi)
 
     fig, ax = plt.subplots(constrained_layout=True)
