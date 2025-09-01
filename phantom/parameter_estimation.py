@@ -152,6 +152,10 @@ def get_maximum_time(e, refx=None, refy=None):
     """
     if refx is None or refy is None:
         refx, refy = int(e["refx"].item()), int(e["refy"].item())
+
+    is_in_boundaries = 0 <= refx < e.R.sizes["x"] and 0 <= refy <= e.R.sizes["y"]
+    if not is_in_boundaries:
+        return None
     convolved_times, convolved_data = gaussian_convolve(
         e.isel(x=refx, y=refy), e.time, s=3
     )
@@ -172,18 +176,27 @@ def get_maximum_amplitude(e, x, y):
 def get_3tde_velocities(e, refx, refy):
     taux, tauy = get_delays(e, refx, refy)
 
-    deltax = e.R.isel(x=refx + 1, y=refy).item() - e.R.isel(x=refx, y=refy).item()
-    deltay = e.Z.isel(x=refx, y=refy + 1).item() - e.Z.isel(x=refx, y=refy).item()
+    deltax = e.R.isel(x=1, y=0).item() - e.R.isel(x=0, y=0).item()
+    deltay = e.Z.isel(x=0, y=1).item() - e.Z.isel(x=0, y=0).item()
     return ve.get_2d_velocities_from_time_delays(taux, tauy, deltax, 0, 0, deltay)
 
 
 def get_delays(e, refx, refy):
     ref_time = get_maximum_time(e, refx, refy)
-    taux_right = get_maximum_time(e, refx + 1, refy) - ref_time
-    taux_left = get_maximum_time(e, refx - 1, refy) - ref_time
-    tauy_up = get_maximum_time(e, refx, refy + 1) - ref_time
-    tauy_down = get_maximum_time(e, refx, refy - 1) - ref_time
-    return (taux_right - taux_left) / 2, (tauy_up - tauy_down) / 2
+    taus_horizontal = [
+        get_maximum_time(e, refx + 1, refy),
+        get_maximum_time(e, refx - 1, refy),
+    ]
+    taus_horizontal = [t for t in taus_horizontal if t is not None]
+    taus_vertical = [
+        get_maximum_time(e, refx, refy + 1),
+        get_maximum_time(e, refx, refy - 1),
+    ]
+    taus_vertical = [t for t in taus_vertical if t is not None]
+    return (
+        np.array(taus_horizontal).mean() - ref_time,
+        np.array(taus_vertical).mean() - ref_time,
+    )
 
 
 def plot_event_with_fit(

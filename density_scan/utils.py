@@ -162,26 +162,30 @@ def analysis(file_suffix=None, force_redo=False):
             average_ds.R.isel(y=refy).values - average_ds.R.isel(x=refx, y=refy).values
         )
 
-        delta_z = poloidal_pos[refy] - poloidal_pos[refy - 1]
-        delta_r = radial_pos[refx] - radial_pos[refx - 1]
         ref_val = poloidal_var[refy]
 
-        zp_fwhm = delta_z * ref_val / (2 * (ref_val - poloidal_var[refy + 1]))
-        zn_fwhm = delta_z * ref_val / (2 * (ref_val - poloidal_var[refy - 1]))
+        def get_last_monotounus_idx(x):
+            index = 0
+            while index + 1 < len(x):
+                if x[index + 1] > x[index]:
+                    break
+                index = index + 1
+            return index
 
-        poloidal_var_p = poloidal_var[refy:]
-        poloidal_pos_p = poloidal_pos[refy:]
-        mask = poloidal_var_p > ref_val / 4
-        zp_fwhm = np.interp(
-            ref_val / 2, poloidal_var_p[mask][::-1], poloidal_pos_p[mask][::-1]
+        def get_fwhm(values, positions):
+            idx = get_last_monotounus_idx(values)
+            if idx == 0:
+                return 0
+            return np.interp(ref_val / 2, values[:idx][::-1], positions[:idx][::-1])
+
+        zp_fwhm = get_fwhm(poloidal_var[refy:], poloidal_pos[refy:])
+        zn_fwhm = get_fwhm(
+            poloidal_var[: (refy + 1)][::-1], poloidal_pos[: (refy + 1)][::-1]
         )
-        poloidal_var_n = poloidal_var[: (refy + 1)]
-        poloidal_pos_n = poloidal_pos[: (refy + 1)]
-        mask = poloidal_var_n > ref_val / 4
-        zn_fwhm = np.interp(ref_val / 2, poloidal_var_n[mask], poloidal_pos_n[mask])
-
-        rp_fwhm = delta_r * ref_val / (2 * (ref_val - radial_var[refx + 1]))
-        rn_fwhm = delta_r * ref_val / (2 * (ref_val - radial_var[refx - 1]))
+        rp_fwhm = get_fwhm(radial_var[refx:], radial_pos[refx:])
+        rn_fwhm = get_fwhm(
+            radial_var[: (refx + 1)][::-1], radial_pos[: (refx + 1)][::-1]
+        )
 
         ax.plot(poloidal_pos, poloidal_var, label=r"$\Phi(Z-Z_*)$", color="blue")
         ax.plot(radial_pos, radial_var, label=r"$\Phi(R-R_*)$", color="green")
@@ -202,6 +206,8 @@ def analysis(file_suffix=None, force_redo=False):
             vy_tde=w_f,
             lx_f=lx,
             ly_f=ly,
+            lr=(rp_fwhm + rn_fwhm) / 100,
+            lz=(zp_fwhm + zn_fwhm) / 100,
             theta_f=theta,
             taud_psd=taud,
             lambda_psd=lam,

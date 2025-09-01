@@ -136,6 +136,8 @@ class BlobParameters:
         vy_tde (float): Velocity from time-dependent ellipse fitting in y-direction.
         lx_f (float): Semi-major axis from Gaussian fit (pixels or m).
         ly_f (float): Semi-minor axis from Gaussian fit (pixels or m).
+        lr (floar): FWHM radial size (m)
+        lz (floar): FWHM radial size (m)
         theta_f (float): Ellipse rotation angle from Gaussian fit (radians).
         taud_psd (float): Blob lifetime from PSD analysis (time steps or ps).
         lambda_psd (float): Characteristic spatial scale from PSD analysis (pixels or m).
@@ -149,6 +151,8 @@ class BlobParameters:
     vy_tde: float
     lx_f: float
     ly_f: float
+    lr: float
+    lz: float
     theta_f: float
     taud_psd: float
     lambda_psd: float
@@ -198,6 +202,8 @@ class BlobParameters:
             "vy_tde": self.vy_tde,
             "lx_f": self.lx_f,
             "ly_f": self.ly_f,
+            "lr": self.lr,
+            "lz": self.lz,
             "theta_f": self.theta_f,
             "taud_psd": self.taud_psd,
             "lambda_psd": self.lambda_psd,
@@ -209,7 +215,7 @@ class BlobParameters:
         return (
             f"BlobParameters(vx_c={self.vx_c:.2f}, vy_c={self.vy_c:.2f}, "
             f"area_c={self.area_c:.2f}, vx_tde={self.vx_tde:.2f}, vy_tde={self.vy_tde:.2f}, "
-            f"lx_f={self.lx_f:.2f}, ly_f={self.ly_f:.2f}, theta_f={self.theta_f:.2f}, "
+            f"lx_f={self.lx_f:.2f}, ly_f={self.ly_f:.2f}, lr={self.lr:.2f}, lz={self.lz:.2f}, theta_f={self.theta_f:.2f}, "
             f"taud_psd={self.taud_psd:.2f}, lambda_psd={self.lambda_psd:.2f}, number_events={self.number_events})"
         )
 
