@@ -67,7 +67,7 @@ def find_events_and_2dca(
             toy = min(refy + check_max, ds.sizes["y"])
             global_peak = (
                 ds.frames.isel(
-                    time=peak_time_idx, x=slice(fromx, tox), y=slice(fromy, toy)
+                    time=peak_time_idx, x=slice(fromx, tox + 1), y=slice(fromy, toy + 1)
                 )
                 .max()
                 .item()
@@ -172,4 +172,4 @@ def find_events_and_2dca(
         cond_av_ds["number_events"] = len(processed)
         return processed, cond_av_ds
 
-    return processed, None
+    return processed, xr.Dataset()

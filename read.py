@@ -1,9 +1,9 @@
 from phantom.show_data import *
 from phantom.utils import *
 
-shot = 1160616016
+shot = 1160616025
 
-ds = xr.open_dataset("data/phantom_{}.nc".format(shot))
+ds = xr.open_dataset("data/apd_{}.nc".format(shot))
 # ds = xr.open_dataset("~/phantom_1160616016.nc")
 # ph_1160616016 goes 1.1 to 1.6
 # ph_1120921007 goes 1.35 to 1.5

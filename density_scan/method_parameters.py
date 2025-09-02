@@ -1,8 +1,8 @@
 method_parameters = {
     "preprocessing": {"radius": 1000},
     "2dca": {
-        "refx": 2,
-        "refy": 6,
+        "refx": 5,
+        "refy": 5,
         "threshold": 2,
         "window": 60,
         "check_max": 1,

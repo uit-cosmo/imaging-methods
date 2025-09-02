@@ -69,8 +69,13 @@ def analysis(file_suffix=None, force_redo=False):
         is_hmode = confinement_more == "EDA-H" or confinement_more == "ELM-free-H"
         if is_hmode:
             continue
+        if shot != 1160616026:
+            continue
         print("Working on shot {}".format(shot))
         average_ds = get_average(shot, file_suffix)
+        if len(average_ds.data_vars) == 0:
+            print(f"The dataset is empty for shot {shot}, ignoring...")
+            continue
         gpi_ds = manager.read_shot_data(shot, data_folder="../data")
         refx, refy = average_ds["refx"].item(), average_ds["refy"].item()
 
@@ -233,6 +238,9 @@ def plot_vertical_conditional_average(file_suffix):
             continue
         print("Working on shot {}".format(shot))
         average_ds = get_average(shot, file_suffix)
+        if len(average_ds.data_vars) == 0:
+            print(f"The dataset is empty for shot {shot}, ignoring...")
+            continue
         refx, refy = average_ds["refx"].item(), average_ds["refy"].item()
         vertical_points = average_ds.cond_av.sel(time=0).isel(x=refx).values
         poloidal_coord = (
@@ -253,6 +261,8 @@ def plot_vertical_conditional_average(file_suffix):
 def plot_results(file_suffix):
     results_file_name = os.path.join("results", f"results_{file_suffix}.json")
     results = ph.ScanResults.from_json(filename=results_file_name)
+    if len(results.shots) == 0:
+        return
 
     gf = np.array([r.discharge.greenwald_fraction for r in results.shots.values()])
     tauds = np.array([r.blob_params.taud_psd for r in results.shots.values()])
@@ -335,6 +345,9 @@ def plot_contour_figure(suffix):
         print("Working on shot {}".format(shot))
         axe = ax[int(ax_indx / 3), ax_indx % 3]
         average_ds = get_average(shot, suffix)
+        if len(average_ds.data_vars) == 0:
+            print(f"The dataset is empty for shot {shot}, ignoring...")
+            continue
         refx, refy = average_ds["refx"].item(), average_ds["refy"].item()
 
         contour_ds = ph.get_contour_evolution(
