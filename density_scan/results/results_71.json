@@ -1,0 +1,254 @@
+{
+    "1160616027": {
+        "plasma_discharge": {
+            "shot_number": 1160616027,
+            "plasma_current": 0.51,
+            "line_averaged_density": 2.82,
+            "greenwald_fraction": 0.8,
+            "t_start": 1.15,
+            "t_end": 1.45,
+            "duration": 0.3,
+            "mlp_mode": "-",
+            "confinement_more": "L"
+        },
+        "blob_parameters": {
+            "vx_c": 423.12925667287584,
+            "vy_c": -18.114857109162354,
+            "area_c": 4.2437060960420164e-05,
+            "vx_tde": -15708.33508262053,
+            "vy_tde": -3575.036187151684,
+            "lx_f": 0.004680063772263661,
+            "ly_f": 0.003573168392504833,
+            "lr": 0.00408929818054838,
+            "lz": 0.004505455234983734,
+            "theta_f": 0.6285738845428912,
+            "taud_psd": 1.8509804431049437e-05,
+            "lambda_psd": 1.4827386909540155e-06,
+            "number_events": 759
+        }
+    },
+    "1160616026": {
+        "plasma_discharge": {
+            "shot_number": 1160616026,
+            "plasma_current": 0.51,
+            "line_averaged_density": 2.83,
+            "greenwald_fraction": 0.8,
+            "t_start": 1.15,
+            "t_end": 1.45,
+            "duration": 0.3,
+            "mlp_mode": "-",
+            "confinement_more": "L"
+        },
+        "blob_parameters": {
+            "vx_c": 420.22812918600744,
+            "vy_c": -25.552075736344154,
+            "area_c": 4.487893518504962e-05,
+            "vx_tde": -9262.986082356796,
+            "vy_tde": -7365.855922506888,
+            "lx_f": 0.004892486100219058,
+            "ly_f": 0.0039037398641467245,
+            "lr": 0.004209282895483195,
+            "lz": 0.004579563362174423,
+            "theta_f": 0.5633243304547904,
+            "taud_psd": 1.6922581465433906e-05,
+            "lambda_psd": 1.044788924436889e-06,
+            "number_events": 770
+        }
+    },
+    "1160616025": {
+        "plasma_discharge": {
+            "shot_number": 1160616025,
+            "plasma_current": 0.51,
+            "line_averaged_density": 2.76,
+            "greenwald_fraction": 0.8,
+            "t_start": 1.15,
+            "t_end": 1.45,
+            "duration": 0.3,
+            "mlp_mode": "-",
+            "confinement_more": "L"
+        },
+        "blob_parameters": {
+            "vx_c": 428.0384719277294,
+            "vy_c": -43.88884375418355,
+            "area_c": 4.536375456380581e-05,
+            "vx_tde": -23984.124876756006,
+            "vy_tde": -7300.650644327423,
+            "lx_f": 0.004994841506936956,
+            "ly_f": 0.003709551811322438,
+            "lr": 0.0043858262874800135,
+            "lz": 0.004676614192089336,
+            "theta_f": 0.6868997602524558,
+            "taud_psd": 1.988719484574686e-05,
+            "lambda_psd": 1.221488556124493e-06,
+            "number_events": 724
+        }
+    },
+    "1160616022": {
+        "plasma_discharge": {
+            "shot_number": 1160616022,
+            "plasma_current": 0.52,
+            "line_averaged_density": 2.29,
+            "greenwald_fraction": 0.65,
+            "t_start": 1.15,
+            "t_end": 1.45,
+            "duration": 0.3,
+            "mlp_mode": "scan",
+            "confinement_more": "L"
+        },
+        "blob_parameters": {
+            "vx_c": 428.0601087614162,
+            "vy_c": -13.2014656277479,
+            "area_c": 4.2844767528084314e-05,
+            "vx_tde": 1066.1218401562512,
+            "vy_tde": 8380.327484385542,
+            "lx_f": 0.003766094368087951,
+            "ly_f": 0.0039835421374038215,
+            "lr": 0.004462499461379632,
+            "lz": 0.004520687307193248,
+            "theta_f": 0.0005381575508047742,
+            "taud_psd": 3.4427962929239886e-05,
+            "lambda_psd": 1.3293328355414714e-06,
+            "number_events": 797
+        }
+    },
+    "1160616018": {
+        "plasma_discharge": {
+            "shot_number": 1160616018,
+            "plasma_current": 0.53,
+            "line_averaged_density": 1.65,
+            "greenwald_fraction": 0.46,
+            "t_start": 1.15,
+            "t_end": 1.45,
+            "duration": 0.3,
+            "mlp_mode": "dwell",
+            "confinement_more": "L"
+        },
+        "blob_parameters": {
+            "vx_c": 411.17095900555927,
+            "vy_c": 22.227985936883584,
+            "area_c": 3.508994720654184e-05,
+            "vx_tde": 90.48958708824526,
+            "vy_tde": 1699.799520356937,
+            "lx_f": 0.003894272440532038,
+            "ly_f": 0.0030426543431050935,
+            "lr": 0.004141458040335572,
+            "lz": 0.003925892210757103,
+            "theta_f": 0.6566079340762276,
+            "taud_psd": 2.4194010411010547e-05,
+            "lambda_psd": 0.015163413061046583,
+            "number_events": 1021
+        }
+    },
+    "1160616017": {
+        "plasma_discharge": {
+            "shot_number": 1160616017,
+            "plasma_current": 0.53,
+            "line_averaged_density": 1.56,
+            "greenwald_fraction": 0.44,
+            "t_start": 1.15,
+            "t_end": 1.45,
+            "duration": 0.3,
+            "mlp_mode": "scan",
+            "confinement_more": "L"
+        },
+        "blob_parameters": {
+            "vx_c": 425.5401930221631,
+            "vy_c": 2.0787009569657457,
+            "area_c": 3.474518953737e-05,
+            "vx_tde": 56.27112316520154,
+            "vy_tde": 1954.000858116134,
+            "lx_f": 0.0034123486791508206,
+            "ly_f": 0.003508494878000703,
+            "lr": 0.004036602164678098,
+            "lz": 0.003985638669072589,
+            "theta_f": 0.06778816086007311,
+            "taud_psd": 2.355400388209805e-05,
+            "lambda_psd": 0.04934347568061368,
+            "number_events": 1003
+        }
+    },
+    "1160616016": {
+        "plasma_discharge": {
+            "shot_number": 1160616016,
+            "plasma_current": 0.53,
+            "line_averaged_density": 1.6,
+            "greenwald_fraction": 0.45,
+            "t_start": 1.15,
+            "t_end": 1.45,
+            "duration": 0.3,
+            "mlp_mode": "scan",
+            "confinement_more": "L"
+        },
+        "blob_parameters": {
+            "vx_c": 420.4496758260508,
+            "vy_c": 9.966036276504624,
+            "area_c": 3.433277627996778e-05,
+            "vx_tde": 10.103917559184874,
+            "vy_tde": 1531.6270897202712,
+            "lx_f": 0.004052559395396633,
+            "ly_f": 0.002794666380767299,
+            "lr": 0.003871716420380789,
+            "lz": 0.0036944537363653076,
+            "theta_f": 0.6877473936641281,
+            "taud_psd": 2.295342835589853e-05,
+            "lambda_psd": 0.050795841784941266,
+            "number_events": 1031
+        }
+    },
+    "1160616011": {
+        "plasma_discharge": {
+            "shot_number": 1160616011,
+            "plasma_current": 0.54,
+            "line_averaged_density": 1.07,
+            "greenwald_fraction": 0.3,
+            "t_start": 1.15,
+            "t_end": 1.45,
+            "duration": 0.3,
+            "mlp_mode": "scan",
+            "confinement_more": "L"
+        },
+        "blob_parameters": {
+            "vx_c": 412.8490100034373,
+            "vy_c": -3.1727962934332106,
+            "area_c": 1.9771807638648055e-05,
+            "vx_tde": 31.802186308359655,
+            "vy_tde": 9592.463051902389,
+            "lx_f": 0.0034578159091682315,
+            "ly_f": 0.002764655414966044,
+            "lr": 0.0033646899042480928,
+            "lz": 0.0036247345176261413,
+            "theta_f": 0.5462955324049494,
+            "taud_psd": 1.7763171837020808e-05,
+            "lambda_psd": 0.11677630313645115,
+            "number_events": 1190
+        }
+    },
+    "1160616009": {
+        "plasma_discharge": {
+            "shot_number": 1160616009,
+            "plasma_current": 0.54,
+            "line_averaged_density": 0.87,
+            "greenwald_fraction": 0.24,
+            "t_start": 1.305,
+            "t_end": 1.45,
+            "duration": 0.145,
+            "mlp_mode": "scan",
+            "confinement_more": "L"
+        },
+        "blob_parameters": {
+            "vx_c": 397.32649290604706,
+            "vy_c": -17.357727811151957,
+            "area_c": 2.086527879051371e-05,
+            "vx_tde": 6372.302744751469,
+            "vy_tde": 5274.748036505883,
+            "lx_f": 0.0034642521522402926,
+            "ly_f": 0.0028659451723339925,
+            "lr": 0.003475079341874982,
+            "lz": 0.0037559323624708663,
+            "theta_f": 0.5487311121304682,
+            "taud_psd": 1.870124065569967e-05,
+            "lambda_psd": 0.12516617027912288,
+            "number_events": 510
+        }
+    }
+}
