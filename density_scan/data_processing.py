@@ -46,12 +46,10 @@ def compute_and_store_conditional_averages(refx, refy, file_suffix=None):
         average_ds.to_netcdf(file_name)
 
 
-if __name__ == "__main__":
-    manager = ph.PlasmaDischargeManager()
-    manager.load_from_json("plasma_discharges.json")
+def do_calculation(refx, refy):
     preprocess_data()
 
-    refx, refy = method_parameters["2dca"]["refx"], method_parameters["2dca"]["refy"]
+    # refx, refy = method_parameters["2dca"]["refx"], method_parameters["2dca"]["refy"]
     suffix = f"{refx}{refy}"
     print(f"Refx: {refx}, Refy: {refy}")
 
@@ -63,3 +61,14 @@ if __name__ == "__main__":
     plot_results(suffix)
     plot_contour_figure(suffix)
     plot_vertical_conditional_average(suffix)
+
+
+if __name__ == "__main__":
+    manager = ph.PlasmaDischargeManager()
+    manager.load_from_json("plasma_discharges.json")
+    for refx in range(9):
+        for refy in range(10):
+            try:
+                do_calculation(refx, refy)
+            except KeyError:
+                print(f"Issues for {refx} {refy}")

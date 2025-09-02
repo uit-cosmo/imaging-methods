@@ -153,7 +153,7 @@ def get_maximum_time(e, refx=None, refy=None):
     if refx is None or refy is None:
         refx, refy = int(e["refx"].item()), int(e["refy"].item())
 
-    is_in_boundaries = 0 <= refx < e.R.sizes["x"] and 0 <= refy <= e.R.sizes["y"]
+    is_in_boundaries = 0 <= refx < e.R.sizes["x"] and 0 <= refy < e.R.sizes["y"]
     if not is_in_boundaries:
         return None
     convolved_times, convolved_data = gaussian_convolve(

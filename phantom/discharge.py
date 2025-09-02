@@ -401,3 +401,51 @@ class ScanResults:
 
         shots = [ShotData.from_dict(item) for item in data.values()]
         return cls(shots=shots)
+
+
+class ResultsManager:
+    def __init__(self, results_dir: str = "results", data_folder: str = "../data"):
+        self.results_dir = results_dir
+        self.data_folder = data_folder
+        # Nested dict: results[refx][refy] -> ScanResults
+        self.results = {}
+        self.load_data()
+
+    def load_data(self) -> None:
+        """Load all available results from JSON files for L-mode shots."""
+        # Initialize nested dict
+        for refx in range(9):
+            self.results[refx] = {}
+            for refy in range(10):
+                self.results[refx][refy] = None  # Default to None if no data
+                # Construct filename
+                suffix = f"{refx}{refy}"
+                results_file_name = os.path.join(
+                    self.results_dir, f"results_{suffix}.json"
+                )
+                if os.path.exists(results_file_name):
+                    # Load ScanResults for this refx, refy
+                    self.results[refx][refy] = ScanResults.from_json(
+                        filename=results_file_name
+                    )
+
+    def get_results(
+        self, shot_number: int, refx: int, refy: int
+    ) -> Optional[ScanResults]:
+        """Retrieve results for a given shot_number, refx, and refy."""
+        if refx not in self.results or refy not in self.results[refx]:
+            return None
+        scan_results = self.results[refx][refy]
+        if scan_results is None or shot_number not in scan_results.shots:
+            return None
+        return scan_results.shots[shot_number]
+
+    def get_lr(self, shot_number: int, refx: int, refy: int) -> float:
+        """Retrieve lr value or np.nan if not available."""
+        result = self.get_results(shot_number, refx, refy)
+        return result.blob_params.lr if result is not None else np.nan
+
+    def get_lz(self, shot_number: int, refx: int, refy: int) -> float:
+        """Retrieve lr value or np.nan if not available."""
+        result = self.get_results(shot_number, refx, refy)
+        return result.blob_params.lz if result is not None else np.nan

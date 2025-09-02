@@ -69,8 +69,6 @@ def analysis(file_suffix=None, force_redo=False):
         is_hmode = confinement_more == "EDA-H" or confinement_more == "ELM-free-H"
         if is_hmode:
             continue
-        if shot != 1160616026:
-            continue
         print("Working on shot {}".format(shot))
         average_ds = get_average(shot, file_suffix)
         if len(average_ds.data_vars) == 0:
