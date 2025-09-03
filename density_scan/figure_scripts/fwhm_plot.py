@@ -12,8 +12,6 @@ cp.set_rcparams_dynamo(params, 2)
 plt.rcParams.update(params)
 
 results = ph.ResultsManager()
-lel = results.get_results(1160616027, 8, 3)
-
 manager = ph.PlasmaDischargeManager()
 manager.load_from_json("plasma_discharges.json")
 shots = [
@@ -23,9 +21,9 @@ shots = [
 ]
 apd_data = manager.read_shot_data(shots[0], data_folder="../data")
 
-refy = 3
+refy = [3, 4, 5, 6]
 ylims = [0, 1.5]
-radial_values = apd_data.R.isel(y=refy).values
+radial_values = apd_data.R.isel(y=3).values
 fig, ax = cp.figure_multiple_rows_columns(1, 2)
 
 gf_groups = defaultdict(list)
@@ -58,7 +56,7 @@ ax[1].set_ylabel(r"$\ell_R$(cm)")
 ax[1].legend()
 ax[1].set_ylim(ylims)
 
-file_name = os.path.join("result_plots", f"lr_plots.pdf")
+file_name = os.path.join("../result_plots", f"lr_plots.pdf")
 plt.savefig(file_name, bbox_inches="tight")
 plt.show()
 plt.close(fig)
@@ -95,7 +93,7 @@ ax[1].set_ylabel(r"$\ell_Z$(cm)")
 ax[1].legend()
 ax[1].set_ylim(ylims)
 
-file_name = os.path.join("result_plots", f"lz_plots.pdf")
+file_name = os.path.join("../result_plots", f"lz_plots.pdf")
 plt.savefig(file_name, bbox_inches="tight")
 plt.show()
 plt.close(fig)

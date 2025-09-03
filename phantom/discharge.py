@@ -1,6 +1,6 @@
 import json
 from dataclasses import dataclass
-from typing import Optional, List, Dict, Tuple
+from typing import Optional, List, Dict, Tuple, Union
 import os
 from .data_preprocessing import load_data_and_preprocess
 import numpy as np
@@ -440,12 +440,42 @@ class ResultsManager:
             return None
         return scan_results.shots[shot_number]
 
-    def get_lr(self, shot_number: int, refx: int, refy: int) -> float:
-        """Retrieve lr value or np.nan if not available."""
-        result = self.get_results(shot_number, refx, refy)
-        return result.blob_params.lr if result is not None else np.nan
+    def get_lr(
+        self, shot_number: int, refx: Union[int, List[int]], refy: Union[int, List[int]]
+    ) -> float:
+        return self.get_blob_param(shot_number, refx, refy, "lr")
 
-    def get_lz(self, shot_number: int, refx: int, refy: int) -> float:
-        """Retrieve lr value or np.nan if not available."""
-        result = self.get_results(shot_number, refx, refy)
-        return result.blob_params.lz if result is not None else np.nan
+    def get_lz(
+        self, shot_number: int, refx: Union[int, List[int]], refy: Union[int, List[int]]
+    ) -> float:
+        return self.get_blob_param(shot_number, refx, refy, "lz")
+
+    def get_blob_param(
+        self,
+        shot_number: int,
+        refx: Union[int, List[int]],
+        refy: Union[int, List[int]],
+        param_name: str,
+    ) -> float:
+        """Retrieve a blob_params attribute value or average over refx and refy if provided as lists. Returns np.nan if no valid data."""
+        # Convert refx and refy to lists if they are integers
+        refx_values = [refx] if isinstance(refx, int) else refx
+        refy_values = [refy] if isinstance(refy, int) else refy
+
+        # Collect parameter values for all combinations of refx and refy
+        param_values = []
+        for rx in refx_values:
+            for ry in refy_values:
+                result = self.get_results(shot_number, rx, ry)
+                param = (
+                    getattr(result.blob_params, param_name)
+                    if result is not None
+                    else np.nan
+                )
+                param_values.append(param)
+
+        # Compute average, ignoring NaN values
+        param_array = np.array(param_values)
+        if np.all(np.isnan(param_array)):
+            return np.nan
+        return np.nanmean(param_array)
