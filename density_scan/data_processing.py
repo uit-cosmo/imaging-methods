@@ -56,11 +56,9 @@ def do_calculation(refx, refy):
     print("Computes 2D averages")
     compute_and_store_conditional_averages(refx, refy, file_suffix=suffix)
     print("Analyzing averages...")
-    analysis(suffix, force_redo=True)
     print("Plotting results...")
     plot_results(suffix)
-    plot_contour_figure(suffix)
-    plot_vertical_conditional_average(suffix)
+    plot_contour_figure(refx, refy)
 
 
 if __name__ == "__main__":
@@ -69,6 +67,6 @@ if __name__ == "__main__":
     for refx in range(9):
         for refy in range(10):
             try:
-                do_calculation(refx, refy)
+                analysis(refx, refy, force_redo=True, do_plots=False)
             except KeyError:
                 print(f"Issues for {refx} {refy}")

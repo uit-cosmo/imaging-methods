@@ -59,8 +59,8 @@ def test_case_a():
     assert np.abs(bp.vx_c - vx_input) < 0.05, "Wrong contour x velocity"
     assert np.abs(bp.vy_c - vy_intput) < 0.05, "Wrong contour y velocity"
 
-    assert np.abs(bp.vx_tde - vx_input) < 0.2, "Wrong TDE x velocity"
-    assert np.abs(bp.vy_tde - vy_intput) < 0.2, "Wrong TDE y velocity"
+    assert np.abs(bp.vx_2dca_tde - vx_input) < 0.2, "Wrong TDE x velocity"
+    assert np.abs(bp.vy_2dca_tde - vy_intput) < 0.2, "Wrong TDE y velocity"
 
     assert np.abs(bp.taud_psd - 1) < 0.5, "Wrong duration time"
     assert np.abs(bp.theta_f - theta_input) < 0.1, "Wrong tilt angle"
@@ -135,8 +135,8 @@ def test_case_c():
     assert np.abs(bp.vx_c - vx_input) < 0.2, "Wrong contour x velocity"
     assert np.abs(bp.vy_c - vy_intput) < 0.2, "Wrong contour y velocity"
 
-    assert np.abs(bp.vx_tde - vx_input) < 0.2, "Wrong TDE x velocity"
-    assert np.abs(bp.vy_tde - vy_intput) < 0.2, "Wrong TDE y velocity"
+    assert np.abs(bp.vx_2dca_tde - vx_input) < 0.2, "Wrong TDE x velocity"
+    assert np.abs(bp.vy_2dca_tde - vy_intput) < 0.2, "Wrong TDE y velocity"
 
     assert np.abs(bp.taud_psd - 1) < 0.5, "Wrong duration time"
     assert np.abs(bp.theta_f - theta_input) < 0.1, "Wrong tilt angle"
@@ -173,8 +173,8 @@ def test_case_d():
     assert np.abs(bp.vx_c - vx_input) < 0.2, "Wrong contour x velocity"
     assert np.abs(bp.vy_c - vy_intput) < 0.2, "Wrong contour y velocity"
 
-    assert np.abs(bp.vx_tde - vx_input) < 0.2, "Wrong TDE x velocity"
-    assert np.abs(bp.vy_tde - vy_intput) < 0.2, "Wrong TDE y velocity"
+    assert np.abs(bp.vx_2dca_tde - vx_input) < 0.2, "Wrong TDE x velocity"
+    assert np.abs(bp.vy_2dca_tde - vy_intput) < 0.2, "Wrong TDE y velocity"
 
     assert np.abs(bp.taud_psd - 1) < 0.5, "Wrong duration time"
     assert np.abs(bp.theta_f - theta_input) < 0.1, "Wrong tilt angle"
@@ -212,8 +212,8 @@ def test_case_e():
     assert np.abs(bp.vx_c - vx_input) < 0.2, "Wrong contour x velocity"
     assert np.abs(bp.vy_c - vy_intput) < 0.2, "Wrong contour y velocity"
 
-    assert np.abs(bp.vx_tde - vx_input) < 0.2, "Wrong TDE x velocity"
-    assert np.abs(bp.vy_tde - vy_intput) < 0.2, "Wrong TDE y velocity"
+    assert np.abs(bp.vx_2dca_tde - vx_input) < 0.2, "Wrong TDE x velocity"
+    assert np.abs(bp.vy_2dca_tde - vy_intput) < 0.2, "Wrong TDE y velocity"
 
     assert np.abs(bp.taud_psd - 1) < 0.5, "Wrong duration time"
     assert np.abs(bp.theta_f - theta_input) < 0.1, "Wrong tilt angle"

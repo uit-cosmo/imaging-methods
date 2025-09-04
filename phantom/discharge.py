@@ -132,8 +132,10 @@ class BlobParameters:
         vx_c (float): Center-of-mass velocity in x-direction (pixels/time step or m/s).
         vy_c (float): Center-of-mass velocity in y-direction (pixels/time step or m/s).
         area_c (float): Blob area (pixels² or m²).
-        vx_tde (float): Velocity from time-dependent ellipse fitting in x-direction.
-        vy_tde (float): Velocity from time-dependent ellipse fitting in y-direction.
+        vx_2dca_tde (float): Velocity from TDE on 2DCA.
+        vy_2dca_tde (float): Velocity from TDE on 2DCA.
+        vx_tde (float): Velocity from TDE on GPI data.
+        vy_tde (float): Velocity from TDE on GPI data..
         lx_f (float): Semi-major axis from Gaussian fit (pixels or m).
         ly_f (float): Semi-minor axis from Gaussian fit (pixels or m).
         lr (floar): FWHM radial size (m)
@@ -147,6 +149,8 @@ class BlobParameters:
     vx_c: float
     vy_c: float
     area_c: float
+    vx_2dca_tde: float
+    vy_2dca_tde: float
     vx_tde: float
     vy_tde: float
     lx_f: float
@@ -166,7 +170,7 @@ class BlobParameters:
     @property
     def velocity_tde(self) -> Tuple[float, float]:
         """Return time-dependent ellipse velocity vector (vx_tde, vy_tde)."""
-        return (self.vx_tde, self.vy_tde)
+        return (self.vx_2dca_tde, self.vy_2dca_tde)
 
     @property
     def total_velocity_c(self) -> float:
@@ -176,7 +180,7 @@ class BlobParameters:
     @property
     def total_velocity_tde(self) -> float:
         """Compute magnitude of time-dependent ellipse velocity."""
-        return np.sqrt(self.vx_tde**2 + self.vy_tde**2)
+        return np.sqrt(self.vx_2dca_tde**2 + self.vy_2dca_tde**2)
 
     @property
     def aspect_ratio(self) -> float:
@@ -198,6 +202,8 @@ class BlobParameters:
             "vx_c": self.vx_c,
             "vy_c": self.vy_c,
             "area_c": self.area_c,
+            "vx_2dca_tde": self.vx_2dca_tde,
+            "vy_2dca_tde": self.vy_2dca_tde,
             "vx_tde": self.vx_tde,
             "vy_tde": self.vy_tde,
             "lx_f": self.lx_f,
@@ -214,7 +220,8 @@ class BlobParameters:
         """String representation of the blob parameters."""
         return (
             f"BlobParameters(vx_c={self.vx_c:.2f}, vy_c={self.vy_c:.2f}, "
-            f"area_c={self.area_c:.2f}, vx_tde={self.vx_tde:.2f}, vy_tde={self.vy_tde:.2f}, "
+            f"area_c={self.area_c:.2f}, vx_2dca_tde={self.vx_2dca_tde:.2f}, vy_2dca_tde={self.vy_2dca_tde:.2f},"
+            f" vx_tde={self.vx_tde:.2f}, vy_tde={self.vy_tde:.2f}"
             f"lx_f={self.lx_f:.2f}, ly_f={self.ly_f:.2f}, lr={self.lr:.2f}, lz={self.lz:.2f}, theta_f={self.theta_f:.2f}, "
             f"taud_psd={self.taud_psd:.2f}, lambda_psd={self.lambda_psd:.2f}, number_events={self.number_events})"
         )

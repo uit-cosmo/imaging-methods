@@ -90,8 +90,8 @@ def fit_ellipse(
     # Initial guesses for lx, ly, and t
     # Rough estimation
     bounds = [
-        (0, 5),  # lx: 0 to 5
-        (0, 5),  # ly: 0 to 5
+        (1e-10, 5),  # lx: 0 to 5
+        (1e-10, 5),  # ly: 0 to 5
         (0, np.pi / 2),  # t: 0 to 2π
     ]
 
@@ -102,8 +102,11 @@ def fit_ellipse(
         popsize=15,  # Optional: population size multiplier
         maxiter=1000,  # Optional: maximum number of iterations
     )
+    lx, ly, theta = result.x
 
-    return result.x
+    if lx > ly:
+        return ly, lx, theta + np.pi / 2
+    return lx, ly, theta
 
 
 def gaussian_convolve(x, times, s=1.0, kernel_size=None):
@@ -184,27 +187,25 @@ def get_3tde_velocities(e, refx, refy):
 def get_delays(e, refx, refy):
     ref_time = get_maximum_time(e, refx, refy)
     taus_horizontal = [
-        get_maximum_time(e, refx + 1, refy),
-        get_maximum_time(e, refx - 1, refy),
+        get_maximum_time(e, refx + 1, refy) - ref_time,
+        ref_time - get_maximum_time(e, refx - 1, refy),
     ]
     taus_horizontal = [t for t in taus_horizontal if t is not None]
     taus_vertical = [
-        get_maximum_time(e, refx, refy + 1),
-        get_maximum_time(e, refx, refy - 1),
+        get_maximum_time(e, refx, refy + 1) - ref_time,
+        ref_time - get_maximum_time(e, refx, refy - 1),
     ]
     taus_vertical = [t for t in taus_vertical if t is not None]
     return (
-        np.array(taus_horizontal).mean() - ref_time,
-        np.array(taus_vertical).mean() - ref_time,
+        np.array(taus_horizontal).mean(),
+        np.array(taus_vertical).mean(),
     )
 
 
-def plot_event_with_fit(
+def fit_ellipse_to_event(
     e,
     refx,
     refy,
-    ax,
-    fig_name=None,
     size_penalty_factor=5,
     aspect_ratio_penalty_factor=0.1,
     theta_penalty_factor=0.1,
@@ -218,6 +219,28 @@ def plot_event_with_fit(
         aspect_ratio_penalty_factor=aspect_ratio_penalty_factor,
         theta_penalty_factor=theta_penalty_factor,
     )
+    return lx, ly, theta
+
+
+def plot_event_with_fit(
+    e,
+    refx,
+    refy,
+    ax,
+    fig_name=None,
+    size_penalty_factor=5,
+    aspect_ratio_penalty_factor=0.1,
+    theta_penalty_factor=0.1,
+):
+    lx, ly, theta = fit_ellipse_to_event(
+        e,
+        refx,
+        refy,
+        size_penalty_factor,
+        aspect_ratio_penalty_factor,
+        theta_penalty_factor,
+    )
+    rx, ry = e.R.isel(x=refx, y=refy).item(), e.Z.isel(x=refx, y=refy).item()
     alphas = np.linspace(0, 2 * np.pi, 200)
     elipsx, elipsy = zip(
         *[ellipse_parameters((lx, ly, theta), rx, ry, a) for a in alphas]
