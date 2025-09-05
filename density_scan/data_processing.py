@@ -64,7 +64,7 @@ def do_calculation(refx, refy):
 if __name__ == "__main__":
     manager = ph.PlasmaDischargeManager()
     manager.load_from_json("plasma_discharges.json")
-    for refx in [8]:
+    for refx in range(8):
         for refy in range(10):
             try:
                 compute_and_store_conditional_averages(
