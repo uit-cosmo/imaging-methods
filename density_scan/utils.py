@@ -28,10 +28,10 @@ def analysis(refx, refy, force_redo=False, do_plots=True):
     manager = ph.PlasmaDischargeManager()
     manager.load_from_json("plasma_discharges.json")
     for shot in manager.get_shot_list():
-        confinement_more = manager.get_discharge_by_shot(shot).confinement_mode
-        is_hmode = confinement_more == "EDA-H" or confinement_more == "ELM-free-H"
-        if is_hmode:
-            continue
+        #confinement_more = manager.get_discharge_by_shot(shot).confinement_mode
+        #is_hmode = confinement_more == "EDA-H" or confinement_more == "ELM-free-H"
+        #if is_hmode:
+        #    continue
         print("Working on shot {}".format(shot))
 
         average_ds = get_average(shot, refx, refy)

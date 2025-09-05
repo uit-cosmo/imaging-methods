@@ -23,10 +23,10 @@ def preprocess_data():
 
 def compute_and_store_conditional_averages(refx, refy, file_suffix=None):
     for shot in manager.get_shot_list():
-        confinement_more = manager.get_discharge_by_shot(shot).confinement_mode
-        is_hmode = confinement_more == "EDA-H" or confinement_more == "ELM-free-H"
-        if is_hmode:
-            continue
+        #confinement_more = manager.get_discharge_by_shot(shot).confinement_mode
+        #is_hmode = confinement_more == "EDA-H" or confinement_more == "ELM-free-H"
+        #if is_hmode:
+        #    continue
         file_name = os.path.join("averages", f"average_ds_{shot}_{file_suffix}.nc")
         if os.path.exists(file_name):
             print(file_name, " already exists, reusing...")
