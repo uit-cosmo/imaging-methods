@@ -16,6 +16,7 @@ def get_average(shot, refx, refy):
 
 
 def analysis(refx, refy, force_redo=False, do_plots=True):
+    results = ph.ScanResults.from_json("results.json")
     results_file_name = os.path.join("results", f"results_{refx}{refy}.json")
     if os.path.exists(results_file_name) and not force_redo:
         print(
@@ -26,7 +27,6 @@ def analysis(refx, refy, force_redo=False, do_plots=True):
 
     manager = ph.PlasmaDischargeManager()
     manager.load_from_json("plasma_discharges.json")
-    results = ph.ScanResults()
     for shot in manager.get_shot_list():
         confinement_more = manager.get_discharge_by_shot(shot).confinement_mode
         is_hmode = confinement_more == "EDA-H" or confinement_more == "ELM-free-H"
@@ -66,9 +66,11 @@ def analysis(refx, refy, force_redo=False, do_plots=True):
             lambda_psd=lam,
             number_events=average_ds["number_events"].item(),
         )
-        results.add_shot(manager.get_discharge_by_shot(shot), bp)
+        if shot not in results.shots:
+            results.add_shot(manager.get_discharge_by_shot(shot), {})
+        results.add_blob_params(shot, refx, refy, bp)
 
-    results.to_json(results_file_name)
+    results.to_json("results.json")
 
 
 def get_tde_velocities(refx, refy, gpi_ds):
@@ -76,10 +78,14 @@ def get_tde_velocities(refx, refy, gpi_ds):
 
     eo = ve.EstimationOptions()
     eo.cc_options.cc_window = method_parameters["2dca"]["window"] * ph.get_dt(gpi_ds)
-    pd = ve.estimate_velocities_for_pixel(
-        refx, refy, ve.CModImagingDataInterface(gpi_ds)
-    )
-    return pd.vx / 100, pd.vy / 100
+    try:
+        pd = ve.estimate_velocities_for_pixel(
+            refx, refy, ve.CModImagingDataInterface(gpi_ds)
+        )
+        vx, vy = pd.vx / 100, pd.vy / 100
+    except ValueError:
+        vx, vy = np.nan, np.nan
+    return vx, vy
 
 
 def get_taud_from_psd(shot, refx, refy, gpi_ds, do_plot):

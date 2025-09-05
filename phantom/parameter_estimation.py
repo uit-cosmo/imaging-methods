@@ -186,14 +186,19 @@ def get_3tde_velocities(e, refx, refy):
 
 def get_delays(e, refx, refy):
     ref_time = get_maximum_time(e, refx, refy)
+    maxtime_right = get_maximum_time(e, refx + 1, refy)
+    maxtime_left = get_maximum_time(e, refx - 1, refy)
+    maxtime_up = get_maximum_time(e, refx, refy + 1)
+    maxtime_down = get_maximum_time(e, refx, refy - 1)
     taus_horizontal = [
-        get_maximum_time(e, refx + 1, refy) - ref_time,
-        ref_time - get_maximum_time(e, refx - 1, refy),
+        (maxtime_right - ref_time) if maxtime_right is not None else None,
+        (ref_time - maxtime_left) if maxtime_left is not None else None,
     ]
     taus_horizontal = [t for t in taus_horizontal if t is not None]
+
     taus_vertical = [
-        get_maximum_time(e, refx, refy + 1) - ref_time,
-        ref_time - get_maximum_time(e, refx, refy - 1),
+        (maxtime_up - ref_time) if maxtime_up is not None else None,
+        (ref_time - maxtime_down) if maxtime_down is not None else None,
     ]
     taus_vertical = [t for t in taus_vertical if t is not None]
     return (

@@ -248,31 +248,38 @@ class ShotData:
     """
 
     discharge: PlasmaDischarge
-    blob_params: BlobParameters
+    blob_params: Dict[int, Dict[int, Optional[BlobParameters]]]
 
-    def __post_init__(self):
-        """Validate the types of discharge and blob_params."""
-        if not isinstance(self.discharge, PlasmaDischarge):
-            raise TypeError("discharge must be a PlasmaDischarge instance")
-        if not isinstance(self.blob_params, BlobParameters):
-            raise TypeError("blob_params must be a BlobParameters instance")
-
-    def to_dict(self) -> Dict[str, Dict]:
+    def to_dict(self):
         """Convert the shot data to a dictionary for JSON serialization."""
         return {
             "plasma_discharge": self.discharge.to_dict(),
-            "blob_parameters": self.blob_params.to_dict(),
+            "blob_params": {
+                str(refx): {
+                    str(refy): params.to_dict() if params is not None else None
+                    for refy, params in refy_dict.items()
+                }
+                for refx, refy_dict in self.blob_params.items()
+            },
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Dict]) -> "ShotData":
+    def from_dict(
+        cls, data: Dict[str, Union[Dict, Dict[str, Dict[str, Optional[Dict]]]]]
+    ):
         """Create a ShotData instance from a dictionary."""
-        required_keys = {"plasma_discharge", "blob_parameters"}
+        required_keys = {"plasma_discharge", "blob_params"}
         if not all(key in data for key in required_keys):
             missing = required_keys - set(data.keys())
             raise KeyError(f"Missing required keys in JSON data: {missing}")
         discharge = PlasmaDischarge.from_dict(data["plasma_discharge"])
-        blob_params = BlobParameters(**data["blob_parameters"])
+        blob_params = {
+            int(refx): {
+                int(refy): BlobParameters(**params) if params is not None else None
+                for refy, params in refy_dict.items()
+            }
+            for refx, refy_dict in data["blob_params"].items()
+        }
         return cls(discharge=discharge, blob_params=blob_params)
 
 
@@ -297,26 +304,15 @@ class ScanResults:
         Create a ScanResults instance from a JSON file or string.
     """
 
-    def __init__(self, shots: Optional[List[ShotData]] = None):
-        """
-        Initialize a ScanResults instance.
-
-        Parameters:
-        -----------
-        shots : List[ShotData], optional
-            Initial list of ShotData instances. If None, starts with an empty list.
-
-        Raises:
-        -------
-        TypeError
-            If any element in shots is not a ShotData instance.
-        """
-        self.shots = {}
+    def __init__(self, shots: Optional[Dict[int, ShotData]] = None):
+        """Initialize a ScanResults instance."""
+        self.shots = {} if shots is None else shots
         if shots is not None:
-            for shot in shots:
-                if not isinstance(shot, ShotData):
-                    raise TypeError("All elements in shots must be ShotData instances")
-                self.shots[shot.discharge.shot_number] = shot
+            for shot_number, shot_data in shots.items():
+                if not isinstance(shot_number, int):
+                    raise TypeError("Shot numbers must be integers")
+                if not isinstance(shot_data, ShotData):
+                    raise TypeError("All values in shots must be ShotData instances")
 
     def add_shot(self, discharge: PlasmaDischarge, blob_params: BlobParameters):
         """
@@ -337,115 +333,81 @@ class ScanResults:
         shot_data = ShotData(discharge=discharge, blob_params=blob_params)
         self.shots[discharge.shot_number] = shot_data
 
-    def print_summary(self):
-        """
-        Print a summary of all shots in the collection.
-        """
-        if not self.shots:
-            print("No shots in the collection.")
-            return
-        print(f"Scan Results Summary ({len(self.shots)} shots):")
-        for i, shot in enumerate(self.shots, 1):
-            print(f"\nShot {i}:")
-            print("  Plasma Discharge Parameters:")
-            print(f"    Shot Number: {shot.discharge.shot_number}")
-            print(f"    Plasma Current: {shot.discharge.plasma_current:.2f} (MA)")
-            print(
-                f"    Line-Averaged Density: {shot.discharge.line_averaged_density:.2f} (10^20 m^-3)"
-            )
-            print(f"    Greenwald Fraction: {shot.discharge.greenwald_fraction:.2f}")
-            print(f"    Start Time: {shot.discharge.t_start:.2f} (s)")
-            print(f"    End Time: {shot.discharge.t_end:.2f} (s)")
-            print(f"    Duration: {shot.discharge.duration:.2f} (s)")
-            print(f"    MLP Mode: {shot.discharge.mlp_mode}")
-            print(f"    Confinement Mode: {shot.discharge.confinement_mode}")
-            print("  Blob Parameters:")
-            print(f"    {shot.blob_params}")
+    def add_blob_params(
+        self, shot_number: int, refx: int, refy: int, blob_params: BlobParameters
+    ):
+        if not isinstance(blob_params, BlobParameters):
+            raise TypeError("blob_params must be a BlobParameters instance")
+        if not isinstance(refx, int) or not isinstance(refy, int):
+            raise TypeError("refx and refy must be integers")
 
-    def to_json(self, filename: Optional[str] = None) -> Optional[str]:
+        # Check if shot exists
+        if shot_number not in self.shots:
+            # Requires discharge data to create a new ShotData instance
+            raise ValueError(
+                f"Shot {shot_number} does not exist. Add discharge data first using add_shot."
+            )
+
+        # Get the ShotData instance
+        shot_data = self.shots[shot_number]
+
+        # Initialize refx dictionary if it doesn't exist
+        if refx not in shot_data.blob_params:
+            shot_data.blob_params[refx] = {}
+
+        # Add or update blob_params for the given refx, refy
+        shot_data.blob_params[refx][refy] = blob_params
+
+    def to_json(self, filename):
         class CustomEncoder(json.JSONEncoder):
             def default(self, obj):
                 if hasattr(obj, "to_dict"):
                     return obj.to_dict()
                 return super().default(obj)
 
-        with open(filename, "w") as f:
-            json.dump(self.shots, f, cls=CustomEncoder, indent=4)
+        data = {str(k): v.to_dict() for k, v in self.shots.items()}
+        with open(filename, "w", encoding="utf-8") as f:
+            json.dump(data, f, cls=CustomEncoder, indent=4)
 
     @classmethod
-    def from_json(cls, json_data: Optional[str] = None, filename: Optional[str] = None):
-        """
-        Create a ScanResults instance from a JSON file or string.
+    def from_json(cls, filename: str):
+        def object_hook(data):
+            if (
+                isinstance(data, dict)
+                and "plasma_discharge" in data
+                and "blob_params" in data
+            ):
+                return ShotData.from_dict(data)
+            return data
 
-        Parameters:
-        -----------
-        json_data : str, optional
-            JSON string containing the collection data. Ignored if filename is provided.
-        filename : str, optional
-            Path to a JSON file containing the collection data.
+        if not os.path.exists(filename):
+            raise FileNotFoundError(f"File {filename} not found")
+        with open(filename, "r", encoding="utf-8") as f:
+            data = json.load(f, object_hook=object_hook)
 
-        Returns:
-        --------
-        ScanResults
-            A new ScanResults instance with the loaded shots.
-
-        Raises:
-        -------
-        ValueError
-            If neither json_data nor filename is provided, or if JSON data is invalid.
-        OSError
-            If reading the file fails.
-        KeyError
-            If required keys are missing from the JSON data for any shot.
-        """
-        if filename:
-            with open(filename, "r") as f:
-                data = json.load(f)
-        elif json_data:
-            data = json.loads(json_data)
-        else:
-            raise ValueError("Either json_data or filename must be provided")
-
-        shots = [ShotData.from_dict(item) for item in data.values()]
+        shots = {int(k): v for k, v in data.items()}
         return cls(shots=shots)
 
 
 class ResultsManager:
-    def __init__(self, results_dir: str = "results", data_folder: str = "../data"):
-        self.results_dir = results_dir
-        self.data_folder = data_folder
-        # Nested dict: results[refx][refy] -> ScanResults
-        self.results = {}
+    def __init__(self, results_file: str = "results.json"):
+        self.results_file = results_file
+        self.results = None
         self.load_data()
 
     def load_data(self) -> None:
-        """Load all available results from JSON files for L-mode shots."""
-        # Initialize nested dict
-        for refx in range(9):
-            self.results[refx] = {}
-            for refy in range(10):
-                self.results[refx][refy] = None  # Default to None if no data
-                # Construct filename
-                suffix = f"{refx}{refy}"
-                results_file_name = os.path.join(
-                    self.results_dir, f"results_{suffix}.json"
-                )
-                if os.path.exists(results_file_name):
-                    # Load ScanResults for this refx, refy
-                    self.results[refx][refy] = ScanResults.from_json(
-                        filename=results_file_name
-                    )
+        if os.path.exists(self.results_file):
+            self.results = ScanResults.from_json(filename=self.results_file)
+        else:
+            self.results = ScanResults()
 
-    def get_results(
-        self, shot_number: int, refx: int, refy: int
-    ) -> Optional[ScanResults]:
-        """Retrieve results for a given shot_number, refx, and refy."""
-        if refx not in self.results or refy not in self.results[refx]:
+    def get_results(self, shot_number: int, refx: int, refy: int) -> Optional[ShotData]:
+        if self.results is None or shot_number not in self.results.shots:
             return None
-        scan_results = self.results[refx][refy]
-        if scan_results is None or shot_number not in scan_results.shots:
+        shot_data = self.results.shots[shot_number]
+        if refx not in shot_data.blob_params or refy not in shot_data.blob_params[refx]:
             return None
-        return scan_results.shots[shot_number]
+        return shot_data if shot_data.blob_params[refx][refy] is not None else None
 
     def get_lr(
         self, shot_number: int, refx: Union[int, List[int]], refy: Union[int, List[int]]
@@ -486,3 +448,15 @@ class ResultsManager:
         if np.all(np.isnan(param_array)):
             return np.nan
         return np.nanmean(param_array)
+
+    def save_results(self):
+        if self.results is not None:
+            self.results.to_json(self.results_file)
+
+    def add_shot_data(
+        self,
+        discharge: PlasmaDischarge,
+        blob_params: Dict[int, Dict[int, Optional[BlobParameters]]],
+    ):
+        self.results.add_shot(discharge, blob_params)
+        self.save_results()
