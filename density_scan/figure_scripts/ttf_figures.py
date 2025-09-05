@@ -13,7 +13,7 @@ cp.set_rcparams_dynamo(matplotlib_params, 2)
 # plt.rcParams["text.usetex"] = False
 plt.rcParams.update(matplotlib_params)
 
-results = ph.ResultsManager()
+results = ph.ResultManager.from_json("results.json")
 manager = ph.PlasmaDischargeManager()
 manager.load_from_json("plasma_discharges.json")
 shots = [
@@ -68,4 +68,6 @@ def make_plot_for_param_and_save(param, ylabel, ylims):
 make_plot_for_param_and_save("lr", r"$\ell_r$(cm)", ylims=[0, 1])
 make_plot_for_param_and_save("lz", r"$\ell_z$(cm)", ylims=[0, 1])
 make_plot_for_param_and_save("ly_f", r"$\ell_\perp$(cm)", ylims=[0, 1])
+make_plot_for_param_and_save("vx_c", r"$v$(cm/s)", ylims=None)
+make_plot_for_param_and_save("vx_2dca_tde", r"$v$(cm/s)", ylims=None)
 make_plot_for_param_and_save("vx_tde", r"$v$(cm/s)", ylims=None)

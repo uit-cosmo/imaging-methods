@@ -16,7 +16,7 @@ def get_average(shot, refx, refy):
 
 
 def analysis(refx, refy, force_redo=False, do_plots=True):
-    results = ph.ScanResults.from_json("results.json")
+    results = ph.ResultManager.from_json("results.json")
     results_file_name = os.path.join("results", f"results_{refx}{refy}.json")
     if os.path.exists(results_file_name) and not force_redo:
         print(
@@ -246,7 +246,7 @@ def get_contour_parameters(shot, refx, refy, average_ds, do_plots):
 
 def plot_results(file_suffix):
     results_file_name = os.path.join("results", f"results_{file_suffix}.json")
-    results = ph.ScanResults.from_json(filename=results_file_name)
+    results = ph.ResultManager.from_json(filename=results_file_name)
     if len(results.shots) == 0:
         return
 

@@ -11,7 +11,7 @@ cp.set_rcparams_dynamo(params, 2)
 # plt.rcParams["text.usetex"] = False
 plt.rcParams.update(params)
 
-results = ph.ResultsManager()
+results = ph.ResultManager.from_json("results.json")
 manager = ph.PlasmaDischargeManager()
 manager.load_from_json("plasma_discharges.json")
 shots = [
@@ -30,7 +30,7 @@ gf_groups = defaultdict(list)
 for shot in shots:
     gf = manager.get_discharge_by_shot(shot).greenwald_fraction
     gf_key = round(gf, 1)
-    lr = [100 * results.get_lr(shot, refx, refy) for refx in range(9)]
+    lr = [100 * results.get_blob_param(shot, refx, refy, "lr") for refx in range(9)]
     gf_groups[gf_key].append((gf, lr))
 
 for gf_key, group in gf_groups.items():
@@ -48,7 +48,7 @@ ax[0].set_ylim(ylims)
 
 for refx in range(9):
     gfs = [manager.get_discharge_by_shot(shot).greenwald_fraction for shot in shots]
-    lrs = [100 * results.get_lr(shot, refx, refy) for shot in shots]
+    lrs = [100 * results.get_blob_param(shot, refx, refy, "lr") for shot in shots]
     ax[1].scatter(gfs, lrs, label=f"R={radial_values[refx]:.2f}")
 
 ax[1].set_xlabel(r"$F_{GW}$")
@@ -56,7 +56,7 @@ ax[1].set_ylabel(r"$\ell_R$(cm)")
 ax[1].legend()
 ax[1].set_ylim(ylims)
 
-file_name = os.path.join("../result_plots", f"lr_plots.pdf")
+file_name = os.path.join("result_plots", f"lr_plots.pdf")
 plt.savefig(file_name, bbox_inches="tight")
 plt.show()
 plt.close(fig)
@@ -68,7 +68,7 @@ gf_groups = defaultdict(list)
 for shot in shots:
     gf = manager.get_discharge_by_shot(shot).greenwald_fraction
     gf_key = round(gf, 1)
-    lz = [100 * results.get_lz(shot, refx, refy) for refx in range(9)]
+    lz = [100 * results.get_blob_param(shot, refx, refy, "lz") for refx in range(9)]
     gf_groups[gf_key].append((gf, lz))
 
 for gf_key, group in gf_groups.items():
@@ -85,7 +85,7 @@ ax[0].set_ylim(ylims)
 
 for refx in range(9):
     gfs = [manager.get_discharge_by_shot(shot).greenwald_fraction for shot in shots]
-    lzs = [100 * results.get_lz(shot, refx, refy) for shot in shots]
+    lzs = [100 * results.get_blob_param(shot, refx, refy, "lz") for shot in shots]
     ax[1].scatter(gfs, lzs, label=f"R={radial_values[refx]:.2f}")
 
 ax[1].set_xlabel(r"$F_{GW}$")
@@ -93,7 +93,7 @@ ax[1].set_ylabel(r"$\ell_Z$(cm)")
 ax[1].legend()
 ax[1].set_ylim(ylims)
 
-file_name = os.path.join("../result_plots", f"lz_plots.pdf")
+file_name = os.path.join("result_plots", f"lz_plots.pdf")
 plt.savefig(file_name, bbox_inches="tight")
 plt.show()
 plt.close(fig)

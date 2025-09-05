@@ -283,7 +283,7 @@ class ShotData:
         return cls(discharge=discharge, blob_params=blob_params)
 
 
-class ScanResults:
+class ResultManager:
     """
     A class to manage a collection of ShotData instances for multiple shots.
 
@@ -358,6 +358,40 @@ class ScanResults:
         # Add or update blob_params for the given refx, refy
         shot_data.blob_params[refx][refy] = blob_params
 
+    def get_blob_params_for_shot(self, shot_number: int, refx: int, refy: int):
+        if self.shots is None or shot_number not in self.shots:
+            return None
+        shot_data = self.shots[shot_number]
+        if refx not in shot_data.blob_params or refy not in shot_data.blob_params[refx]:
+            return None
+        return shot_data.blob_params[refx][refy]
+
+    def get_blob_param(
+        self,
+        shot_number: int,
+        refx: Union[int, List[int]],
+        refy: Union[int, List[int]],
+        param_name: str,
+    ) -> float:
+        """Retrieve a blob_params attribute value or average over refx and refy if provided as lists. Returns np.nan if no valid data."""
+        # Convert refx and refy to lists if they are integers
+        refx_values = [refx] if isinstance(refx, int) else refx
+        refy_values = [refy] if isinstance(refy, int) else refy
+
+        # Collect parameter values for all combinations of refx and refy
+        param_values = []
+        for rx in refx_values:
+            for ry in refy_values:
+                bp = self.get_blob_params_for_shot(shot_number, rx, ry)
+                param = getattr(bp, param_name) if bp is not None else np.nan
+                param_values.append(param)
+
+        # Compute average, ignoring NaN values
+        param_array = np.array(param_values)
+        if np.all(np.isnan(param_array)):
+            return np.nan
+        return np.nanmean(param_array)
+
     def to_json(self, filename):
         class CustomEncoder(json.JSONEncoder):
             def default(self, obj):
@@ -387,76 +421,3 @@ class ScanResults:
 
         shots = {int(k): v for k, v in data.items()}
         return cls(shots=shots)
-
-
-class ResultsManager:
-    def __init__(self, results_file: str = "results.json"):
-        self.results_file = results_file
-        self.results = None
-        self.load_data()
-
-    def load_data(self) -> None:
-        if os.path.exists(self.results_file):
-            self.results = ScanResults.from_json(filename=self.results_file)
-        else:
-            self.results = ScanResults()
-
-    def get_results(self, shot_number: int, refx: int, refy: int) -> Optional[ShotData]:
-        if self.results is None or shot_number not in self.results.shots:
-            return None
-        shot_data = self.results.shots[shot_number]
-        if refx not in shot_data.blob_params or refy not in shot_data.blob_params[refx]:
-            return None
-        return shot_data if shot_data.blob_params[refx][refy] is not None else None
-
-    def get_lr(
-        self, shot_number: int, refx: Union[int, List[int]], refy: Union[int, List[int]]
-    ) -> float:
-        return self.get_blob_param(shot_number, refx, refy, "lr")
-
-    def get_lz(
-        self, shot_number: int, refx: Union[int, List[int]], refy: Union[int, List[int]]
-    ) -> float:
-        return self.get_blob_param(shot_number, refx, refy, "lz")
-
-    def get_blob_param(
-        self,
-        shot_number: int,
-        refx: Union[int, List[int]],
-        refy: Union[int, List[int]],
-        param_name: str,
-    ) -> float:
-        """Retrieve a blob_params attribute value or average over refx and refy if provided as lists. Returns np.nan if no valid data."""
-        # Convert refx and refy to lists if they are integers
-        refx_values = [refx] if isinstance(refx, int) else refx
-        refy_values = [refy] if isinstance(refy, int) else refy
-
-        # Collect parameter values for all combinations of refx and refy
-        param_values = []
-        for rx in refx_values:
-            for ry in refy_values:
-                result = self.get_results(shot_number, rx, ry)
-                param = (
-                    getattr(result.blob_params, param_name)
-                    if result is not None
-                    else np.nan
-                )
-                param_values.append(param)
-
-        # Compute average, ignoring NaN values
-        param_array = np.array(param_values)
-        if np.all(np.isnan(param_array)):
-            return np.nan
-        return np.nanmean(param_array)
-
-    def save_results(self):
-        if self.results is not None:
-            self.results.to_json(self.results_file)
-
-    def add_shot_data(
-        self,
-        discharge: PlasmaDischarge,
-        blob_params: Dict[int, Dict[int, Optional[BlobParameters]]],
-    ):
-        self.results.add_shot(discharge, blob_params)
-        self.save_results()

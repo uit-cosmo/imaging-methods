@@ -11,7 +11,7 @@ fig, ax = plt.subplots()
 
 for file_suffix in suffixes:
     results_file_name = os.path.join("results", f"results_{file_suffix}.json")
-    results = ph.ScanResults.from_json(filename=results_file_name)
+    results = ph.ResultManager.from_json(filename=results_file_name)
 
     gf = np.array([r.discharge.greenwald_fraction for r in results.shots])
     lx = np.array([r.blob_params.lx_f for r in results.shots])
