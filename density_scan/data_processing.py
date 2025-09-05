@@ -67,7 +67,7 @@ def do_calculation(refx, refy):
 def process_point(args, manager, results):
     shot, refx, refy = args
     try:
-        print(f"Working on shot {shot}, refx={refx}, refy={refy}")
+        print(f"Working on shot {shot} and pixel {refx}{refy}")
         compute_and_store_conditional_averages(refx, refy, file_suffix=f"{refx}{refy}")
         bp = analysis(shot, refx, refy, manager, do_plots=False)
         with mp.Lock():  # Ensure thread-safe access to results
@@ -98,7 +98,7 @@ def run_single_thread():
         for refx in range(8):
             for refy in range(10):
                 try:
-                    print("Working on shot {}".format(shot))
+                    print(f"Working on shot {shot} and pixel {refx}{refy}")
                     compute_and_store_conditional_averages(
                         refx, refy, file_suffix=f"{refx}{refy}"
                     )
