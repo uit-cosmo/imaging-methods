@@ -2,6 +2,8 @@ import json
 from dataclasses import dataclass
 from typing import Optional, List, Dict, Tuple, Union
 import os
+
+from density_scan.density_scan import discharge
 from .data_preprocessing import load_data_and_preprocess
 import numpy as np
 
@@ -79,6 +81,9 @@ class PlasmaDischargeManager:
 
     def get_shot_list(self) -> List[int]:
         """Return a list of all shot numbers."""
+        return [discharge.shot_number for discharge in self.discharges]
+
+    def get_ohmic_shot_list(self) -> List[int]:
         return [
             discharge.shot_number
             for discharge in self.discharges

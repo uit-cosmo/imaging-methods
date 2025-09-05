@@ -15,62 +15,37 @@ def get_average(shot, refx, refy):
     return average_ds
 
 
-def analysis(refx, refy, force_redo=False, do_plots=True):
-    results = ph.ResultManager.from_json("results.json")
-    results_file_name = os.path.join("results", f"results_{refx}{refy}.json")
-    if os.path.exists(results_file_name) and not force_redo:
-        print(
-            results_file_name
-            + " exists, remove if you want to run new analysis, returning..."
-        )
-        return
+def analysis(shot, refx, refy, manager, do_plots=True):
+    average_ds = get_average(shot, refx, refy)
+    if len(average_ds.data_vars) == 0:
+        print(f"The dataset is empty for shot {shot}, ignoring...")
+        return None
+    gpi_ds = manager.read_shot_data(shot, data_folder="../data")
 
-    manager = ph.PlasmaDischargeManager()
-    manager.load_from_json("plasma_discharges.json")
-    for shot in manager.get_shot_list():
-        #confinement_more = manager.get_discharge_by_shot(shot).confinement_mode
-        #is_hmode = confinement_more == "EDA-H" or confinement_more == "ELM-free-H"
-        #if is_hmode:
-        #    continue
-        print("Working on shot {}".format(shot))
+    v_c, w_c, area_c = get_contour_parameters(shot, refx, refy, average_ds, do_plots)
+    v_2dca_tde, w_2dca_tde = get_2dca_tde_velocities(refx, refy, average_ds)
+    v_tde, w_tde = get_tde_velocities(refx, refy, gpi_ds)
+    lx, ly, theta = get_gaussian_fit_sizes(shot, refx, refy, average_ds, do_plots)
+    taud, lam = get_taud_from_psd(shot, refx, refy, gpi_ds, do_plots)
+    lr, lz = get_fwhm_sizes(shot, refx, refy, average_ds, do_plots)
 
-        average_ds = get_average(shot, refx, refy)
-        if len(average_ds.data_vars) == 0:
-            print(f"The dataset is empty for shot {shot}, ignoring...")
-            continue
-        gpi_ds = manager.read_shot_data(shot, data_folder="../data")
-
-        v_c, w_c, area_c = get_contour_parameters(
-            shot, refx, refy, average_ds, do_plots
-        )
-        v_2dca_tde, w_2dca_tde = get_2dca_tde_velocities(refx, refy, average_ds)
-        v_tde, w_tde = get_tde_velocities(refx, refy, gpi_ds)
-        lx, ly, theta = get_gaussian_fit_sizes(shot, refx, refy, average_ds, do_plots)
-        taud, lam = get_taud_from_psd(shot, refx, refy, gpi_ds, do_plots)
-        lr, lz = get_fwhm_sizes(shot, refx, refy, average_ds, do_plots)
-
-        bp = ph.BlobParameters(
-            vx_c=v_c,
-            vy_c=w_c,
-            area_c=area_c,
-            vx_2dca_tde=v_2dca_tde,
-            vy_2dca_tde=w_2dca_tde,
-            vx_tde=v_tde,
-            vy_tde=w_tde,
-            lx_f=lx,
-            ly_f=ly,
-            lr=lr,
-            lz=lz,
-            theta_f=theta,
-            taud_psd=taud,
-            lambda_psd=lam,
-            number_events=average_ds["number_events"].item(),
-        )
-        if shot not in results.shots:
-            results.add_shot(manager.get_discharge_by_shot(shot), {})
-        results.add_blob_params(shot, refx, refy, bp)
-
-    results.to_json("results.json")
+    return ph.BlobParameters(
+        vx_c=v_c,
+        vy_c=w_c,
+        area_c=area_c,
+        vx_2dca_tde=v_2dca_tde,
+        vy_2dca_tde=w_2dca_tde,
+        vx_tde=v_tde,
+        vy_tde=w_tde,
+        lx_f=lx,
+        ly_f=ly,
+        lr=lr,
+        lz=lz,
+        theta_f=theta,
+        taud_psd=taud,
+        lambda_psd=lam,
+        number_events=average_ds["number_events"].item(),
+    )
 
 
 def get_tde_velocities(refx, refy, gpi_ds):

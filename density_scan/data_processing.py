@@ -4,6 +4,9 @@ import sys
 from utils import *
 from method_parameters import method_parameters
 
+import multiprocessing as mp
+from functools import partial
+
 
 def preprocess_data():
     for shot in manager.get_shot_list():
@@ -23,9 +26,9 @@ def preprocess_data():
 
 def compute_and_store_conditional_averages(refx, refy, file_suffix=None):
     for shot in manager.get_shot_list():
-        #confinement_more = manager.get_discharge_by_shot(shot).confinement_mode
-        #is_hmode = confinement_more == "EDA-H" or confinement_more == "ELM-free-H"
-        #if is_hmode:
+        # confinement_more = manager.get_discharge_by_shot(shot).confinement_mode
+        # is_hmode = confinement_more == "EDA-H" or confinement_more == "ELM-free-H"
+        # if is_hmode:
         #    continue
         file_name = os.path.join("averages", f"average_ds_{shot}_{file_suffix}.nc")
         if os.path.exists(file_name):
@@ -61,15 +64,55 @@ def do_calculation(refx, refy):
     plot_contour_figure(refx, refy)
 
 
+def process_point(args, manager, results):
+    shot, refx, refy = args
+    try:
+        print(f"Working on shot {shot}, refx={refx}, refy={refy}")
+        compute_and_store_conditional_averages(refx, refy, file_suffix=f"{refx}{refy}")
+        bp = analysis(shot, refx, refy, manager, do_plots=False)
+        with mp.Lock():  # Ensure thread-safe access to results
+            if shot not in results.shots:
+                results.add_shot(manager.get_discharge_by_shot(shot), {})
+            results.add_blob_params(shot, refx, refy, bp)
+    except KeyError:
+        print(f"Issues for shot {shot}, refx={refx}, refy={refy}")
+
+
+def run_parallel():
+    # Create a list of all (shot, refx, refy) combinations
+    tasks = [
+        (shot, refx, refy)
+        for shot in manager.get_shot_list()
+        for refx in range(8)
+        for refy in range(10)
+    ]
+
+    # Use multiprocessing Pool to parallelize
+    num_processes = mp.cpu_count()  # Use all available CPU cores
+    with mp.Pool(processes=num_processes) as pool:
+        pool.map(partial(process_point, manager=manager, results=results), tasks)
+
+
+def run_single_thread():
+    for shot in manager.get_shot_list():
+        for refx in range(8):
+            for refy in range(10):
+                try:
+                    print("Working on shot {}".format(shot))
+                    compute_and_store_conditional_averages(
+                        refx, refy, file_suffix=f"{refx}{refy}"
+                    )
+                    bp = analysis(shot, refx, refy, manager, do_plots=False)
+                    if shot not in results.shots:
+                        results.add_shot(manager.get_discharge_by_shot(shot), {})
+                    results.add_blob_params(shot, refx, refy, bp)
+                except KeyError:
+                    print(f"Issues for {refx} {refy}")
+
+
 if __name__ == "__main__":
     manager = ph.PlasmaDischargeManager()
     manager.load_from_json("plasma_discharges.json")
-    for refx in range(8):
-        for refy in range(10):
-            try:
-                compute_and_store_conditional_averages(
-                    refx, refy, file_suffix=f"{refx}{refy}"
-                )
-                analysis(refx, refy, force_redo=True, do_plots=False)
-            except KeyError:
-                print(f"Issues for {refx} {refy}")
+    results = ph.ResultManager.from_json("results.json")
+    run_parallel()
+    results.to_json("results.json")
