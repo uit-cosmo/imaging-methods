@@ -1,6 +1,3 @@
-import phantom as ph
-import os
-import sys
 from utils import *
 from method_parameters import method_parameters
 
@@ -47,21 +44,6 @@ def compute_and_store_conditional_averages(refx, refy, file_suffix=None):
             single_counting=method_parameters["2dca"]["single_counting"],
         )
         average_ds.to_netcdf(file_name)
-
-
-def do_calculation(refx, refy):
-    preprocess_data()
-
-    # refx, refy = method_parameters["2dca"]["refx"], method_parameters["2dca"]["refy"]
-    suffix = f"{refx}{refy}"
-    print(f"Refx: {refx}, Refy: {refy}")
-
-    print("Computes 2D averages")
-    compute_and_store_conditional_averages(refx, refy, file_suffix=suffix)
-    print("Analyzing averages...")
-    print("Plotting results...")
-    plot_results(suffix)
-    plot_contour_figure(refx, refy)
 
 
 def process_point(args, manager, results):
@@ -114,5 +96,5 @@ if __name__ == "__main__":
     manager = ph.PlasmaDischargeManager()
     manager.load_from_json("plasma_discharges.json")
     results = ph.ResultManager.from_json("results.json")
-    run_parallel()
+    run_single_thread()
     results.to_json("results.json")

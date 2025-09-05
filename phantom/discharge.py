@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from typing import Optional, List, Dict, Tuple, Union
 import os
 
-from density_scan.density_scan import discharge
 from .data_preprocessing import load_data_and_preprocess
 import numpy as np
 
@@ -312,12 +311,6 @@ class ResultManager:
     def __init__(self, shots: Optional[Dict[int, ShotData]] = None):
         """Initialize a ScanResults instance."""
         self.shots = {} if shots is None else shots
-        if shots is not None:
-            for shot_number, shot_data in shots.items():
-                if not isinstance(shot_number, int):
-                    raise TypeError("Shot numbers must be integers")
-                if not isinstance(shot_data, ShotData):
-                    raise TypeError("All values in shots must be ShotData instances")
 
     def add_shot(self, discharge: PlasmaDischarge, blob_params: BlobParameters):
         """
