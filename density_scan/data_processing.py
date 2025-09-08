@@ -66,7 +66,7 @@ def process_point(args, manager, results: ResultManager, force_redo=False):
         print(traceback.format_exc())
 
 
-def run_parallel():
+def run_parallel(results):
     # Create a list of all (shot, refx, refy) combinations
     tasks = [
         (shot, refx, refy)
@@ -81,7 +81,7 @@ def run_parallel():
         pool.map(partial(process_point, manager=manager, results=results), tasks)
 
 
-def run_single_thread(force_redo=False):
+def run_single_thread(results, force_redo=False):
     for shot in manager.get_shot_list():
         for refx in range(8):
             for refy in range(10):
@@ -109,5 +109,5 @@ if __name__ == "__main__":
     manager = ph.PlasmaDischargeManager()
     manager.load_from_json("plasma_discharges.json")
     results = ph.ResultManager.from_json("results.json")
-    run_single_thread()
+    run_single_thread(results)
     results.to_json("results.json")
