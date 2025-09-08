@@ -4,6 +4,8 @@ from method_parameters import method_parameters
 
 import multiprocessing as mp
 from functools import partial
+import traceback
+import logging
 
 
 def preprocess_data():
@@ -22,29 +24,22 @@ def preprocess_data():
         ds.to_netcdf(file_name)
 
 
-def compute_and_store_conditional_averages(refx, refy, file_suffix=None):
-    for shot in manager.get_shot_list():
-        # confinement_more = manager.get_discharge_by_shot(shot).confinement_mode
-        # is_hmode = confinement_more == "EDA-H" or confinement_more == "ELM-free-H"
-        # if is_hmode:
-        #    continue
-        file_name = os.path.join("averages", f"average_ds_{shot}_{file_suffix}.nc")
-        if os.path.exists(file_name):
-            print(file_name, " already exists, reusing...")
-            continue
-        ds = manager.read_shot_data(
-            shot, None, data_folder="../data", preprocessed=True
-        )
-        events, average_ds = ph.find_events_and_2dca(
-            ds,
-            refx,
-            refy,
-            threshold=method_parameters["2dca"]["threshold"],
-            check_max=method_parameters["2dca"]["check_max"],
-            window_size=method_parameters["2dca"]["window"],
-            single_counting=method_parameters["2dca"]["single_counting"],
-        )
-        average_ds.to_netcdf(file_name)
+def compute_and_store_conditional_averages(shot, refx, refy, file_suffix=None):
+    file_name = os.path.join("averages", f"average_ds_{shot}_{file_suffix}.nc")
+    if os.path.exists(file_name):
+        # print(file_name, " already exists, reusing...")
+        return
+    ds = manager.read_shot_data(shot, None, data_folder="../data", preprocessed=True)
+    events, average_ds = ph.find_events_and_2dca(
+        ds,
+        refx,
+        refy,
+        threshold=method_parameters["2dca"]["threshold"],
+        check_max=method_parameters["2dca"]["check_max"],
+        window_size=method_parameters["2dca"]["window"],
+        single_counting=method_parameters["2dca"]["single_counting"],
+    )
+    average_ds.to_netcdf(file_name)
 
 
 def process_point(args, manager, results: ResultManager, force_redo=False):
@@ -55,15 +50,18 @@ def process_point(args, manager, results: ResultManager, force_redo=False):
     ):
         return
     try:
-        print(f"Working on shot {shot} and pixel {refx}{refy}")
-        compute_and_store_conditional_averages(refx, refy, file_suffix=f"{refx}{refy}")
+        # print(f"Working on shot {shot} and pixel {refx}{refy}")
+        compute_and_store_conditional_averages(
+            shot, refx, refy, file_suffix=f"{refx}{refy}"
+        )
         bp = analysis(shot, refx, refy, manager, do_plots=False)
         with mp.Lock():  # Ensure thread-safe access to results
             if shot not in results.shots:
                 results.add_shot(manager.get_discharge_by_shot(shot), {})
             results.add_blob_params(shot, refx, refy, bp)
-    except KeyError:
+    except Exception as e:
         print(f"Issues for shot {shot}, refx={refx}, refy={refy}")
+        print(traceback.format_exc())
 
 
 def run_parallel():
