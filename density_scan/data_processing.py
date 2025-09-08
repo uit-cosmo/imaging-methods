@@ -42,28 +42,20 @@ def compute_and_store_conditional_averages(shot, refx, refy, file_suffix=None):
     average_ds.to_netcdf(file_name)
 
 
-def process_point(args, manager, results: ResultManager, force_redo=False):
+def process_point(args, manager, force_redo=False):
     shot, refx, refy = args
-    if (
-        results.get_blob_params_for_shot(shot, refx, refy) is not None
-        and not force_redo
-    ):
-        return
     try:
-        # print(f"Working on shot {shot} and pixel {refx}{refy}")
-        compute_and_store_conditional_averages(
-            shot, refx, refy, file_suffix=f"{refx}{refy}"
-        )
+        # print(f"Working on shot {shot}, refx={refx}, refy={refy}")
+        compute_and_store_conditional_averages(refx, refy, file_suffix=f"{refx}{refy}")
         bp = analysis(shot, refx, refy, manager, do_plots=False)
         if bp is None:
-            return
-        with mp.Lock():  # Ensure thread-safe access to results
-            if shot not in results.shots:
-                results.add_shot(manager.get_discharge_by_shot(shot), {})
-            results.add_blob_params(shot, refx, refy, bp)
+            return None
+        # Return data to be added to results
+        return shot, refx, refy, bp
     except Exception as e:
         print(f"Issues for shot {shot}, refx={refx}, refy={refy}")
         print(traceback.format_exc())
+        return None
 
 
 def run_parallel(results):
@@ -73,12 +65,21 @@ def run_parallel(results):
         for shot in manager.get_shot_list()
         for refx in range(8)
         for refy in range(10)
+        if results.get_blob_params_for_shot(shot, refx, refy) is None
     ]
 
     # Use multiprocessing Pool to parallelize
     num_processes = mp.cpu_count()  # Use all available CPU cores
     with mp.Pool(processes=num_processes) as pool:
-        pool.map(partial(process_point, manager=manager, results=results), tasks)
+        process_results = pool.map(partial(process_point, manager=manager), tasks)
+
+    for result in process_results:
+        if result is None:
+            continue
+        shot, refx, refy, bp = result
+        if shot not in results.shots:
+            results.add_shot(manager.get_discharge_by_shot(shot), {})
+        results.add_blob_params(shot, refx, refy, bp)
 
 
 def run_single_thread(results, force_redo=False):
@@ -109,5 +110,5 @@ if __name__ == "__main__":
     manager = ph.PlasmaDischargeManager()
     manager.load_from_json("plasma_discharges.json")
     results = ph.ResultManager.from_json("results.json")
-    run_single_thread(results)
+    run_parallel(results)
     results.to_json("results.json")
