@@ -9,7 +9,12 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 def get_average(shot, refx, refy):
     file_name = os.path.join("averages", f"average_ds_{shot}_{refx}{refy}.nc")
+    if not os.path.exists(file_name):
+        print(f"File does not exist {file_name}")
+        return None
     average_ds = xr.open_dataset(file_name)
+    if len(average_ds.data_vars) == 0:
+        return None
     refx_ds, refy_ds = average_ds["refx"].item(), average_ds["refy"].item()
     assert refx == refx_ds and refy == refy_ds
     return average_ds
@@ -17,7 +22,7 @@ def get_average(shot, refx, refy):
 
 def analysis(shot, refx, refy, manager, do_plots=True):
     average_ds = get_average(shot, refx, refy)
-    if len(average_ds.data_vars) == 0:
+    if average_ds is None:
         print(f"The dataset is empty for shot {shot}, ignoring...")
         return None
     gpi_ds = manager.read_shot_data(shot, data_folder="../data")
