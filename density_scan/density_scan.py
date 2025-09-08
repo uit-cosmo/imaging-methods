@@ -13,10 +13,6 @@ discharges = [
     PlasmaDischarge(1160616016, 0.53, 1.60, 0.45, 1.15, 1.45, 0.300, "scan", "L"),
     PlasmaDischarge(1160616011, 0.54, 1.07, 0.30, 1.15, 1.45, 0.300, "scan", "L"),
     PlasmaDischarge(1160616009, 0.54, 0.87, 0.24, 1.305, 1.45, 0.145, "scan", "L"),
-    PlasmaDischarge(1110201016, 0.90, 3.69, 0.64, 1.06, 1.345, 0.285, "none", "EDA-H"),
-    PlasmaDischarge(
-        1110201011, 1.20, 4.32, 0.56, 1.06, 1.255, 0.195, "none", "ELM-free-H"
-    ),
     PlasmaDischarge(1120814016, 0.743, 1.635, 0.33, 1.3, 1.65, 0.35, "none", "EDA-H"),
     PlasmaDischarge(1120814018, 0.741, 1.621, 0.33, 1.33, 1.65, 0.32, "none", "EDA-H"),
     PlasmaDischarge(1120814019, 0.744, 1.601, 0.32, 1.33, 1.65, 0.32, "none", "EDA-H"),
@@ -37,7 +33,7 @@ discharges = [
         1110201010, 0.93, np.nan, np.nan, 1.05, 1.35, np.nan, "none", "EDA-H"
     ),
     PlasmaDischarge(
-        1110201011, 1.22, np.nan, np.nan, 1.12, 1.25, np.nan, "none", "ELM-free-H"
+        1110201011, 1.20, 4.32, 0.56, 1.06, 1.255, 0.195, "none", "ELM-free-H"
     ),
     PlasmaDischarge(
         1110201014, 0.93, np.nan, np.nan, 1.05, 1.31, np.nan, "none", "ELM-free-H"
@@ -45,9 +41,7 @@ discharges = [
     PlasmaDischarge(
         1110201015, 0.91, np.nan, np.nan, 1.05, 1.35, np.nan, "none", "EDA-H"
     ),
-    PlasmaDischarge(
-        1110201016, 0.92, np.nan, np.nan, 1.05, 1.35, np.nan, "none", "EDA-H"
-    ),
+    PlasmaDischarge(1110201016, 0.90, 3.69, 0.64, 1.06, 1.345, 0.285, "none", "EDA-H"),
     PlasmaDischarge(
         1110201018, 0.93, np.nan, np.nan, 1.05, 1.35, np.nan, "none", "EDA-H"
     ),

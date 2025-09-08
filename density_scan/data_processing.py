@@ -1,3 +1,4 @@
+from phantom import ResultManager
 from utils import *
 from method_parameters import method_parameters
 
@@ -46,8 +47,13 @@ def compute_and_store_conditional_averages(refx, refy, file_suffix=None):
         average_ds.to_netcdf(file_name)
 
 
-def process_point(args, manager, results):
+def process_point(args, manager, results: ResultManager, force_redo=False):
     shot, refx, refy = args
+    if (
+        results.get_blob_params_for_shot(shot, refx, refy) is not None
+        and not force_redo
+    ):
+        return
     try:
         print(f"Working on shot {shot} and pixel {refx}{refy}")
         compute_and_store_conditional_averages(refx, refy, file_suffix=f"{refx}{refy}")
@@ -75,11 +81,16 @@ def run_parallel():
         pool.map(partial(process_point, manager=manager, results=results), tasks)
 
 
-def run_single_thread():
+def run_single_thread(force_redo=False):
     for shot in manager.get_shot_list():
         for refx in range(8):
             for refy in range(10):
                 try:
+                    if (
+                        results.get_blob_params_for_shot(shot, refx, refy) is not None
+                        and not force_redo
+                    ):
+                        return
                     print(f"Working on shot {shot} and pixel {refx}{refy}")
                     compute_and_store_conditional_averages(
                         refx, refy, file_suffix=f"{refx}{refy}"
