@@ -55,6 +55,8 @@ def process_point(args, manager, results: ResultManager, force_redo=False):
             shot, refx, refy, file_suffix=f"{refx}{refy}"
         )
         bp = analysis(shot, refx, refy, manager, do_plots=False)
+        if bp is None:
+            return
         with mp.Lock():  # Ensure thread-safe access to results
             if shot not in results.shots:
                 results.add_shot(manager.get_discharge_by_shot(shot), {})
@@ -94,6 +96,8 @@ def run_single_thread(force_redo=False):
                         refx, refy, file_suffix=f"{refx}{refy}"
                     )
                     bp = analysis(shot, refx, refy, manager, do_plots=False)
+                    if bp is None:
+                        continue
                     if shot not in results.shots:
                         results.add_shot(manager.get_discharge_by_shot(shot), {})
                     results.add_blob_params(shot, refx, refy, bp)
