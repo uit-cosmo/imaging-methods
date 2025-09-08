@@ -42,11 +42,11 @@ def compute_and_store_conditional_averages(shot, refx, refy, file_suffix=None):
     average_ds.to_netcdf(file_name)
 
 
-def process_point(args, manager, force_redo=False):
+def process_point(args, manager):
     shot, refx, refy = args
     try:
         # print(f"Working on shot {shot}, refx={refx}, refy={refy}")
-        compute_and_store_conditional_averages(refx, refy, file_suffix=f"{refx}{refy}")
+        compute_and_store_conditional_averages(shot, refx, refy)
         bp = analysis(shot, refx, refy, manager, do_plots=False)
         if bp is None:
             return None
@@ -58,15 +58,17 @@ def process_point(args, manager, force_redo=False):
         return None
 
 
-def run_parallel(results):
+def run_parallel(force_redo=False):
     # Create a list of all (shot, refx, refy) combinations
-    tasks = [
-        (shot, refx, refy)
-        for shot in manager.get_shot_list()
-        for refx in range(8)
-        for refy in range(10)
-        if results.get_blob_params_for_shot(shot, refx, refy) is None
-    ]
+    tasks = []
+    for shot in manager.get_shot_list():
+        for refx in range(9):
+            for refy in range(10):
+                if (
+                    results.get_blob_params_for_shot(shot, refx, refy) is None
+                    or force_redo
+                ):
+                    tasks.append((shot, refx, refy))
 
     # Use multiprocessing Pool to parallelize
     num_processes = mp.cpu_count()  # Use all available CPU cores
@@ -82,9 +84,9 @@ def run_parallel(results):
         results.add_blob_params(shot, refx, refy, bp)
 
 
-def run_single_thread(results, force_redo=False):
+def run_single_thread(force_redo=False):
     for shot in manager.get_shot_list():
-        for refx in range(8):
+        for refx in range(9):
             for refy in range(10):
                 try:
                     if (
@@ -110,5 +112,5 @@ if __name__ == "__main__":
     manager = ph.PlasmaDischargeManager()
     manager.load_from_json("plasma_discharges.json")
     results = ph.ResultManager.from_json("results.json")
-    run_parallel(results)
+    run_parallel()
     results.to_json("results.json")
