@@ -47,7 +47,7 @@ def process_point(args, manager):
     try:
         # print(f"Working on shot {shot}, refx={refx}, refy={refy}")
         compute_and_store_conditional_averages(shot, refx, refy)
-        bp = analysis(shot, refx, refy, manager, do_plots=False)
+        bp = analysis(shot, refx, refy, manager, do_plots=True)
         if bp is None:
             return None
         # Return data to be added to results
@@ -72,7 +72,6 @@ def run_parallel(force_redo=False):
 
     # Use multiprocessing Pool to parallelize
     num_processes = mp.cpu_count()  # Use all available CPU cores
-    num_processes = 10  # Use all available CPU cores
     with mp.Pool(processes=num_processes) as pool:
         process_results = pool.map(partial(process_point, manager=manager), tasks)
 
