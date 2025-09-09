@@ -24,8 +24,8 @@ def preprocess_data():
         ds.to_netcdf(file_name)
 
 
-def compute_and_store_conditional_averages(shot, refx, refy, file_suffix=None):
-    file_name = os.path.join("averages", f"average_ds_{shot}_{file_suffix}.nc")
+def compute_and_store_conditional_averages(shot, refx, refy):
+    file_name = os.path.join("averages", f"average_ds_{shot}_{refx}{refy}.nc")
     if os.path.exists(file_name):
         # print(file_name, " already exists, reusing...")
         return
@@ -61,7 +61,7 @@ def process_point(args, manager):
 def run_parallel(force_redo=False):
     # Create a list of all (shot, refx, refy) combinations
     tasks = []
-    for shot in manager.get_shot_list():
+    for shot in manager.get_ohmic_shot_list():
         for refx in range(9):
             for refy in range(10):
                 if (
@@ -72,6 +72,7 @@ def run_parallel(force_redo=False):
 
     # Use multiprocessing Pool to parallelize
     num_processes = mp.cpu_count()  # Use all available CPU cores
+    num_processes = 10  # Use all available CPU cores
     with mp.Pool(processes=num_processes) as pool:
         process_results = pool.map(partial(process_point, manager=manager), tasks)
 
@@ -85,7 +86,7 @@ def run_parallel(force_redo=False):
 
 
 def run_single_thread(force_redo=False):
-    for shot in manager.get_shot_list():
+    for shot in manager.get_ohmic_shot_list():
         for refx in range(9):
             for refy in range(10):
                 try:
@@ -95,10 +96,8 @@ def run_single_thread(force_redo=False):
                     ):
                         return
                     print(f"Working on shot {shot} and pixel {refx}{refy}")
-                    compute_and_store_conditional_averages(
-                        refx, refy, file_suffix=f"{refx}{refy}"
-                    )
-                    bp = analysis(shot, refx, refy, manager, do_plots=False)
+                    compute_and_store_conditional_averages(shot, refx, refy)
+                    bp = analysis(shot, refx, refy, manager, do_plots=True)
                     if bp is None:
                         continue
                     if shot not in results.shots:
@@ -112,5 +111,5 @@ if __name__ == "__main__":
     manager = ph.PlasmaDischargeManager()
     manager.load_from_json("plasma_discharges.json")
     results = ph.ResultManager.from_json("results.json")
-    run_parallel()
+    run_parallel(force_redo=True)
     results.to_json("results.json")
