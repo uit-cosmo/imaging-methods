@@ -52,7 +52,7 @@ def test_case_a():
         theta=theta_input,
         bs=bs,
     )
-    ds = ph.run_norm_ds(ds, method_parameters["preprocessing"]["radius"])
+    ds = im.run_norm_ds(ds, method_parameters["preprocessing"]["radius"])
     bp = full_analysis(ds, method_parameters, "a")
     print(bp)
 
@@ -89,7 +89,7 @@ def test_case_b():
         theta=theta_input,
         bs=bs,
     )
-    ds = ph.run_norm_ds(ds, method_parameters["preprocessing"]["radius"])
+    ds = im.run_norm_ds(ds, method_parameters["preprocessing"]["radius"])
     bp = full_analysis(ds, method_parameters, "b")
     print(bp)
 
@@ -125,7 +125,7 @@ def test_case_c():
         theta=theta_input,
         bs=bs,
     )
-    ds = ph.run_norm_ds(ds, method_parameters["preprocessing"]["radius"])
+    ds = im.run_norm_ds(ds, method_parameters["preprocessing"]["radius"])
 
     sigma = 1
     ds = ds.assign(frames=ds["frames"] + sigma * np.random.random(ds.frames.shape))
@@ -165,7 +165,7 @@ def test_case_d():
         theta=theta_input,
         bs=bs,
     )
-    ds = ph.run_norm_ds(ds, method_parameters["preprocessing"]["radius"])
+    ds = im.run_norm_ds(ds, method_parameters["preprocessing"]["radius"])
 
     bp = full_analysis(ds, method_parameters, "d")
     print(bp)
@@ -205,7 +205,7 @@ def test_case_e():
         theta=theta_input,
         bs=bs,
     )
-    ds = ph.run_norm_ds(ds, method_parameters["preprocessing"]["radius"])
+    ds = im.run_norm_ds(ds, method_parameters["preprocessing"]["radius"])
     bp = full_analysis(ds, method_parameters, "e")
     print(bp)
 

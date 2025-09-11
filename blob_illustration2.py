@@ -8,6 +8,7 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import cosmoplots as cp
 
 shot = 1160616027
+shot = 1140613026
 manager = PlasmaDischargeManager()
 manager.load_from_json("density_scan/plasma_discharges.json")
 ds = manager.read_shot_data(shot, preprocessed=True)
@@ -35,10 +36,10 @@ rlcfs, zlcfs = calculate_splinted_LCFS(
 for refx in np.arange(1, 9):
     # axe = ax[refx - 1]
     axe = ax[(refx - 1) // 4][(refx - 1) % 4]
-    # events, average = find_events_and_2dca(
-    #    ds, refx, row, threshold=2, check_max=0, window_size=60, single_counting=True
-    # )
-    # average.to_netcdf("tmp_{}_{}.nc".format(row, refx))
+    events, average = find_events_and_2dca(
+        ds, refx, row, threshold=2, check_max=0, window_size=60, single_counting=True
+    )
+    average.to_netcdf("tmp_{}_{}.nc".format(row, refx))
     average = xr.open_dataset("tmp_{}_{}.nc".format(row, refx))
 
     data = average["cond_av"].sel(time=0).values

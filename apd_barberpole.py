@@ -1,7 +1,7 @@
 import numpy as np
 
-from phantom.show_data import *
-from phantom.utils import *
+from imaging_methods.show_data import *
+from imaging_methods.utils import *
 import fppanalysis as fpp
 import matplotlib.pyplot as plt
 from scipy.optimize import differential_evolution

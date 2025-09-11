@@ -6,7 +6,7 @@ import xarray as xr
 import superposedpulses as sp
 import matplotlib.pyplot as plt
 import os
-import phantom as ph
+import imaging_methods as im
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 from blobmodel import (
@@ -110,7 +110,7 @@ def make_2d_realization(Lx, Ly, T, nx, ny, dt, num_blobs, vx, vy, lx, ly, theta,
         periodic_y=False,
         t_drain=1e10,
         blob_factory=bf,
-        verbose=False,
+        verbose=True,
         t_init=0,
     )
     ds = model.make_realization(speed_up=True, error=1e-10)
@@ -171,7 +171,7 @@ def plot_frames_with_contour(average, contours, t_indexes, variable="cond_av"):
 def full_analysis(
     ds, method_parameters, suffix, figures_dir="integrated_tests_figures"
 ):
-    dt = ph.get_dt(ds)
+    dt = im.get_dt(ds)
     t_indexes = np.linspace(100, 110, num=10) / dt
     fig = plot_frames(ds, t_indexes)
     plt.savefig(
@@ -180,7 +180,7 @@ def full_analysis(
     )
 
     tdca_params = method_parameters["2dca"]
-    events, average_ds = ph.find_events_and_2dca(
+    events, average_ds = im.find_events_and_2dca(
         ds,
         tdca_params["refx"],
         tdca_params["refy"],
@@ -190,7 +190,7 @@ def full_analysis(
         single_counting=tdca_params["single_counting"],
     )
 
-    contour_ds = ph.get_contour_evolution(
+    contour_ds = im.get_contour_evolution(
         average_ds.cond_av,
         method_parameters["contouring"]["threshold_factor"],
         max_displacement_threshold=None,
@@ -203,7 +203,7 @@ def full_analysis(
     )
 
     contour_file_name = os.path.join(figures_dir, "contours_{}.gif".format(suffix))
-    ph.show_movie_with_contours(
+    im.show_movie_with_contours(
         average_ds,
         contour_ds,
         "cond_av",
@@ -215,7 +215,7 @@ def full_analysis(
 
     fig, ax = plt.subplots(figsize=(5, 5))
 
-    velocity_ds = ph.get_contour_velocity(
+    velocity_ds = im.get_contour_velocity(
         contour_ds.center_of_mass,
         method_parameters["contouring"]["com_smoothing"],
     )
@@ -223,10 +223,10 @@ def full_analysis(
         velocity_ds.isel(time=slice(10, -10)).mean(dim="time", skipna=True).values
     )
 
-    area = ph.plot_contour_at_zero(average_ds.cond_av, contour_ds, ax)
+    area = im.plot_contour_at_zero(average_ds.cond_av, contour_ds, ax)
 
     fit_params = method_parameters["gauss_fit"]
-    lx, ly, theta = ph.plot_event_with_fit(
+    lx, ly, theta = im.plot_event_with_fit(
         average_ds.cond_av,
         tdca_params["refx"],
         tdca_params["refy"],
@@ -236,15 +236,15 @@ def full_analysis(
         theta_penalty_factor=fit_params["tilt_penalty"],
     )
     inset_ax = inset_axes(ax, width=1, height=1, loc="lower left")
-    v_f, w_f = ph.get_3tde_velocities(
+    v_f, w_f = im.get_3tde_velocities(
         average_ds.cond_av, tdca_params["refx"], tdca_params["refy"]
     )
 
-    taud, lam, freqs = ph.DurationTimeEstimator(
-        ph.SecondOrderStatistic.PSD, ph.Analytics.TwoSided
+    taud, lam, freqs = im.DurationTimeEstimator(
+        im.SecondOrderStatistic.PSD, im.Analytics.TwoSided
     ).plot_and_fit(
         ds.frames.isel(x=tdca_params["refx"], y=tdca_params["refy"]).values,
-        ph.get_dt(average_ds),
+        im.get_dt(average_ds),
         inset_ax,
         cutoff=method_parameters["taud_estimation"]["cutoff"],
         nperseg=method_parameters["taud_estimation"]["nperseg"],
@@ -270,7 +270,7 @@ def full_analysis(
     plt.savefig(results_file_name, bbox_inches="tight")
     plt.close(fig)
 
-    bp = ph.BlobParameters(
+    bp = im.BlobParameters(
         vx_c=v_c,
         vy_c=w_c,
         area_c=area,

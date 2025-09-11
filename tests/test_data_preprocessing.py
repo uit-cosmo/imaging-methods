@@ -1,6 +1,6 @@
 import xarray as xr
 import numpy as np
-import phantom.data_preprocessing
+import imaging_methods.data_preprocessing
 from numpy.testing import assert_array_equal
 
 # Create test data
@@ -24,7 +24,7 @@ ds["frames"].values[5, 4, :] = np.nan
 ds["frames"].values[0, 0, :] = np.nan
 ds["frames"].values[0, 1, :] = np.nan
 
-ds_interpolated = phantom.data_preprocessing.interpolate_nans_3d(ds)
+ds_interpolated = imaging_methods.data_preprocessing.interpolate_nans_3d(ds)
 
 
 def test_interpolation():
@@ -52,6 +52,8 @@ def test_no_change_if_no_nan():
         coords={"y": y, "x": x, "time": time},
     )
     copy = random_ds.copy(deep=True)
-    random_ds_interpolated = phantom.data_preprocessing.interpolate_nans_3d(random_ds)
+    random_ds_interpolated = imaging_methods.data_preprocessing.interpolate_nans_3d(
+        random_ds
+    )
 
     assert_array_equal(copy.frames.values, random_ds_interpolated.frames.values)

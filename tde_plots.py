@@ -1,4 +1,4 @@
-from phantom.utils import *
+from imaging_methods.utils import *
 import velocity_estimation as ve
 import cosmoplots as cp
 import matplotlib.pyplot as plt

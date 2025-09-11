@@ -89,6 +89,13 @@ class PlasmaDischargeManager:
             if discharge.confinement_mode == "L"
         ]
 
+    def get_imode_shot_list(self) -> List[int]:
+        return [
+            discharge.shot_number
+            for discharge in self.discharges
+            if discharge.confinement_mode == "I-mode"
+        ]
+
     def read_shot_data(
         self,
         shot,

@@ -1,4 +1,4 @@
-import phantom as ph
+import imaging_methods as im
 import numpy as np
 import xarray as xr
 import pytest
@@ -73,22 +73,22 @@ def synthetic_dataset():
 
 def test_threshold():
     ds = get_single_pixel_ds(np.array([0, 0, 1, 1.2, 0, 0, 1.2, 1]))
-    events, average = ph.find_events_and_2dca(ds, 0, 0, threshold=0.5, window_size=3)
+    events, average = im.find_events_and_2dca(ds, 0, 0, threshold=0.5, window_size=3)
     assert len(events) == 2
 
 
 def test_single_count():
     ds = get_single_pixel_ds(np.array([0, 0, 1, 1.2, 0, 0, 1, 1.2, 0, 0]))
-    events, _ = ph.find_events_and_2dca(ds, 0, 0, threshold=0.5, window_size=4)
+    events, _ = im.find_events_and_2dca(ds, 0, 0, threshold=0.5, window_size=4)
     assert len(events) == 2
 
-    events, _ = ph.find_events_and_2dca(
+    events, _ = im.find_events_and_2dca(
         ds, 0, 0, threshold=0.5, window_size=5, single_counting=True
     )
     assert len(events) == 1
 
     ds = get_single_pixel_ds(np.array([0, 0, 1, 1.2, 0, 0, 1.2, 1, 0, 0, 1.2, 1, 0, 0]))
-    events, _ = ph.find_events_and_2dca(
+    events, _ = im.find_events_and_2dca(
         ds, 0, 0, threshold=0.5, window_size=5, single_counting=True
     )
     assert len(events) == 2
@@ -96,7 +96,7 @@ def test_single_count():
 
 def test_truncation():
     ds = get_single_pixel_ds(np.array([0, 0, 1, 1.2, 0, 0, 0, 0, 0, 0, 1, 1.2]))
-    events, _ = ph.find_events_and_2dca(
+    events, _ = im.find_events_and_2dca(
         ds, 0, 0, threshold=0.5, window_size=5, single_counting=True
     )
     assert len(events) == 1
@@ -105,7 +105,7 @@ def test_truncation():
 def test_conditional_reproducibility():
     signal = np.repeat(np.array([0, 0, 0, 1, 2, 3, 2, 1, 0, 0, 0]), 10)
     ds = get_single_pixel_ds(signal)
-    events, condav_ds = ph.find_events_and_2dca(
+    events, condav_ds = im.find_events_and_2dca(
         ds, 0, 0, threshold=2.5, window_size=5, single_counting=True
     )
     assert np.all(condav_ds.cond_repr.isel(x=0, y=0).values == 1)
@@ -117,7 +117,7 @@ def test_conditional_reproducibility_change():
         10,
     )
     ds = get_single_pixel_ds(signal)
-    events, condav_ds = ph.find_events_and_2dca(
+    events, condav_ds = im.find_events_and_2dca(
         ds, 0, 0, threshold=2.5, window_size=5, single_counting=True
     )
     assert np.all(condav_ds.cond_repr.isel(x=0, y=0).values < 1)
@@ -130,36 +130,36 @@ def test_check_max():
     signal4 = np.array([0, 0, 1, 2, 1, 0, 0])
 
     ds = get_multi_pixel_ds(signal1, signal2, signal3, signal4)
-    events, _ = ph.find_events_and_2dca(
+    events, _ = im.find_events_and_2dca(
         ds, 0, 0, threshold=0.5, window_size=5, check_max=1
     )
     assert len(events) == 1
 
-    events, _ = ph.find_events_and_2dca(
+    events, _ = im.find_events_and_2dca(
         ds, 0, 0, threshold=0.5, window_size=5, check_max=0
     )
     assert len(events) == 1
 
-    events, _ = ph.find_events_and_2dca(
+    events, _ = im.find_events_and_2dca(
         ds, 0, 1, threshold=0.5, window_size=5, check_max=1
     )
     assert len(events) == 0
 
-    events, _ = ph.find_events_and_2dca(
+    events, _ = im.find_events_and_2dca(
         ds, 0, 1, threshold=0.5, window_size=5, check_max=0
     )
     assert len(events) == 1
 
 
 def test_basic_event_detection(synthetic_dataset):
-    events, _ = ph.find_events_and_2dca(
+    events, _ = im.find_events_and_2dca(
         synthetic_dataset, 1, 1, threshold=3, window_size=5
     )
     assert len(events) == 5
 
 
 def test_global_max_filter(synthetic_dataset):
-    events, _ = ph.find_events_and_2dca(
+    events, _ = im.find_events_and_2dca(
         synthetic_dataset, 1, 1, threshold=3, window_size=5, check_max=2
     )
     # Event at 30-35 should be filtered out (global max at 2,2)
@@ -169,7 +169,7 @@ def test_global_max_filter(synthetic_dataset):
 
 
 def test_single_counting(synthetic_dataset):
-    events, _ = ph.find_events_and_2dca(
+    events, _ = im.find_events_and_2dca(
         synthetic_dataset, 1, 1, threshold=3, window_size=5, single_counting=True
     )
     assert len(events) == 4  # Original 3 valid events minus 1 overlap
@@ -181,7 +181,7 @@ def test_single_counting(synthetic_dataset):
 
 
 def test_window_integrity(synthetic_dataset):
-    events, _ = ph.find_events_and_2dca(
+    events, _ = im.find_events_and_2dca(
         synthetic_dataset, 1, 1, threshold=3, window_size=5
     )
     for event in events:
@@ -199,18 +199,18 @@ def test_edge_cases():
 
     ds = get_single_pixel_ds(data)
 
-    events, _ = ph.find_events_and_2dca(ds, 0, 0, window_size=5)
+    events, _ = im.find_events_and_2dca(ds, 0, 0, window_size=5)
     assert len(events) == 0  # Should filter out both edge cases
 
 
 def test_empty_result():
     ds = get_single_pixel_ds(np.zeros(100))
-    events, _ = ph.find_events_and_2dca(ds, 0, 0, threshold=1)
+    events, _ = im.find_events_and_2dca(ds, 0, 0, threshold=1)
     assert len(events) == 0
 
 
 def test_single_counting_priority(synthetic_dataset):
-    events, _ = ph.find_events_and_2dca(
+    events, _ = im.find_events_and_2dca(
         synthetic_dataset, 1, 1, threshold=3, window_size=5, single_counting=True
     )
     peaks = [e["abs_time"] for e in events]

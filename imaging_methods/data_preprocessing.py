@@ -3,7 +3,7 @@ import xarray as xr
 import numpy as np
 from scipy.interpolate import LinearNDInterpolator, NearestNDInterpolator
 
-from phantom import get_t_start_end
+from imaging_methods import get_t_start_end
 
 
 def interpolate_nans_3d(ds):

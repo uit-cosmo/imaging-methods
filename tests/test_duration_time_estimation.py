@@ -1,4 +1,4 @@
-import phantom as ph
+import imaging_methods as im
 from test_utils import (
     make_2d_realization,
     get_blob,
@@ -15,26 +15,38 @@ nx = 1
 ny = 1
 dt = 0.01
 theta = 0
-bs = BlobShapeImpl(BlobShapeEnum.exp, BlobShapeEnum.gaussian)
+bs = BlobShapeImpl(BlobShapeEnum.exp, BlobShapeEnum.exp)
 
 refx, refy = 0, 0
 
 
 @pytest.mark.parametrize(
-    "sos", [ph.SecondOrderStatistic.PSD, ph.SecondOrderStatistic.ACF]
+    "sos", [im.SecondOrderStatistic.PSD, im.SecondOrderStatistic.ACF]
 )
 @pytest.mark.parametrize("size", [0.1, 1, 10])
 def test_size(sos, size):
     ds = make_2d_realization(
-        Lx, Ly, 1000, nx, ny, dt, 100, vx=1, vy=0, lx=size, ly=size, theta=theta, bs=bs
+        Lx,
+        Ly,
+        10000,
+        nx,
+        ny,
+        dt,
+        1000,
+        vx=1,
+        vy=0,
+        lx=size,
+        ly=size,
+        theta=theta,
+        bs=bs,
     )
 
     cutoff = None
-    if sos == ph.SecondOrderStatistic.ACF:
+    if sos == im.SecondOrderStatistic.ACF:
         cutoff = 10 * size
 
-    taud, _ = ph.DurationTimeEstimator(
-        sos, ph.Analytics.TwoSided
+    taud, _ = im.DurationTimeEstimator(
+        sos, im.Analytics.TwoSided
     ).estimate_duration_time(
         ds.isel(x=refx, y=refy).frames.values,
         dt,
@@ -48,7 +60,7 @@ def test_size(sos, size):
 
 
 @pytest.mark.parametrize(
-    "sos", [ph.SecondOrderStatistic.PSD, ph.SecondOrderStatistic.ACF]
+    "sos", [im.SecondOrderStatistic.PSD, im.SecondOrderStatistic.ACF]
 )
 @pytest.mark.parametrize("vx", [0.1, 1, 10])
 def test_vel(sos, vx):
@@ -57,11 +69,11 @@ def test_vel(sos, vx):
     )
 
     cutoff = None
-    if sos == ph.SecondOrderStatistic.ACF:
+    if sos == im.SecondOrderStatistic.ACF:
         cutoff = 10 / vx
 
-    taud, _ = ph.DurationTimeEstimator(
-        sos, ph.Analytics.TwoSided
+    taud, _ = im.DurationTimeEstimator(
+        sos, im.Analytics.TwoSided
     ).estimate_duration_time(
         ds.frames.isel(x=refx, y=refy).values,
         dt,
@@ -111,8 +123,8 @@ def test_uniform_velocity_distribution():
     ds = model.make_realization(speed_up=True, error=1e-10)
     data_series = ds.n.isel(x=refx, y=refy).values
 
-    taud, _ = ph.DurationTimeEstimator(
-        ph.SecondOrderStatistic.PSD, ph.Analytics.TwoSided
+    taud, _ = im.DurationTimeEstimator(
+        im.SecondOrderStatistic.PSD, im.Analytics.TwoSided
     ).estimate_duration_time(
         data_series,
         dt,
