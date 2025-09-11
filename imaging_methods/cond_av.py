@@ -13,23 +13,50 @@ def find_events_and_2dca(
     verbose=True,
 ):
     """
+    2DCA method as described in the article.
     Find events where reference pixel exceeds threshold and extract windows around peaks.
 
     Parameters:
-    ds (xarray.Dataset): Input dataset with time, x, y coordinates
+    ds (xarray.Dataset): Input dataset with time, x, y coordinates. cmod_functions format is expected.
     refx (int): X index of reference pixel
     refy (int): Y index of reference pixel
     threshold (float): Threshold value for event detection
     window_size (int): Size of window to extract around peaks
-    check_max (int): Radius of the area on which the reference pixel is checked to be maximum at peak time
+    check_max (int): Radius of the area on which the reference pixel is checked to be maximum at peak time. Set to 0 if
+        no checking is desired.
     single_counting (bool): If True, ensures a minimum distance between events given by window_size.
     verbose (bool): If True, print some method information.
 
     Returns:
-    events: List of xarray.Dataset objects containing extracted windows
-    average: xarray.Dataset containing average event across all input events
+    tuple: A tuple containing two elements:
+        - events (list of xarray.Dataset): A list of datasets, each representing a time window around a detected event peak.
+            Each dataset contains:
+                - Data variables:
+                    - frames: Array of shape (time, x, y) containing the data for the event window.
+                - Attributes:
+                    - refx (int): X index of the reference pixel.
+                    - refy (int): Y index of the reference pixel.
+                    - event_id (int): Unique identifier for the event.
+                    - abs_time (float): Absolute time of the event's peak.
+                - Coordinates:
+                    - time: Relative time coordinates centered on the peak (in units of the input dataset's time step),
+                        ranging from -half_window * dt to +half_window * dt.
+                    - x, y: Spatial coordinates inherited from the input dataset.
+        - average (xarray.Dataset): A dataset containing the conditional average and related metrics across all events.
+            Contains:
+                - Data variables:
+                    - cond_av: Array of shape (time, x, y) representing the mean of all event windows.
+                    - cond_repr: Array of shape (time, x, y) representing the conditional representativeness,
+                        calculated as cond_av^2 / mean2, where mean2 is the mean of squared event windows.
+                - Coordinates:
+                    - time: Relative time coordinates centered on the peak, matching the events' time coordinates.
+                    - x, y: Spatial coordinates inherited from the input dataset.
+                - Attributes:
+                    - refx (int): X index of the reference pixel.
+                    - refy (int): Y index of the reference pixel.
+                    - number_events (int): The total number of valid events included in the average.
+            If no valid events are found, returns an empty xarray.Dataset.
     """
-    # Assuming the data is on cmod_functions format, in xarray and with frames name
     ref_ts = ds.frames.isel(x=refx, y=refy)
 
     above_threshold = ref_ts > threshold
