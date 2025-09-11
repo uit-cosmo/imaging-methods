@@ -12,3 +12,12 @@ I have applied this to APD, Phantom and synthetic blob data. The main method is 
 - utils: Other functions
 
 Top level files have been used to analyze different shots and synthetic data generated with blobmodel.
+
+# Density scan
+Application of the imaging methods on experimental data from Alcator C-Mod. As an example, the result of the contouring 
+method on 2DCA data from a high Greenwald fraction Ohmic shot is:
+<td>
+
+<img src="https://github.com/uit-cosmo/phantom/blob/main/presentation/example_contour.gif?raw=true" alt="2DCA" style="max-width: 40%;" />
+
+</td>
