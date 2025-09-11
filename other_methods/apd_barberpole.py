@@ -9,7 +9,7 @@ import velocity_estimation as ve
 
 shot = 1140613026
 
-ds = xr.open_dataset("ds_short.nc")
+ds = xr.open_dataset("../ds_short.nc")
 
 times = ds["time"].values
 refx, refy = 7, 5

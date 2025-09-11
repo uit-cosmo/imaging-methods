@@ -18,7 +18,7 @@ refx, refy = 6, 5
 #   ds, refx, refy, threshold=2, check_max=0, window_size=60, single_counting=True
 # )
 # average.to_netcdf("tmp.nc")
-average = xr.open_dataset("tmp.nc")
+average = xr.open_dataset("../tmp.nc")
 
 # show_movie(average, "cond_av")
 

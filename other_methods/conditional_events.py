@@ -12,7 +12,7 @@ shot = 1160616018
 shot = 1140613026
 ds = load_data_and_preprocess(shot, 0.2)
 # ds.to_netcdf("data1426large.nc")
-ds = xr.open_dataset("data1426large.nc")
+ds = xr.open_dataset("../data1426large.nc")
 
 refx, refy = 6, 5
 

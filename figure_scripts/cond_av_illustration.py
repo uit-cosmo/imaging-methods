@@ -14,7 +14,7 @@ refx, refy = 6, 5
 
 win_size = 120
 threshold = 2.5
-events, average, _ = find_events_and_2dca(
+events, average = find_events_and_2dca(
     ds,
     refx,
     refy,

@@ -151,40 +151,6 @@ def get_taumax(v, w, dx, dy, lx, ly, t):
     return (a1 - a2 + a3) / (d1 + d2 - d3)
 
 
-def validate_dataset(ds):
-    """
-    Check for expected dataset structure
-    :param ds: Dataset
-    """
-    if not isinstance(ds, (xr.Dataset, xr.DataArray)):
-        raise ValueError("Input 'event' must be an xarray Dataset or DataArray")
-    if "frames" not in ds and not isinstance(ds, xr.DataArray):
-        raise ValueError("Input must contain 'frames' or be a DataArray")
-    if "R" not in ds.coords or "Z" not in ds.coords:
-        raise ValueError("Input must include 'R' and 'Z' coordinates")
-
-
-def validate_dataarray(da, coords=False):
-    """
-    Check for expected dataarray structure
-    :param da: DataArray
-    :param coords: bool, if True, checks for coords dimension ('r' and 'z')
-    """
-    if not isinstance(da, xr.DataArray):
-        raise ValueError("Input 'com_da' must be an xarray DataArray")
-    if "time" not in da.dims:
-        raise ValueError("Input must have time dimensions")
-    if "time" not in da.coords:
-        raise ValueError("Input must include 'time' coordinates")
-    if coords:
-        if "coord" not in da.dims or da.shape[-1] != 2:
-            raise ValueError("Input must have coord dimension with coord=['r', 'z']")
-        if "coord" not in da.coords:
-            raise ValueError("Input must include 'coord' coordinates")
-        if not np.array_equal(da.coord.values, ["r", "z"]):
-            raise ValueError("Input coord must be ['r', 'z']")
-
-
 def autocorrelation(times, taud, lam):
     """
     Returns the normalized autocorrelation of a shot noise process.
