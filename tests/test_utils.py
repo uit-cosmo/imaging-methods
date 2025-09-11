@@ -146,9 +146,11 @@ def plot_frames(ds, t_indexes, variable="frames"):
 
 
 def plot_frames_with_contour(average, contours, t_indexes, variable="cond_av"):
-    fig, ax = plt.subplots(2, 5, figsize=(10, 5))
-    for i in np.arange(10):
-        axe = ax[i // 5][i % 5]
+    fig, ax = plt.subplots(
+        2, 4, figsize=(4 * 2.08, 2 * 2.08), gridspec_kw={"hspace": 0.4}
+    )
+    for i in np.arange(8):
+        axe = ax[i // 4][i % 4]
         im = axe.imshow(
             average[variable].isel(time=int(t_indexes[i])).values,
             origin="lower",

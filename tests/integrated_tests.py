@@ -1,6 +1,13 @@
 from test_utils import *
 from blobmodel import BlobShapeEnum, BlobShapeImpl
 import numpy as np
+import cosmoplots as cp
+
+plt.style.use(["cosmoplots.default"])
+plt.rcParams["text.latex.preamble"] = (
+    r"\usepackage{amsmath} \usepackage{mathptmx} \usepackage{amssymb} "
+)
+
 
 T = 1000
 Lx = 8

@@ -157,31 +157,31 @@ class BlobParameters:
         number_events (int): Number of detected events.
     """
 
-    vx_c: float
-    vy_c: float
-    area_c: float
-    vx_2dca_tde: float
-    vy_2dca_tde: float
-    vx_tde: float
-    vy_tde: float
-    lx_f: float
-    ly_f: float
-    lr: float
-    lz: float
-    theta_f: float
-    taud_psd: float
-    lambda_psd: float
-    number_events: float
+    vx_c: float = np.nan
+    vy_c: float = np.nan
+    area_c: float = np.nan
+    vx_2dca_tde: float = np.nan
+    vy_2dca_tde: float = np.nan
+    vx_tde: float = np.nan
+    vy_tde: float = np.nan
+    lx_f: float = np.nan
+    ly_f: float = np.nan
+    lr: float = np.nan
+    lz: float = np.nan
+    theta_f: float = np.nan
+    taud_psd: float = np.nan
+    lambda_psd: float = np.nan
+    number_events: float = np.nan
 
     @property
     def velocity_c(self) -> Tuple[float, float]:
         """Return center-of-mass velocity vector (vx_c, vy_c)."""
-        return (self.vx_c, self.vy_c)
+        return self.vx_c, self.vy_c
 
     @property
     def velocity_tde(self) -> Tuple[float, float]:
         """Return time-dependent ellipse velocity vector (vx_tde, vy_tde)."""
-        return (self.vx_2dca_tde, self.vy_2dca_tde)
+        return self.vx_2dca_tde, self.vy_2dca_tde
 
     @property
     def total_velocity_c(self) -> float:
