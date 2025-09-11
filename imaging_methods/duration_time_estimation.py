@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import warnings
 from enum import Enum
 import fppanalysis as fppa
-from .second_order_statistics import autocorrelation, power_spectral_density
+from .utils import autocorrelation, power_spectral_density
 
 
 class Analytics(Enum):
