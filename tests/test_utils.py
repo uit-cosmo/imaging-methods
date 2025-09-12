@@ -127,9 +127,11 @@ def make_2d_realization(Lx, Ly, T, nx, ny, dt, num_blobs, vx, vy, lx, ly, theta,
 
 
 def plot_frames(ds, t_indexes, variable="frames"):
-    fig, ax = plt.subplots(2, 5, figsize=(10, 5))
-    for i in np.arange(10):
-        axe = ax[i // 5][i % 5]
+    fig, ax = plt.subplots(
+        2, 4, figsize=(4 * 2.08, 2 * 2.08), gridspec_kw={"hspace": 0.4}
+    )
+    for i in np.arange(8):
+        axe = ax[i // 4][i % 4]
         im = axe.imshow(
             ds[variable].isel(time=int(t_indexes[i])).values,
             origin="lower",
@@ -174,7 +176,7 @@ def full_analysis(
     ds, method_parameters, suffix, figures_dir="integrated_tests_figures"
 ):
     dt = im.get_dt(ds)
-    t_indexes = np.linspace(100, 110, num=10) / dt
+    t_indexes = np.linspace(100, 110, num=8) / dt
     fig = plot_frames(ds, t_indexes)
     plt.savefig(
         os.path.join(figures_dir, "data_portion_{}.eps".format(suffix)),

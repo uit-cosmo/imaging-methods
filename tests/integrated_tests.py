@@ -77,9 +77,9 @@ def test_case_b():
     vx_input = 1
     vy_intput = 0
     aspect_ratio = 3
-    lx_input = np.sqrt(aspect_ratio)
-    ly_input = 1 / np.sqrt(aspect_ratio)
-    theta_input = np.pi / 4
+    lx_input = 1 / np.sqrt(aspect_ratio)
+    ly_input = np.sqrt(aspect_ratio)
+    theta_input = 3 * np.pi / 4
 
     ds = make_2d_realization(
         Lx,
