@@ -9,7 +9,8 @@ import logging
 
 
 def preprocess_data():
-    for shot in manager.get_shot_list():
+    # for shot in manager.get_shot_list():
+    for shot in [1150618021, 1150618036]:
         file_name = os.path.join("../data", f"apd_{shot}_preprocessed.nc")
         if os.path.exists(file_name):
             continue
@@ -110,6 +111,7 @@ def run_single_thread(force_redo=False):
 if __name__ == "__main__":
     manager = ph.PlasmaDischargeManager()
     manager.load_from_json("plasma_discharges.json")
-    results = ph.ResultManager.from_json("results.json")
-    run_parallel(force_redo=True)
-    results.to_json("results.json")
+    # results = ph.ResultManager.from_json("results.json")
+    # run_parallel(force_redo=True)
+    # results.to_json("results.json")
+    preprocess_data()

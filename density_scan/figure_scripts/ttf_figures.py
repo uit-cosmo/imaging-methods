@@ -4,7 +4,7 @@ import os
 import numpy as np
 from matplotlib import matplotlib_fname
 
-import phantom as ph
+import imaging_methods as im
 import cosmoplots as cp
 from collections import defaultdict
 
@@ -13,8 +13,8 @@ cp.set_rcparams_dynamo(matplotlib_params, 2)
 # plt.rcParams["text.usetex"] = False
 plt.rcParams.update(matplotlib_params)
 
-results = ph.ResultManager.from_json("results.json")
-manager = ph.PlasmaDischargeManager()
+results = im.ResultManager.from_json("results.json")
+manager = im.PlasmaDischargeManager()
 manager.load_from_json("plasma_discharges.json")
 shots = [
     shot
