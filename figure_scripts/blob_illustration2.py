@@ -6,12 +6,12 @@ from imaging_methods import *
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import cosmoplots as cp
 
-shot = 1160616027
+shot = 1140613026
 manager = PlasmaDischargeManager()
 manager.load_from_json("density_scan/plasma_discharges.json")
 ds = manager.read_shot_data(shot, preprocessed=True)
 
-refy = 4
+refy = 5
 
 params = plt.rcParams
 cp.set_rcparams_dynamo(params, 2)
@@ -31,8 +31,11 @@ rlcfs, zlcfs = calculate_splinted_LCFS(
     ds["zlcfs"].values,
 )
 
+
 def get_average(shot, refx, refy):
-    file_name = os.path.join("density_scan/averages", f"average_ds_{shot}_{refx}{refy}.nc")
+    file_name = os.path.join(
+        "density_scan/averages", f"average_ds_{shot}_{refx}{refy}.nc"
+    )
     if not os.path.exists(file_name):
         print(f"File does not exist {file_name}")
         return None
