@@ -5,8 +5,6 @@ from shapely.geometry import Polygon, Point
 from scipy.spatial import ConvexHull
 from scipy.signal import windows
 
-from phantom import validate_dataarray, validate_dataset
-
 
 def compute_contour_mass(contour, frame, R, Z):
     """
@@ -105,8 +103,6 @@ def get_contour_evolution(event, threshold_factor=0.5, max_displacement_threshol
         Returns None if max_displacement > max_displacement_threshold or if fewer than two time points
         with a non-None threshold.
     """
-    validate_dataset(event)
-
     # Extract time coordinate and data
     time_coords = event.time.values
     contours = []
@@ -269,7 +265,6 @@ def get_contour_velocity(com_da, window_size=3, window_type="boxcar"):
     Returns:
     - velocity_da (xr.DataArray): Velocity with dims ('time', 'coord'), cropped to valid time points.
     """
-    validate_dataarray(com_da, coords=True)
     if window_size < 1 or not isinstance(window_size, int):
         raise ValueError("window_size must be a positive integer")
     if window_type not in ["boxcar", "gaussian", "hamming", "blackman", "triang"]:

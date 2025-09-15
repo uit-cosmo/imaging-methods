@@ -1,19 +1,17 @@
 import numpy as np
 
-from phantom.utils import *
 import matplotlib.pyplot as plt
-from phantom.contours import *
-from phantom import *
+
+from imaging_methods import *
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import cosmoplots as cp
 
 shot = 1160616027
-shot = 1140613026
 manager = PlasmaDischargeManager()
 manager.load_from_json("density_scan/plasma_discharges.json")
 ds = manager.read_shot_data(shot, preprocessed=True)
 
-row = 4
+refy = 4
 
 params = plt.rcParams
 cp.set_rcparams_dynamo(params, 2)
@@ -33,14 +31,24 @@ rlcfs, zlcfs = calculate_splinted_LCFS(
     ds["zlcfs"].values,
 )
 
+def get_average(shot, refx, refy):
+    file_name = os.path.join("density_scan/averages", f"average_ds_{shot}_{refx}{refy}.nc")
+    if not os.path.exists(file_name):
+        print(f"File does not exist {file_name}")
+        return None
+    average_ds = xr.open_dataset(file_name)
+    if len(average_ds.data_vars) == 0:
+        return None
+    refx_ds, refy_ds = average_ds["refx"].item(), average_ds["refy"].item()
+    assert refx == refx_ds and refy == refy_ds
+    return average_ds
+
+
 for refx in np.arange(1, 9):
-    # axe = ax[refx - 1]
     axe = ax[(refx - 1) // 4][(refx - 1) % 4]
-    events, average = find_events_and_2dca(
-        ds, refx, row, threshold=2, check_max=0, window_size=60, single_counting=True
-    )
-    average.to_netcdf("tmp_{}_{}.nc".format(row, refx))
-    average = xr.open_dataset("tmp_{}_{}.nc".format(row, refx))
+    average = get_average(shot, refx, refy)
+    if average is None:
+        continue
 
     data = average["cond_av"].sel(time=0).values
     im = axe.imshow(
@@ -57,8 +65,8 @@ for refx in np.arange(1, 9):
     axe.set_ylim((ds.Z[0, 0], ds.Z[-1, 0]))
     axe.set_xlim((np.min(ds.R.values), ds.R[0, -1]))
     axe.set_xticks([88, 89, 90, 91])
-    axe.set_title(r"$R_*={:.2f} $cm".format(ds.R[row, refx]))
+    axe.set_title(r"$R_*={:.2f} $cm".format(ds.R[refy, refx]))
 
 
-plt.savefig("blob_motion_{}_{}.pdf".format(row, shot), bbox_inches="tight")
+plt.savefig("blob_motion_{}_{}.pdf".format(refy, shot), bbox_inches="tight")
 plt.show()
