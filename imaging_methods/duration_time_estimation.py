@@ -86,7 +86,6 @@ class DurationTimeEstimator:
         base, values = self._get_second_order_statistic(
             data_series, dt, cutoff, **kwargs
         )
-        print("base: ", len(base))
 
         if self.analytics == Analytics.OneSided:
             if bounds is None:
