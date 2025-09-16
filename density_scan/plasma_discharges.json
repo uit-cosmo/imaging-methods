@@ -99,28 +99,6 @@
         "confinement_more": "L"
     },
     {
-        "shot_number": 1110201016,
-        "plasma_current": 0.9,
-        "line_averaged_density": 3.69,
-        "greenwald_fraction": 0.64,
-        "t_start": 1.06,
-        "t_end": 1.345,
-        "duration": 0.285,
-        "mlp_mode": "none",
-        "confinement_more": "EDA-H"
-    },
-    {
-        "shot_number": 1110201011,
-        "plasma_current": 1.2,
-        "line_averaged_density": 4.32,
-        "greenwald_fraction": 0.56,
-        "t_start": 1.06,
-        "t_end": 1.255,
-        "duration": 0.195,
-        "mlp_mode": "none",
-        "confinement_more": "ELM-free-H"
-    },
-    {
         "shot_number": 1120814016,
         "plasma_current": 0.743,
         "line_averaged_density": 1.635,
@@ -287,12 +265,12 @@
     },
     {
         "shot_number": 1110201011,
-        "plasma_current": 1.22,
-        "line_averaged_density": NaN,
-        "greenwald_fraction": NaN,
-        "t_start": 1.12,
-        "t_end": 1.25,
-        "duration": NaN,
+        "plasma_current": 1.2,
+        "line_averaged_density": 4.32,
+        "greenwald_fraction": 0.56,
+        "t_start": 1.06,
+        "t_end": 1.255,
+        "duration": 0.195,
         "mlp_mode": "none",
         "confinement_more": "ELM-free-H"
     },
@@ -320,12 +298,12 @@
     },
     {
         "shot_number": 1110201016,
-        "plasma_current": 0.92,
-        "line_averaged_density": NaN,
-        "greenwald_fraction": NaN,
-        "t_start": 1.05,
-        "t_end": 1.35,
-        "duration": NaN,
+        "plasma_current": 0.9,
+        "line_averaged_density": 3.69,
+        "greenwald_fraction": 0.64,
+        "t_start": 1.06,
+        "t_end": 1.345,
+        "duration": 0.285,
         "mlp_mode": "none",
         "confinement_more": "EDA-H"
     },
@@ -427,5 +405,27 @@
         "duration": NaN,
         "mlp_mode": "none",
         "confinement_more": "I-mode"
+    },
+    {
+        "shot_number": 1150618021,
+        "plasma_current": 0.6,
+        "line_averaged_density": NaN,
+        "greenwald_fraction": 0.3,
+        "t_start": NaN,
+        "t_end": NaN,
+        "duration": NaN,
+        "mlp_mode": "none",
+        "confinement_more": "H-mode"
+    },
+    {
+        "shot_number": 1150618036,
+        "plasma_current": 0.6,
+        "line_averaged_density": NaN,
+        "greenwald_fraction": 0.6,
+        "t_start": NaN,
+        "t_end": NaN,
+        "duration": NaN,
+        "mlp_mode": "none",
+        "confinement_more": "H-mode"
     }
 ]

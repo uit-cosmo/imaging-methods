@@ -111,7 +111,10 @@ class PlasmaDischargeManager:
             self.get_discharge_by_shot(shot).t_start,
             self.get_discharge_by_shot(shot).t_end,
         )
-        return ds_full.sel(time=slice(t_start, t_end))
+        if not np.isnan(t_start) and not np.isnan(t_end):
+            return ds_full.sel(time=slice(t_start, t_end))
+        else:
+            return ds_full
 
     def get_data_from_tree(self, shot, data_folder="data"):
         try:

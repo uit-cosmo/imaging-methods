@@ -1,11 +1,9 @@
-from phantom import ResultManager
 from utils import *
 from method_parameters import method_parameters
 
 import multiprocessing as mp
 from functools import partial
 import traceback
-import logging
 
 
 def preprocess_data():
@@ -31,7 +29,7 @@ def compute_and_store_conditional_averages(shot, refx, refy):
         # print(file_name, " already exists, reusing...")
         return
     ds = manager.read_shot_data(shot, None, data_folder="../data", preprocessed=True)
-    events, average_ds = ph.find_events_and_2dca(
+    events, average_ds = im.find_events_and_2dca(
         ds,
         refx,
         refy,
@@ -62,7 +60,8 @@ def process_point(args, manager):
 def run_parallel(force_redo=False):
     # Create a list of all (shot, refx, refy) combinations
     tasks = []
-    for shot in manager.get_imode_shot_list():
+    # for shot in manager.get_imode_shot_list():
+    for shot in [1150618021, 1150618036]:
         for refx in range(9):
             for refy in range(10):
                 if (
@@ -73,7 +72,7 @@ def run_parallel(force_redo=False):
 
     # Use multiprocessing Pool to parallelize
     num_processes = mp.cpu_count()  # Use all available CPU cores
-    num_processes = 10  # mp.cpu_count()  # Use all available CPU cores
+    num_processes = 6  # mp.cpu_count()  # Use all available CPU cores
     with mp.Pool(processes=num_processes) as pool:
         process_results = pool.map(partial(process_point, manager=manager), tasks)
 
@@ -109,9 +108,8 @@ def run_single_thread(force_redo=False):
 
 
 if __name__ == "__main__":
-    manager = ph.PlasmaDischargeManager()
+    manager = im.PlasmaDischargeManager()
     manager.load_from_json("plasma_discharges.json")
-    # results = ph.ResultManager.from_json("results.json")
-    # run_parallel(force_redo=True)
-    # results.to_json("results.json")
-    preprocess_data()
+    results = im.ResultManager.from_json("results.json")
+    run_parallel(force_redo=True)
+    results.to_json("results.json")

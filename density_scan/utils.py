@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import xarray as xr
 import os
 import numpy as np
-import phantom as ph
+import imaging_methods as im
 from method_parameters import method_parameters
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
@@ -34,7 +34,7 @@ def analysis(shot, refx, refy, manager, do_plots=True):
     taud, lam = get_taud_from_psd(shot, refx, refy, gpi_ds, do_plots)
     lr, lz = get_fwhm_sizes(shot, refx, refy, average_ds, do_plots)
 
-    return ph.BlobParameters(
+    return im.BlobParameters(
         vx_c=v_c,
         vy_c=w_c,
         area_c=area_c,
@@ -57,7 +57,7 @@ def get_tde_velocities(refx, refy, gpi_ds):
     import velocity_estimation as ve
 
     eo = ve.EstimationOptions()
-    eo.cc_options.cc_window = method_parameters["2dca"]["window"] * ph.get_dt(gpi_ds)
+    eo.cc_options.cc_window = method_parameters["2dca"]["window"] * im.get_dt(gpi_ds)
     try:
         pd = ve.estimate_velocities_for_pixel(
             refx, refy, ve.CModImagingDataInterface(gpi_ds)
@@ -69,22 +69,22 @@ def get_tde_velocities(refx, refy, gpi_ds):
 
 
 def get_taud_from_psd(shot, refx, refy, gpi_ds, do_plot):
-    taud, lam = ph.DurationTimeEstimator(
-        ph.SecondOrderStatistic.PSD, ph.Analytics.TwoSided
+    taud, lam = im.DurationTimeEstimator(
+        im.SecondOrderStatistic.PSD, im.Analytics.TwoSided
     ).estimate_duration_time(
         gpi_ds.frames.isel(x=refx, y=refy).values,
-        ph.get_dt(gpi_ds),
+        im.get_dt(gpi_ds),
         cutoff=method_parameters["taud_estimation"]["cutoff"],
         nperseg=method_parameters["taud_estimation"]["nperseg"],
     )
     if do_plot:
         fig, ax = plt.subplots()
         psd_file_name = os.path.join("psds", f"psd_{shot}_{refx}{refy}.eps")
-        taud, lam, freqs = ph.DurationTimeEstimator(
-            ph.SecondOrderStatistic.PSD, ph.Analytics.TwoSided
+        taud, lam, freqs = im.DurationTimeEstimator(
+            im.SecondOrderStatistic.PSD, im.Analytics.TwoSided
         ).plot_and_fit(
             gpi_ds.frames.isel(x=refx, y=refy).values,
-            ph.get_dt(gpi_ds),
+            im.get_dt(gpi_ds),
             ax,
             cutoff=method_parameters["taud_estimation"]["cutoff"],
             nperseg=method_parameters["taud_estimation"]["nperseg"],
@@ -157,7 +157,7 @@ def get_gaussian_fit_sizes(shot, refx, refy, average_ds, do_plots):
         fit_params["aspect_penalty"],
         fit_params["tilt_penalty"],
     )
-    lx, ly, theta = ph.fit_ellipse_to_event(
+    lx, ly, theta = im.fit_ellipse_to_event(
         average_ds.cond_av,
         refx,
         refy,
@@ -169,7 +169,7 @@ def get_gaussian_fit_sizes(shot, refx, refy, average_ds, do_plots):
         fig, ax = plt.subplots()
         fit_file_name = os.path.join("fits", f"fit_{shot}_{refx}{refy}.eps")
 
-        lx, ly, theta = ph.plot_event_with_fit(
+        lx, ly, theta = im.plot_event_with_fit(
             average_ds.cond_av,
             refx,
             refy,
@@ -184,17 +184,17 @@ def get_gaussian_fit_sizes(shot, refx, refy, average_ds, do_plots):
 
 
 def get_2dca_tde_velocities(refx, refy, average_ds):
-    v_f, w_f = ph.get_3tde_velocities(average_ds.cond_av, refx, refy)
+    v_f, w_f = im.get_3tde_velocities(average_ds.cond_av, refx, refy)
     return v_f / 100, w_f / 100
 
 
 def get_contour_parameters(shot, refx, refy, average_ds, do_plots):
-    contour_ds = ph.get_contour_evolution(
+    contour_ds = im.get_contour_evolution(
         average_ds.cond_av,
         method_parameters["contouring"]["threshold_factor"],
         max_displacement_threshold=None,
     )
-    velocity_ds = ph.get_contour_velocity(
+    velocity_ds = im.get_contour_velocity(
         contour_ds.center_of_mass,
         window_size=method_parameters["contouring"]["com_smoothing"],
     )
@@ -206,7 +206,7 @@ def get_contour_parameters(shot, refx, refy, average_ds, do_plots):
         gif_file_name = os.path.join(
             "contour_movies", f"average_contour_{shot}_{refx}{refy}.gif"
         )
-        ph.show_movie_with_contours(
+        im.show_movie_with_contours(
             average_ds,
             contour_ds,
             "cond_av",
@@ -218,7 +218,7 @@ def get_contour_parameters(shot, refx, refy, average_ds, do_plots):
 
         fig, ax = plt.subplots(figsize=(5, 5))
         contour_file_name = os.path.join("contours", f"contour_{shot}_{refx}{refy}.eps")
-        ph.plot_contour_at_zero(average_ds.cond_av, contour_ds, ax, contour_file_name)
+        im.plot_contour_at_zero(average_ds.cond_av, contour_ds, ax, contour_file_name)
         plt.close(fig)
 
     return v_c / 100, w_c / 100, area_c / 100**2
@@ -226,7 +226,7 @@ def get_contour_parameters(shot, refx, refy, average_ds, do_plots):
 
 def plot_results(file_suffix):
     results_file_name = os.path.join("results", f"results_{file_suffix}.json")
-    results = ph.ResultManager.from_json(filename=results_file_name)
+    results = im.ResultManager.from_json(filename=results_file_name)
     if len(results.shots) == 0:
         return
 
@@ -301,7 +301,7 @@ def plot_contour_figure(refx, refy):
     subfigure_labels = [chr(97 + i) for i in range(9)]
     ax_indx = 0
 
-    manager = ph.PlasmaDischargeManager()
+    manager = im.PlasmaDischargeManager()
     manager.load_from_json("plasma_discharges.json")
     for shot in manager.get_shot_list():
         confinement_more = manager.get_discharge_by_shot(shot).confinement_mode
@@ -316,12 +316,12 @@ def plot_contour_figure(refx, refy):
             continue
         refx, refy = average_ds["refx"].item(), average_ds["refy"].item()
 
-        contour_ds = ph.get_contour_evolution(
+        contour_ds = im.get_contour_evolution(
             average_ds.cond_av,
             method_parameters["contouring"]["threshold_factor"],
             max_displacement_threshold=None,
         )
-        area = ph.plot_contour_at_zero(average_ds.cond_av, contour_ds, axe)
+        area = im.plot_contour_at_zero(average_ds.cond_av, contour_ds, axe)
 
         fit_params = method_parameters["gauss_fit"]
         ps, pe, pt = (
@@ -329,7 +329,7 @@ def plot_contour_figure(refx, refy):
             fit_params["aspect_penalty"],
             fit_params["tilt_penalty"],
         )
-        lx, ly, theta = ph.plot_event_with_fit(
+        lx, ly, theta = im.plot_event_with_fit(
             average_ds.cond_av,
             refx,
             refy,
@@ -368,11 +368,11 @@ def plot_contour_figure(refx, refy):
         #                              bbox_to_anchor=(0.1, 0.1, 0.4, 0.4),
 
         gpi_ds = manager.read_shot_data(shot, data_folder="../data")
-        taud, lam, freqs = ph.DurationTimeEstimator(
-            ph.SecondOrderStatistic.PSD, ph.Analytics.TwoSided
+        taud, lam, freqs = im.DurationTimeEstimator(
+            im.SecondOrderStatistic.PSD, im.Analytics.TwoSided
         ).plot_and_fit(
             gpi_ds.frames.isel(x=refx, y=refy).values,
-            ph.get_dt(average_ds),
+            im.get_dt(average_ds),
             inset_ax,
             cutoff=method_parameters["taud_estimation"]["cutoff"],
             nperseg=method_parameters["taud_estimation"]["nperseg"],
