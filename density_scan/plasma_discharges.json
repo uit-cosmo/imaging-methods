@@ -411,8 +411,8 @@
         "plasma_current": 0.6,
         "line_averaged_density": NaN,
         "greenwald_fraction": 0.3,
-        "t_start": NaN,
-        "t_end": NaN,
+        "t_start": 0.65,
+        "t_end": 1.35,
         "duration": NaN,
         "mlp_mode": "none",
         "confinement_more": "H-mode"
@@ -422,8 +422,8 @@
         "plasma_current": 0.6,
         "line_averaged_density": NaN,
         "greenwald_fraction": 0.6,
-        "t_start": NaN,
-        "t_end": NaN,
+        "t_start": 0.65,
+        "t_end": 1.1,
         "duration": NaN,
         "mlp_mode": "none",
         "confinement_more": "H-mode"

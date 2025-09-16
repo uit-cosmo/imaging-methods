@@ -13,12 +13,9 @@ def preprocess_data():
         if os.path.exists(file_name):
             continue
         print("Preprocessing data for shot {}".format(shot))
-        ds = manager.read_shot_data(
-            shot,
-            None,
-            preprocessed=False,
-            data_folder="../data",
-            radius=method_parameters["preprocessing"]["radius"],
+        ds = manager.read_shot_data(shot, data_folder="../data", preprocessed=False)
+        ds = manager.preprocess_dataset(
+            ds, radius=method_parameters["preprocessing"]["radius"]
         )
         ds.to_netcdf(file_name)
 

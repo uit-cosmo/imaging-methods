@@ -2,8 +2,9 @@ import json
 from dataclasses import dataclass
 from typing import Optional, List, Dict, Tuple, Union
 import os
+import xarray as xr
 
-from .data_preprocessing import load_data_and_preprocess
+from .data_preprocessing import run_norm_ds, interpolate_nans_3d
 import numpy as np
 
 
@@ -99,22 +100,33 @@ class PlasmaDischargeManager:
     def read_shot_data(
         self,
         shot,
-        window=None,
         data_folder: str = "data",
         preprocessed=True,
-        radius=1000,
     ):
-        ds_full = load_data_and_preprocess(
-            shot, window, data_folder, preprocessed, radius=radius
+        file_name = os.path.join(
+            data_folder,
+            f"apd_{shot}_preprocessed.nc" if preprocessed else f"apd_{shot}.nc",
         )
+        try:
+            ds = xr.open_dataset(file_name)
+        except FileNotFoundError:
+            raise FileNotFoundError(f"Data file {file_name} not found")
+        except Exception as e:
+            raise ValueError(f"Failed to load {file_name}: {str(e)}")
+
         t_start, t_end = (
             self.get_discharge_by_shot(shot).t_start,
             self.get_discharge_by_shot(shot).t_end,
         )
         if not np.isnan(t_start) and not np.isnan(t_end):
-            return ds_full.sel(time=slice(t_start, t_end))
+            return ds.sel(time=slice(t_start, t_end))
         else:
-            return ds_full
+            return ds
+
+    def preprocess_dataset(self, ds, radius=1000):
+        ds = run_norm_ds(ds, radius)
+        ds = interpolate_nans_3d(ds)
+        return ds
 
     def get_data_from_tree(self, shot, data_folder="data"):
         try:

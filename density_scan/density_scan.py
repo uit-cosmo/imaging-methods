@@ -69,12 +69,8 @@ discharges = [
     PlasmaDischarge(
         1140613027, np.nan, np.nan, np.nan, 0.7, 1.2, np.nan, "none", "I-mode"
     ),
-    PlasmaDischarge(
-        1150618021, 0.6, np.nan, 0.3, np.nan, np.nan, np.nan, "none", "H-mode"
-    ),
-    PlasmaDischarge(
-        1150618036, 0.6, np.nan, 0.6, np.nan, np.nan, np.nan, "none", "H-mode"
-    ),
+    PlasmaDischarge(1150618021, 0.6, np.nan, 0.3, 0.65, 1.35, np.nan, "none", "H-mode"),
+    PlasmaDischarge(1150618036, 0.6, np.nan, 0.6, 0.65, 1.1, np.nan, "none", "H-mode"),
 ]
 # Add discharges to manager
 for discharge in discharges:
