@@ -58,7 +58,7 @@ def run_parallel(force_redo=False):
     # Create a list of all (shot, refx, refy) combinations
     tasks = []
     # for shot in manager.get_imode_shot_list():
-    for shot in [1150618021, 1150618036]:
+    for shot in [1120814031]:
         for refx in range(9):
             for refy in range(10):
                 if (
@@ -69,7 +69,7 @@ def run_parallel(force_redo=False):
 
     # Use multiprocessing Pool to parallelize
     num_processes = mp.cpu_count()  # Use all available CPU cores
-    num_processes = 6  # mp.cpu_count()  # Use all available CPU cores
+    num_processes = 10  # mp.cpu_count()  # Use all available CPU cores
     with mp.Pool(processes=num_processes) as pool:
         process_results = pool.map(partial(process_point, manager=manager), tasks)
 
