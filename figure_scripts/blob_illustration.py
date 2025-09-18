@@ -4,10 +4,8 @@ import matplotlib.pyplot as plt
 from imaging_methods import *
 import cosmoplots as cp
 
-shot = 1160616011
 manager = PlasmaDischargeManager()
 manager.load_from_json("density_scan/plasma_discharges.json")
-ds = manager.read_shot_data(shot, preprocessed=True)
 
 params = plt.rcParams
 cp.set_rcparams_dynamo(params, 2)
@@ -15,18 +13,18 @@ cp.set_rcparams_dynamo(params, 2)
 plt.rcParams.update(params)
 
 
-limit_spline = interpolate.interp1d(ds["zlimit"], ds["rlimit"], kind="cubic")
-zfine = np.linspace(-8, 1, 100)
+def plot_cond_av(shot, refx, refy):
+    ds = manager.read_shot_data(shot, preprocessed=True)
+    limit_spline = interpolate.interp1d(ds["zlimit"], ds["rlimit"], kind="cubic")
+    zfine = np.linspace(-8, 1, 100)
 
-rlcfs, zlcfs = calculate_splinted_LCFS(
-    ds["efit_time"].values.mean(),
-    ds["efit_time"].values,
-    ds["rlcfs"].values,
-    ds["zlcfs"].values,
-)
+    rlcfs, zlcfs = calculate_splinted_LCFS(
+        ds["efit_time"].values.mean(),
+        ds["efit_time"].values,
+        ds["rlcfs"].values,
+        ds["zlcfs"].values,
+    )
 
-
-def plot_cond_av(refx, refy):
     average = xr.open_dataset(
         os.path.join("density_scan/averages", f"average_ds_{shot}_{refx}{refy}.nc")
     )
@@ -68,4 +66,5 @@ def plot_cond_av(refx, refy):
     plt.show()
 
 
-plot_cond_av(2, 5)
+for shot in manager.get_ohmic_H_shot_list():
+    plot_cond_av(shot, 6, 5)
