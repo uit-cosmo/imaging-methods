@@ -2,6 +2,7 @@ import fppanalysis as fppa
 import velocity_estimation as ve
 import xarray as xr
 import numpy as np
+from scipy import interpolate
 
 
 class PhantomDataInterface(ve.ImagingDataInterface):
@@ -204,3 +205,27 @@ def power_spectral_density(omega, taud, lam):
     f1 = 1 + ((1 - lam) * taud * omega) * (1.0 - lam) * taud * omega
     f2 = 1 + (lam * taud * omega) * (lam * taud * omega)
     return 4 * taud / (f1 * f2)
+
+
+def get_lcfs_min_and_max(ds, t_start, t_end):
+    z_fine = np.linspace(-8, 1, 100)
+    r_min = 100 * np.ones(len(z_fine))
+    r_max = 0 * np.ones(len(z_fine))
+
+    for time_index in range(ds["efit_time"].size):
+        time = ds["efit_time"][time_index].item()
+        if time < t_start or time > t_end:
+            continue
+        r_values = ds["rlcfs"].isel(efit_time=time_index).values
+        z_values = ds["zlcfs"].isel(efit_time=time_index).values
+
+        f = interpolate.interp1d(
+            z_values[r_values >= 86],
+            r_values[r_values >= 86],
+            kind="cubic",
+        )
+        r_fine = f(z_fine)
+        r_min = np.minimum(r_min, r_fine)
+        r_max = np.maximum(r_max, r_fine)
+
+    return r_min, r_max, z_fine
