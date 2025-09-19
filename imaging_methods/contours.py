@@ -181,13 +181,13 @@ def get_contour_evolution(event, threshold_factor=0.5, max_displacement_threshol
             max_displacement = (
                 np.max(displacements) if len(displacements) > 0 else np.nan
             )
-    if len(time_coords) < 2 or (
-        not np.isnan(max_displacement)
-        and max_displacement_threshold is not None
-        and max_displacement > max_displacement_threshold
-    ):
-        print(f"Exceeded maximum displacement: {max_displacement:.2f}")
-        return None
+        if (
+            not np.isnan(max_displacement)
+            and max_displacement_threshold is not None
+            and max_displacement > max_displacement_threshold
+        ):
+            print(f"Exceeded maximum displacement: {max_displacement:.2f}")
+            return None
 
     # Create ragged array for contours
     max_points = max(len(c) for c in contours) if contours else 1

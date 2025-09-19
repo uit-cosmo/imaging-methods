@@ -88,7 +88,15 @@ def show_movie(
         # im.set_extent((dataset.x[0], dataset.x[-1], dataset.y[0], dataset.y[-1]))
         im.set_clim(vmin, vmax)
         time = dataset[t_dim][i]
-        tx.set_text(f"t = {time:.7f}")
+        tx.set_text(r"t $=\,{:.2f}\,\mu$s".format(time * 1e6))
+        if has_lcfs:
+            rlcfs, zlcfs = calculate_splinted_LCFS(
+                time.item(),
+                dataset["efit_time"].values,
+                dataset["rlcfs"].values,
+                dataset["zlcfs"].values,
+            )
+            lcfs[0].set_data(rlcfs, zlcfs)
 
     if ax is None:
         ax = fig.add_subplot(111)
