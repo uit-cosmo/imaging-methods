@@ -58,7 +58,7 @@ def run_parallel(force_redo=False):
     # Create a list of all (shot, refx, refy) combinations
     tasks = []
     # for shot in manager.get_imode_shot_list():
-    for shot in [1120814018]:
+    for shot in []:
         for refx in range(9):
             for refy in range(10):
                 if (

@@ -429,6 +429,27 @@ class ResultManager:
             return np.nan
         return np.nanmean(param_array)
 
+    def get_blob_param_array(self, shot_number: int, param: str) -> np.ndarray:
+        """Retrieve a 2D array of blob_params attribute values for all refx and refy indices for a given shot number.
+
+        Args:
+            shot_number (int): The shot number to query.
+            param (str): The name of the parameter to retrieve.
+
+        Returns:
+            np.ndarray: A 2D array of shape (len(refy_values), len(refx_values)) containing parameter values.
+                        Elements are np.nan where data is missing.
+        """
+        # Initialize 2D array to store parameter values
+        param_array = np.full((9, 10), np.nan)
+
+        # Iterate over all refx and refy combinations
+        for rx in range(9):
+            for ry in range(10):
+                param_array[rx, ry] = self.get_blob_param(shot_number, rx, ry, param)
+
+        return param_array
+
     def to_json(self, filename):
         class CustomEncoder(json.JSONEncoder):
             def default(self, obj):

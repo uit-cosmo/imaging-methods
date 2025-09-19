@@ -327,3 +327,46 @@ def movie_2dca_with_contours(shot, refx, refy):
         interpolation="spline16",
         show=True,
     )
+
+
+def plot_skewness_and_flatness(ds, shot, fig=None, ax=None):
+    from scipy.stats import skew, kurtosis
+
+    if fig is None:
+        fig, ax = plt.subplots(
+            1, 2, figsize=(2 * 3.3, 1 * 3.3), gridspec_kw={"wspace": 0.5}
+        )
+
+    nx = ds.sizes["x"]  # Number of x pixels
+    ny = ds.sizes["y"]  # Number of y pixels
+
+    # Initialize array to store skewness
+    skewness = np.zeros((ny, nx))
+    kurt = np.zeros((ny, nx))
+
+    # Compute skewness for each pixel using a for loop
+    for x in range(nx):
+        for y in range(ny):
+            time_series = ds.frames.isel(x=x, y=y).values
+            skewness[y, x] = skew(time_series)
+            kurt[y, x] = kurtosis(time_series)
+
+    def plot_image(axe, data, label):
+        im = axe.imshow(data, origin="lower", cmap="viridis")
+        im.set_extent((ds.R[0, 0], ds.R[0, -1], ds.Z[0, 0], ds.Z[-1, 0]))
+        axe.set_xlabel("R")
+        axe.set_ylabel("Z")
+        axe.set_title(f"{label} {shot}")
+        plt.colorbar(im, ax=axe, label=label)
+
+    plot_image(ax[0], skewness, "Skewness")
+    plot_image(ax[1], kurt, "Kurtosis")
+
+
+def add_limiter_and_lcfs(ds, ax):
+    limit_spline = interpolate.interp1d(ds["zlimit"], ds["rlimit"], kind="cubic")
+    zfine = np.linspace(-8, 1, 100)
+    ax.plot(limit_spline(zfine), zfine, color="black", ls="--")
+
+    r_min, r_max, z_lcfs = get_lcfs_min_and_max(ds)
+    ax.fill_betweenx(z_lcfs, r_min, r_max, color="grey", alpha=0.5)
