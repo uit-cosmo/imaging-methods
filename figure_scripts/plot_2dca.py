@@ -1,10 +1,12 @@
-import numpy as np
-import xarray as xr
 import argparse
 import sys
 from imaging_methods import *
 import os
+import cosmoplots as cp
 
+params = plt.rcParams
+cp.set_rcparams_dynamo(params, 1)
+plt.rcParams.update(params)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Plot average")
@@ -25,28 +27,11 @@ if __name__ == "__main__":
     refx = args.refx
     refy = args.refy
 
-    average = xr.open_dataset(
-        "density_scan/averages/average_ds_{}_{}{}.nc".format(shot, refx, refy)
-    )
+    movie_2dca_with_contours(shot, refx, refy)
 
-    contour_ds = get_contour_evolution(
-        average.cond_av,
-        0.3,
-        max_displacement_threshold=None,
-    )
     output_name = "2dca_{}_{}{}.gif".format(shot, refx, refy)
-    show_movie_with_contours(
-        average,
-        contour_ds,
-        "cond_av",
-        lims=(0, 3),
-        gif_name=output_name,
-        interpolation="spline16",
-        show=True,
-    )
-
-    os.system(
-        "gifsicle -i {} -O3 --colors 32 --lossy=150 -o {}".format(
-            output_name, output_name
-        )
-    )
+    # os.system(
+    #    "gifsicle -i {} -O3 --colors 32 --lossy=150 -o {}".format(
+    #        output_name, output_name
+    #    )
+    # )

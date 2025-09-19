@@ -207,7 +207,8 @@ def power_spectral_density(omega, taud, lam):
     return 4 * taud / (f1 * f2)
 
 
-def get_lcfs_min_and_max(ds, t_start, t_end):
+def get_lcfs_min_and_max(ds):
+    t_start, t_end = ds.time.min().item(), ds.time.max().item()
     z_fine = np.linspace(-8, 1, 100)
     r_min = 100 * np.ones(len(z_fine))
     r_max = 0 * np.ones(len(z_fine))
@@ -220,8 +221,8 @@ def get_lcfs_min_and_max(ds, t_start, t_end):
         z_values = ds["zlcfs"].isel(efit_time=time_index).values
 
         f = interpolate.interp1d(
-            z_values[r_values >= 86],
-            r_values[r_values >= 86],
+            z_values[r_values >= 80],
+            r_values[r_values >= 80],
             kind="cubic",
         )
         r_fine = f(z_fine)
@@ -229,3 +230,30 @@ def get_lcfs_min_and_max(ds, t_start, t_end):
         r_max = np.maximum(r_max, r_fine)
 
     return r_min, r_max, z_fine
+
+
+def get_average_lcfs_rad_vs_time(ds):
+    t_start, t_end = ds.time.min().item(), ds.time.max().item()
+    z_min_apd, z_max_apd = ds.Z[0, 0], ds.Z[-1, 0]
+    z_fine = np.linspace(z_min_apd, z_max_apd, 100)
+
+    etimes = ds["efit_time"]
+    mask = np.logical_and(etimes > t_start, etimes < t_end)
+    times_in_range = etimes[mask]
+    rvals = []
+
+    for time in times_in_range:
+        if time < t_start or time > t_end:
+            continue
+        r_values = ds["rlcfs"].sel(efit_time=time).values
+        z_values = ds["zlcfs"].sel(efit_time=time).values
+
+        f = interpolate.interp1d(
+            z_values[r_values >= 80],
+            r_values[r_values >= 80],
+            kind="cubic",
+        )
+        r_fine = f(z_fine)
+        rvals.append(r_fine.mean())
+
+    return times_in_range, np.array(rvals)

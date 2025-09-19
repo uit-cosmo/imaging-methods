@@ -3,27 +3,23 @@ import numpy as np
 import matplotlib.pyplot as plt
 from imaging_methods import *
 import cosmoplots as cp
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 manager = PlasmaDischargeManager()
 manager.load_from_json("density_scan/plasma_discharges.json")
 
 params = plt.rcParams
 cp.set_rcparams_dynamo(params, 2)
-# plt.rcParams["text.usetex"] = False
 plt.rcParams.update(params)
 
 
-def plot_cond_av(shot, refx, refy):
+def plot_cond_av(shot, refx, refy, plot_inset_lcfs=False):
     ds = manager.read_shot_data(shot, preprocessed=True)
     limit_spline = interpolate.interp1d(ds["zlimit"], ds["rlimit"], kind="cubic")
     zfine = np.linspace(-8, 1, 100)
 
-    rlcfs, zlcfs = calculate_splinted_LCFS(
-        ds["efit_time"].values.mean(),
-        ds["efit_time"].values,
-        ds["rlcfs"].values,
-        ds["zlcfs"].values,
-    )
+    r_min, r_max, z_lcfs = get_lcfs_min_and_max(ds)
+    times_lcfs, r_lcfs = get_average_lcfs_rad_vs_time(ds)
 
     average = xr.open_dataset(
         os.path.join("density_scan/averages", f"average_ds_{shot}_{refx}{refy}.nc")
@@ -33,6 +29,7 @@ def plot_cond_av(shot, refx, refy):
 
     contours = get_contour_evolution(average.cond_av, 0.3)
     t_indexes = np.floor(np.linspace(0, average["time"].size - 7, num=8))
+    # t_indexes = np.floor(np.linspace(15, average["time"].size - 19, num=8))
     fig, ax = plt.subplots(
         2, 4, figsize=(4 * 2.08, 2 * 2.08), gridspec_kw={"hspace": 0.4}
     )
@@ -54,9 +51,16 @@ def plot_cond_av(shot, refx, refy):
         axe.plot(c[:, 0], c[:, 1], ls="--", color="black")
 
         axe.plot(limit_spline(zfine), zfine, color="black", ls="--")
-        axe.plot(rlcfs, zlcfs, color="black")
+        axe.fill_betweenx(z_lcfs, r_min, r_max, color="grey", alpha=0.5)
         axe.set_ylim((ds.Z[0, 0], ds.Z[-1, 0]))
         axe.set_xlim((ds.R[0, 0], ds.R[0, -1]))
+
+        if i == 0 and plot_inset_lcfs:
+            inset_ax = inset_axes(axe, width=0.5, height=0.5, loc="lower left")
+            inset_ax.plot(times_lcfs, r_lcfs, color="black")
+            inset_ax.set_ylabel(r"$<r_{sep}>$", fontsize=4)
+            inset_ax.set_xlabel(r"$t$", fontsize=4)
+
         t = average["time"].isel(time=int(t_indexes[i])).item()
         axe.set_title(r"$t={:.2f}\,\mu $s".format(t * 1e6))
 
@@ -66,5 +70,5 @@ def plot_cond_av(shot, refx, refy):
     plt.show()
 
 
-for shot in manager.get_ohmic_H_shot_list():
-    plot_cond_av(shot, 6, 5)
+# plot_cond_av(1160616009, 6, 5)
+movie_2dca_with_contours(1120814031, 6, 5)

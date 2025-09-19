@@ -25,7 +25,7 @@ def compute_and_store_conditional_averages(shot, refx, refy):
     if os.path.exists(file_name):
         # print(file_name, " already exists, reusing...")
         return
-    ds = manager.read_shot_data(shot, None, data_folder="../data", preprocessed=True)
+    ds = manager.read_shot_data(shot, data_folder="../data", preprocessed=True)
     events, average_ds = im.find_events_and_2dca(
         ds,
         refx,
@@ -43,7 +43,7 @@ def process_point(args, manager):
     try:
         # print(f"Working on shot {shot}, refx={refx}, refy={refy}")
         compute_and_store_conditional_averages(shot, refx, refy)
-        bp = analysis(shot, refx, refy, manager, do_plots=True)
+        bp = analysis(shot, refx, refy, manager, do_plots=False)
         if bp is None:
             return None
         # Return data to be added to results
@@ -58,7 +58,7 @@ def run_parallel(force_redo=False):
     # Create a list of all (shot, refx, refy) combinations
     tasks = []
     # for shot in manager.get_imode_shot_list():
-    for shot in [1120814031]:
+    for shot in [1120814018]:
         for refx in range(9):
             for refy in range(10):
                 if (

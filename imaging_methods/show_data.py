@@ -162,6 +162,7 @@ def calculate_splinted_LCFS(
 def show_movie_with_contours(
     dataset: xr.Dataset,
     contours_ds,
+    apd_dataset: xr.Dataset = None,
     variable: str = "n",
     interval: int = 100,
     gif_name: Union[str, None] = None,
@@ -171,6 +172,7 @@ def show_movie_with_contours(
     fig=None,
     ax=None,
     show=True,
+    show_debug_info=False,
 ) -> None:
     """
     Creates an animation that shows the evolution of a specific variable over time.
@@ -197,7 +199,6 @@ def show_movie_with_contours(
     - This function chooses between a 1D and 2D visualizations based on the dimensionality of the dataset.
 
     """
-
     t_dim = "t" if "t" in dataset._coord_names else "time"
     if fig is None:
         fig = plt.figure()
@@ -205,13 +206,6 @@ def show_movie_with_contours(
     dt = get_dt(dataset)
     R, Z = dataset.R.values, dataset.Z.values
     refx, refy = int(dataset["refx"].item()), int(dataset["refy"].item())
-
-    def indexes_to_coordinates(R, Z, indexes):
-        dx = R[0, 1] - R[0, 0]
-        dy = Z[1, 0] - Z[0, 0]
-        r_values = np.min(R) + indexes[:, 1] * dx
-        z_values = np.min(Z) + indexes[:, 0] * dy
-        return r_values, z_values
 
     def animate_2d(i: int) -> Any:
         """
@@ -232,32 +226,34 @@ def show_movie_with_contours(
             vmin, vmax = np.min(arr), np.max(arr)
         else:
             vmin, vmax = lims
-        # vmin, vmax = 0, 1
         im.set_data(arr)
-        # im.set_extent((dataset.x[0], dataset.x[-1], dataset.y[0], dataset.y[-1]))
         im.set_clim(vmin, vmax)
         c = contours_ds.contours.isel(time=i).data
         line[0].set_data(c[:, 0], c[:, 1])
 
         time = dataset[t_dim][i]
-        l = contours_ds.length.isel(time=i).item()
-        convexity_deficienty = contours_ds.convexity_deficiency.isel(time=i).item()
-        com = contours_ds.center_of_mass.isel(time=i).values
-        size = contours_ds.area.isel(time=i).item()
-        max_displacement = contours_ds["max_displacement"]
-        tx.set_text(
-            f"l = {l:.2f}, cd = {convexity_deficienty:.2f}, com = {com[0]:.2f} {com[1]:.2f}, area = {size:.2f}, Md = {max_displacement:.2f}"
-        )
+        if show_debug_info:
+            l = contours_ds.length.isel(time=i).item()
+            convexity_deficienty = contours_ds.convexity_deficiency.isel(time=i).item()
+            com = contours_ds.center_of_mass.isel(time=i).values
+            size = contours_ds.area.isel(time=i).item()
+            max_displacement = contours_ds["max_displacement"]
+            tx.set_text(
+                f"l = {l:.2f}, cd = {convexity_deficienty:.2f}, com = {com[0]:.2f} {com[1]:.2f}, area = {size:.2f}, Md = {max_displacement:.2f}"
+            )
+        else:
+            tx.set_text(r"t$={:.2f}\,\mu$s".format(time * 1e6))
 
     if ax is None:
         ax = fig.add_subplot(111)
-    tx = ax.set_title("t = 0")
+    tx = ax.set_title(r"t$={:.2f}\,\mu$s".format(dataset[t_dim][0] * 1e6))
     ax.scatter(
-        dataset.R.isel(x=refx, y=refy).item(), dataset.Z.isel(x=refx, y=refy).item()
+        dataset.R.isel(x=refx, y=refy).item(),
+        dataset.Z.isel(x=refx, y=refy).item(),
+        color="black",
     )
     div = make_axes_locatable(ax)
     cax = div.append_axes("right", "5%", "5%")
-    t_init = dataset[t_dim][0].values
     im = ax.imshow(
         dataset[variable].isel(**{t_dim: 0}),
         origin="lower",
@@ -265,6 +261,16 @@ def show_movie_with_contours(
     )
     line = ax.plot([], [], ls="--", color="black")
     fig.colorbar(im, cax=cax)
+
+    if apd_dataset is not None:
+        limit_spline = interpolate.interp1d(
+            apd_dataset["zlimit"], apd_dataset["rlimit"], kind="cubic"
+        )
+        zfine = np.linspace(-8, 1, 100)
+        ax.plot(limit_spline(zfine), zfine, color="black", ls="--")
+
+        r_min, r_max, z_lcfs = get_lcfs_min_and_max(apd_dataset)
+        ax.fill_betweenx(z_lcfs, r_min, r_max, color="grey", alpha=0.5)
 
     im.set_extent(
         (dataset.R[0, 0], dataset.R[0, -1], dataset.Z[0, 0], dataset.Z[-1, 0])
@@ -280,3 +286,36 @@ def show_movie_with_contours(
         plt.show()
     else:
         fig.clf()
+
+
+def movie_2dca_with_contours(shot, refx, refy):
+    from .contours import get_contour_evolution
+    from .discharge import PlasmaDischargeManager
+
+    manager = PlasmaDischargeManager()
+    manager.load_from_json("density_scan/plasma_discharges.json")
+    ds = manager.read_shot_data(shot, preprocessed=True)
+
+    average = xr.open_dataset(
+        "density_scan/averages/average_ds_{}_{}{}.nc".format(shot, refx, refy)
+    )
+
+    contour_ds = get_contour_evolution(
+        average.cond_av,
+        0.3,
+        max_displacement_threshold=None,
+    )
+    output_name = "2dca_{}_{}{}.gif".format(shot, refx, refy)
+    fig, ax = plt.subplots(figsize=(3, 3))
+    show_movie_with_contours(
+        average,
+        contour_ds,
+        apd_dataset=ds,
+        variable="cond_av",
+        lims=(0, average.cond_av.max().item()),
+        fig=fig,
+        ax=ax,
+        gif_name=output_name,
+        interpolation="spline16",
+        show=True,
+    )
