@@ -49,6 +49,9 @@ class PlasmaDischarge:
             confinement_mode=data["confinement_more"],
         )
 
+    def greenwald_fraction_fun(self):
+        return self.line_averaged_density * np.pi * 0.22**2 / self.plasma_current
+
 
 class PlasmaDischargeManager:
     def __init__(self):
