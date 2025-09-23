@@ -5,7 +5,7 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import cosmoplots as cp
 
 # Load the dataset
-shot = 1140613027
+shot = 1110201016
 manager = PlasmaDischargeManager()
 manager.load_from_json("density_scan/plasma_discharges.json")
 ds = manager.read_shot_data(shot, preprocessed=True)

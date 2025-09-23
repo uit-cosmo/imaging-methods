@@ -83,6 +83,13 @@ class PlasmaDischargeManager:
         """Return a list of all shot numbers."""
         return [discharge.shot_number for discharge in self.discharges]
 
+    def get_shot_list_by_confinement(self, confinement) -> List[int]:
+        return [
+            discharge.shot_number
+            for discharge in self.discharges
+            if discharge.confinement_mode in confinement
+        ]
+
     def get_ohmic_H_shot_list(self) -> List[int]:
         return [
             1120814016,

@@ -13,19 +13,45 @@ discharges = [
     PlasmaDischarge(1160616016, 0.53, 1.60, 0.45, 1.15, 1.45, 0.300, "scan", "L"),
     PlasmaDischarge(1160616011, 0.54, 1.07, 0.30, 1.15, 1.45, 0.300, "scan", "L"),
     PlasmaDischarge(1160616009, 0.54, 0.87, 0.24, 1.305, 1.45, 0.145, "scan", "L"),
-    PlasmaDischarge(1120814016, 0.743, 1.635, 0.33, 1.3, 1.65, 0.35, "none", "EDA-H"),
-    PlasmaDischarge(1120814018, 0.741, 1.621, 0.33, 1.33, 1.65, 0.32, "none", "EDA-H"),
-    PlasmaDischarge(1120814019, 0.744, 1.601, 0.32, 1.33, 1.65, 0.32, "none", "EDA-H"),
-    PlasmaDischarge(1120814020, 0.745, 1.706, 0.34, 1.33, 1.65, 0.32, "none", "EDA-H"),
-    PlasmaDischarge(1120814021, 0.744, 1.987, 0.40, 1.33, 1.65, 0.32, "none", "EDA-H"),
-    PlasmaDischarge(1120814025, 0.745, 1.572, 0.32, 1.33, 1.65, 0.32, "none", "EDA-H"),
-    PlasmaDischarge(1120814026, 0.745, 1.278, 0.26, 0.95, 1.4, 0.45, "scan", "EDA-H"),
-    PlasmaDischarge(1120814027, 0.743, 1.561, 0.32, 0.95, 1.4, 0.45, "scan", "EDA-H"),
-    PlasmaDischarge(1120814028, 0.74, 1.77, 0.36, 1.15, 1.5, 0.35, "scan", "EDA-H"),
-    PlasmaDischarge(1120814029, 0.746, 1.75, 0.35, 1.15, 1.5, 0.35, "scan", "EDA-H"),
-    PlasmaDischarge(1120814030, 0.744, 1.74, 0.35, 1.15, 1.5, 0.35, "scan", "EDA-H"),
-    PlasmaDischarge(1120814031, 0.743, 1.652, 0.33, 1.15, 1.5, 0.35, "scan", "EDA-H"),
-    PlasmaDischarge(1120814032, 0.747, 1.83, 0.37, 1.15, 1.5, 0.35, "scan", "EDA-H"),
+    PlasmaDischarge(
+        1120814016, 0.743, 1.635, 0.33, 1.3, 1.65, 0.35, "none", "Ohmic EDA-H"
+    ),
+    PlasmaDischarge(
+        1120814018, 0.741, 1.621, 0.33, 1.33, 1.65, 0.32, "none", "Ohmic EDA-H"
+    ),
+    PlasmaDischarge(
+        1120814019, 0.744, 1.601, 0.32, 1.33, 1.65, 0.32, "none", "Ohmic EDA-H"
+    ),
+    PlasmaDischarge(
+        1120814020, 0.745, 1.706, 0.34, 1.33, 1.65, 0.32, "none", "Ohmic EDA-H"
+    ),
+    PlasmaDischarge(
+        1120814021, 0.744, 1.987, 0.40, 1.33, 1.65, 0.32, "none", "Ohmic EDA-H"
+    ),
+    PlasmaDischarge(
+        1120814025, 0.745, 1.572, 0.32, 1.33, 1.65, 0.32, "none", "Ohmic EDA-H"
+    ),
+    PlasmaDischarge(
+        1120814026, 0.745, 1.278, 0.26, 0.95, 1.4, 0.45, "scan", "Ohmic EDA-H"
+    ),
+    PlasmaDischarge(
+        1120814027, 0.743, 1.561, 0.32, 0.95, 1.4, 0.45, "scan", "Ohmic EDA-H"
+    ),
+    PlasmaDischarge(
+        1120814028, 0.74, 1.77, 0.36, 1.15, 1.5, 0.35, "scan", "Ohmic EDA-H"
+    ),
+    PlasmaDischarge(
+        1120814029, 0.746, 1.75, 0.35, 1.15, 1.5, 0.35, "scan", "Ohmic EDA-H"
+    ),
+    PlasmaDischarge(
+        1120814030, 0.744, 1.74, 0.35, 1.15, 1.5, 0.35, "scan", "Ohmic EDA-H"
+    ),
+    PlasmaDischarge(
+        1120814031, 0.743, 1.652, 0.33, 1.15, 1.5, 0.35, "scan", "Ohmic EDA-H"
+    ),
+    PlasmaDischarge(
+        1120814032, 0.747, 1.83, 0.37, 1.15, 1.5, 0.35, "scan", "Ohmic EDA-H"
+    ),
     PlasmaDischarge(
         1110201007, 0.93, np.nan, np.nan, 1.10, 1.40, np.nan, "none", "EDA-H"
     ),

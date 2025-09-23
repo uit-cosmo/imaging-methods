@@ -26,8 +26,11 @@ if __name__ == "__main__":
     shot = args.shot
     refx = args.refx
     refy = args.refy
-
-    movie_2dca_with_contours(shot, refx, refy)
+    manager = PlasmaDischargeManager()
+    manager.load_from_json("density_scan/plasma_discharges.json")
+    for shot in manager.get_shot_list_by_confinement(["EDA-H", "ELM-free-H"]):
+        print(f"Shot {shot}")
+        movie_2dca_with_contours(shot, 6, 5)
 
     output_name = "2dca_{}_{}{}.gif".format(shot, refx, refy)
     # os.system(

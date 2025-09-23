@@ -107,7 +107,7 @@
         "t_end": 1.65,
         "duration": 0.35,
         "mlp_mode": "none",
-        "confinement_more": "EDA-H"
+        "confinement_more": "Ohmic EDA-H"
     },
     {
         "shot_number": 1120814018,
@@ -118,7 +118,7 @@
         "t_end": 1.65,
         "duration": 0.32,
         "mlp_mode": "none",
-        "confinement_more": "EDA-H"
+        "confinement_more": "Ohmic EDA-H"
     },
     {
         "shot_number": 1120814019,
@@ -129,7 +129,7 @@
         "t_end": 1.65,
         "duration": 0.32,
         "mlp_mode": "none",
-        "confinement_more": "EDA-H"
+        "confinement_more": "Ohmic EDA-H"
     },
     {
         "shot_number": 1120814020,
@@ -140,7 +140,7 @@
         "t_end": 1.65,
         "duration": 0.32,
         "mlp_mode": "none",
-        "confinement_more": "EDA-H"
+        "confinement_more": "Ohmic EDA-H"
     },
     {
         "shot_number": 1120814021,
@@ -151,7 +151,7 @@
         "t_end": 1.65,
         "duration": 0.32,
         "mlp_mode": "none",
-        "confinement_more": "EDA-H"
+        "confinement_more": "Ohmic EDA-H"
     },
     {
         "shot_number": 1120814025,
@@ -162,7 +162,7 @@
         "t_end": 1.65,
         "duration": 0.32,
         "mlp_mode": "none",
-        "confinement_more": "EDA-H"
+        "confinement_more": "Ohmic EDA-H"
     },
     {
         "shot_number": 1120814026,
@@ -173,7 +173,7 @@
         "t_end": 1.4,
         "duration": 0.45,
         "mlp_mode": "scan",
-        "confinement_more": "EDA-H"
+        "confinement_more": "Ohmic EDA-H"
     },
     {
         "shot_number": 1120814027,
@@ -184,7 +184,7 @@
         "t_end": 1.4,
         "duration": 0.45,
         "mlp_mode": "scan",
-        "confinement_more": "EDA-H"
+        "confinement_more": "Ohmic EDA-H"
     },
     {
         "shot_number": 1120814028,
@@ -195,7 +195,7 @@
         "t_end": 1.5,
         "duration": 0.35,
         "mlp_mode": "scan",
-        "confinement_more": "EDA-H"
+        "confinement_more": "Ohmic EDA-H"
     },
     {
         "shot_number": 1120814029,
@@ -206,7 +206,7 @@
         "t_end": 1.5,
         "duration": 0.35,
         "mlp_mode": "scan",
-        "confinement_more": "EDA-H"
+        "confinement_more": "Ohmic EDA-H"
     },
     {
         "shot_number": 1120814030,
@@ -217,7 +217,7 @@
         "t_end": 1.5,
         "duration": 0.35,
         "mlp_mode": "scan",
-        "confinement_more": "EDA-H"
+        "confinement_more": "Ohmic EDA-H"
     },
     {
         "shot_number": 1120814031,
@@ -228,7 +228,7 @@
         "t_end": 1.5,
         "duration": 0.35,
         "mlp_mode": "scan",
-        "confinement_more": "EDA-H"
+        "confinement_more": "Ohmic EDA-H"
     },
     {
         "shot_number": 1120814032,
@@ -239,7 +239,7 @@
         "t_end": 1.5,
         "duration": 0.35,
         "mlp_mode": "scan",
-        "confinement_more": "EDA-H"
+        "confinement_more": "Ohmic EDA-H"
     },
     {
         "shot_number": 1110201007,
