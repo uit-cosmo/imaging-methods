@@ -385,6 +385,28 @@
         "confinement_more": "EDA-H"
     },
     {
+        "shot_number": 1120712027,
+        "plasma_current": 0.74,
+        "line_averaged_density": 0.76,
+        "greenwald_fraction": NaN,
+        "t_start": 1.05,
+        "t_end": 1.35,
+        "duration": NaN,
+        "mlp_mode": "none",
+        "confinement_more": "EDA-H"
+    },
+    {
+        "shot_number": 1120926017,
+        "plasma_current": 0.78,
+        "line_averaged_density": 1.1,
+        "greenwald_fraction": NaN,
+        "t_start": 1.05,
+        "t_end": 1.35,
+        "duration": NaN,
+        "mlp_mode": "none",
+        "confinement_more": "EDA-H"
+    },
+    {
         "shot_number": 1140613026,
         "plasma_current": NaN,
         "line_averaged_density": NaN,
@@ -407,9 +429,20 @@
         "confinement_more": "I-mode"
     },
     {
+        "shot_number": 1150916025,
+        "plasma_current": 0.5,
+        "line_averaged_density": 0.5,
+        "greenwald_fraction": 0.3,
+        "t_start": 0.65,
+        "t_end": 1.35,
+        "duration": NaN,
+        "mlp_mode": "none",
+        "confinement_more": "I-mode"
+    },
+    {
         "shot_number": 1150618021,
         "plasma_current": 0.6,
-        "line_averaged_density": NaN,
+        "line_averaged_density": 0.8,
         "greenwald_fraction": 0.3,
         "t_start": 0.65,
         "t_end": 1.35,
@@ -420,7 +453,7 @@
     {
         "shot_number": 1150618036,
         "plasma_current": 0.6,
-        "line_averaged_density": NaN,
+        "line_averaged_density": 1.6,
         "greenwald_fraction": 0.6,
         "t_start": 0.65,
         "t_end": 1.1,
