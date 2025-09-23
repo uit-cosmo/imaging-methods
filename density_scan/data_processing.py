@@ -7,7 +7,9 @@ import traceback
 
 
 def preprocess_data():
-    for shot in manager.get_shot_list_by_confinement(["IWL"]).extend([1120712027, 1120926017, 1150916025]):
+    shots = manager.get_shot_list_by_confinement(["IWL"])
+    shots.extend([1120712027, 1120926017, 1150916025])
+    for shot in shots:
         file_name = os.path.join("../data", f"apd_{shot}_preprocessed.nc")
         if os.path.exists(file_name):
             continue
