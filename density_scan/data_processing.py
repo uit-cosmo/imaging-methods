@@ -59,7 +59,9 @@ def run_parallel(force_redo=False):
     # Create a list of all (shot, refx, refy) combinations
     tasks = []
     # for shot in manager.get_imode_shot_list():
-    for shot in manager.get_shot_list_by_confinement(["IWL"]).extend([1120712027, 1120926017, 1150916025]):
+    for shot in manager.get_shot_list_by_confinement(["IWL"]).extend(
+        [1120712027, 1120926017, 1150916025]
+    ):
         for refx in range(9):
             for refy in range(10):
                 if (
@@ -110,5 +112,5 @@ if __name__ == "__main__":
     manager.load_from_json("plasma_discharges.json")
     results = im.ResultManager.from_json("results.json")
     preprocess_data()
-    #run_parallel(force_redo=True)
+    # run_parallel(force_redo=True)
     results.to_json("results.json")
