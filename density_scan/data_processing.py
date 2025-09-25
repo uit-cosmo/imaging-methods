@@ -1,3 +1,4 @@
+from imaging_methods import movie_2dca_with_contours
 from utils import *
 from method_parameters import method_parameters
 
@@ -6,9 +7,7 @@ from functools import partial
 import traceback
 
 
-def preprocess_data():
-    shots = manager.get_shot_list_by_confinement(["IWL"])
-    shots.extend([1120712027, 1120926017, 1150916025])
+def preprocess_data(shots):
     for shot in shots:
         file_name = os.path.join("../data", f"apd_{shot}_preprocessed.nc")
         if os.path.exists(file_name):
@@ -55,11 +54,10 @@ def process_point(args, manager):
         return None
 
 
-def run_parallel(force_redo=False):
+def run_parallel(shots, force_redo=False):
     # Create a list of all (shot, refx, refy) combinations
     tasks = []
-    # for shot in manager.get_imode_shot_list():
-    for shot in manager.get_shot_list_by_confinement(["IWL"]).extend([1120712027, 1120926017, 1150916025]):
+    for shot in shots:
         for refx in range(9):
             for refy in range(10):
                 if (
@@ -83,8 +81,8 @@ def run_parallel(force_redo=False):
         results.add_blob_params(shot, refx, refy, bp)
 
 
-def run_single_thread(force_redo=False):
-    for shot in manager.get_ohmic_shot_list():
+def run_single_thread(shots, force_redo=False):
+    for shot in shots:
         for refx in range(9):
             for refy in range(10):
                 try:
@@ -108,7 +106,11 @@ def run_single_thread(force_redo=False):
 if __name__ == "__main__":
     manager = im.PlasmaDischargeManager()
     manager.load_from_json("plasma_discharges.json")
+
+    shots = manager.get_shot_list_by_confinement(["IWL"])
+    shots.extend([1120712027, 1120926017, 1150916025])
     results = im.ResultManager.from_json("results.json")
-    preprocess_data()
-    #run_parallel(force_redo=True)
+    for shot in shots:
+        movie_2dca_with_contours(shots, 6, 5)
+    #run_parallel(shots, force_redo=True)
     results.to_json("results.json")
