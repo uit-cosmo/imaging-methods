@@ -301,7 +301,7 @@ def movie_2dca_with_contours(shot, refx, refy):
     from .discharge import PlasmaDischargeManager
 
     manager = PlasmaDischargeManager()
-    manager.load_from_json("density_scan/plasma_discharges.json")
+    manager.load_from_json("plasma_discharges.json")
     ds = manager.read_shot_data(shot, preprocessed=True)
 
     average = xr.open_dataset(
