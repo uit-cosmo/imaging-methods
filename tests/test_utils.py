@@ -135,7 +135,7 @@ def plot_frames(ds, t_indexes, variable="frames"):
         im = axe.imshow(
             ds[variable].isel(time=int(t_indexes[i])).values,
             origin="lower",
-            interpolation="spline16",
+            interpolation=None,  # "spline16",
         )
         im.set_extent((ds.R[0, 0], ds.R[0, -1], ds.Z[0, 0], ds.Z[-1, 0]))
         im.set_clim(0, 2)
@@ -156,7 +156,7 @@ def plot_frames_with_contour(average, contours, t_indexes, variable="cond_av"):
         im = axe.imshow(
             average[variable].isel(time=int(t_indexes[i])).values,
             origin="lower",
-            interpolation="spline16",
+            interpolation=None,  # "spline16",
         )
         c = contours.contours.isel(time=int(t_indexes[i])).data
         axe.plot(c[:, 0], c[:, 1], ls="--", color="black")
@@ -210,7 +210,8 @@ def full_analysis(
     im.show_movie_with_contours(
         average_ds,
         contour_ds,
-        "cond_av",
+        apd_dataset=None,
+        variable="cond_av",
         lims=(0, 3),
         gif_name=contour_file_name,
         interpolation="spline16",
