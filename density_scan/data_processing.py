@@ -109,10 +109,12 @@ if __name__ == "__main__":
     manager = im.PlasmaDischargeManager()
     manager.load_from_json("density_scan/plasma_discharges.json")
 
-    shots = manager.get_shot_list_by_confinement(["L"])
     results = im.ResultManager.from_json("density_scan/results.json")
-    for shot in shots:
-        movie_2dca_with_contours(shot, 6, 5)
+    shots = [1120712027]
+    preprocess_data(shots)
+    #run_parallel(shots)
+    #for shot in shots:
+    #    movie_2dca_with_contours(shot, 6, 5)
 
     # run_parallel(shots, force_redo=True)
     results.to_json("density_scan/results.json")
