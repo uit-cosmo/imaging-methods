@@ -105,12 +105,12 @@ def run_single_thread(shots, force_redo=False):
 
 if __name__ == "__main__":
     manager = im.PlasmaDischargeManager()
-    manager.load_from_json("plasma_discharges.json")
+    manager.load_from_json("density_scan/plasma_discharges.json")
 
     shots = manager.get_shot_list_by_confinement(["IWL"])
     shots.extend([1120712027, 1120926017, 1150916025])
-    results = im.ResultManager.from_json("results.json")
+    results = im.ResultManager.from_json("density_scan/results.json")
     for shot in shots:
-        movie_2dca_with_contours(shots, 6, 5)
+        movie_2dca_with_contours(shot, 6, 5)
     #run_parallel(shots, force_redo=True)
-    results.to_json("results.json")
+    results.to_json("density_scan/results.json")
