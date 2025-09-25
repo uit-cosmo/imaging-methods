@@ -325,8 +325,9 @@ def movie_2dca_with_contours(shot, refx, refy):
         ax=ax,
         gif_name=output_name,
         interpolation="spline16",
-        show=True,
+        show=False,
     )
+    fig.clf()
 
 
 def plot_skewness_and_flatness(ds, shot, fig=None, ax=None):

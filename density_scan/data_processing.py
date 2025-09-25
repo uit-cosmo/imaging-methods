@@ -1,4 +1,4 @@
-from imaging_methods import movie_2dca_with_contours
+from imaging_methods import movie_2dca_with_contours, plot_skewness_and_flatness
 from utils import *
 from method_parameters import method_parameters
 
@@ -21,11 +21,13 @@ def preprocess_data(shots):
 
 
 def compute_and_store_conditional_averages(shot, refx, refy):
-    file_name = os.path.join("averages", f"average_ds_{shot}_{refx}{refy}.nc")
+    file_name = os.path.join(
+        "density_scan/averages", f"average_ds_{shot}_{refx}{refy}.nc"
+    )
     if os.path.exists(file_name):
         # print(file_name, " already exists, reusing...")
         return
-    ds = manager.read_shot_data(shot, data_folder="../data", preprocessed=True)
+    ds = manager.read_shot_data(shot, data_folder="data", preprocessed=True)
     events, average_ds = im.find_events_and_2dca(
         ds,
         refx,
@@ -58,8 +60,8 @@ def run_parallel(shots, force_redo=False):
     # Create a list of all (shot, refx, refy) combinations
     tasks = []
     for shot in shots:
-        for refx in range(9):
-            for refy in range(10):
+        for refx in [6]:  # range(9):
+            for refy in [5]:  # range(10):
                 if (
                     results.get_blob_params_for_shot(shot, refx, refy) is None
                     or force_redo
@@ -68,7 +70,7 @@ def run_parallel(shots, force_redo=False):
 
     # Use multiprocessing Pool to parallelize
     num_processes = mp.cpu_count()  # Use all available CPU cores
-    num_processes = 6  # mp.cpu_count()  # Use all available CPU cores
+    num_processes = 2  # mp.cpu_count()  # Use all available CPU cores
     with mp.Pool(processes=num_processes) as pool:
         process_results = pool.map(partial(process_point, manager=manager), tasks)
 
@@ -107,10 +109,10 @@ if __name__ == "__main__":
     manager = im.PlasmaDischargeManager()
     manager.load_from_json("density_scan/plasma_discharges.json")
 
-    shots = manager.get_shot_list_by_confinement(["IWL"])
-    shots.extend([1120712027, 1120926017, 1150916025])
+    shots = manager.get_shot_list_by_confinement(["L"])
     results = im.ResultManager.from_json("density_scan/results.json")
     for shot in shots:
         movie_2dca_with_contours(shot, 6, 5)
-    #run_parallel(shots, force_redo=True)
+
+    # run_parallel(shots, force_redo=True)
     results.to_json("density_scan/results.json")
