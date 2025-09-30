@@ -20,5 +20,5 @@ def plot_raw_for_shot(shot):
     plt.show()
 
 
-for shot in manager.get_shot_list_by_confinement(["IWL"]):
-    plot_raw_for_shot(shot)
+shot = 1150916025
+plot_raw_for_shot(shot)

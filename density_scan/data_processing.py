@@ -110,11 +110,17 @@ if __name__ == "__main__":
     manager.load_from_json("density_scan/plasma_discharges.json")
 
     results = im.ResultManager.from_json("density_scan/results.json")
-    shots = [1120712027]
-    preprocess_data(shots)
-    #run_parallel(shots)
-    #for shot in shots:
-    #    movie_2dca_with_contours(shot, 6, 5)
+    shots = [1150916025]
+    run_parallel(shots)
+    for shot in shots:
+        ds = manager.read_shot_data(shot, preprocessed=True)
+        fig, ax = plt.subplots(
+            1, 2, figsize=(2 * 3.3, 1 * 3.3), gridspec_kw={"wspace": 0.5}
+        )
+        plot_skewness_and_flatness(ds, shot, fig, ax)
+        plt.savefig("skewness_{}.pdf".format(shot), bbox_inches="tight")
+        plt.show()
+        movie_2dca_with_contours(shot, 6, 5)
 
     # run_parallel(shots, force_redo=True)
-    results.to_json("density_scan/results.json")
+    # results.to_json("density_scan/results.json")
