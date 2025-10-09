@@ -8,7 +8,9 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 
 def get_average(shot, refx, refy):
-    file_name = os.path.join("averages", f"average_ds_{shot}_{refx}{refy}.nc")
+    file_name = os.path.join(
+        "density_scan/averages", f"average_ds_{shot}_{refx}{refy}.nc"
+    )
     if not os.path.exists(file_name):
         print(f"File does not exist {file_name}")
         return None
@@ -25,7 +27,7 @@ def analysis(shot, refx, refy, manager, do_plots=True):
     if average_ds is None:
         print(f"The dataset is empty for shot {shot}, ignoring...")
         return None
-    gpi_ds = manager.read_shot_data(shot, data_folder="../data")
+    gpi_ds = manager.read_shot_data(shot, data_folder="data")
 
     v_c, w_c, area_c = get_contour_parameters(shot, refx, refy, average_ds, do_plots)
     v_2dca_tde, w_2dca_tde = get_2dca_tde_velocities(refx, refy, average_ds)
@@ -79,7 +81,9 @@ def get_taud_from_psd(shot, refx, refy, gpi_ds, do_plot):
     )
     if do_plot:
         fig, ax = plt.subplots()
-        psd_file_name = os.path.join("psds", f"psd_{shot}_{refx}{refy}.eps")
+        psd_file_name = os.path.join(
+            "density_scan/psds", f"psd_{shot}_{refx}{refy}.eps"
+        )
         taud, lam, freqs = im.DurationTimeEstimator(
             im.SecondOrderStatistic.PSD, im.Analytics.TwoSided
         ).plot_and_fit(
@@ -143,7 +147,9 @@ def get_fwhm_sizes(shot, refx, refy, average_ds, do_plot):
         ax.set_xlabel(r"$R-R_*, Z-Z_*$")
         ax.legend()
 
-        lr_lz_figname = os.path.join("fwhm", f"fwhm_{shot}_{refx}{refy}.eps")
+        lr_lz_figname = os.path.join(
+            "density_scan/fwhm", f"fwhm_{shot}_{refx}{refy}.eps"
+        )
         plt.savefig(lr_lz_figname, bbox_inches="tight")
         plt.close(fig)
 
@@ -167,7 +173,9 @@ def get_gaussian_fit_sizes(shot, refx, refy, average_ds, do_plots):
     )
     if do_plots:
         fig, ax = plt.subplots()
-        fit_file_name = os.path.join("fits", f"fit_{shot}_{refx}{refy}.eps")
+        fit_file_name = os.path.join(
+            "density_scan/fits", f"fit_{shot}_{refx}{refy}.eps"
+        )
 
         lx, ly, theta = im.plot_event_with_fit(
             average_ds.cond_av,
@@ -204,7 +212,7 @@ def get_contour_parameters(shot, refx, refy, average_ds, do_plots):
     area_c = contour_ds.area.sel(time=0).item()
     if do_plots:
         gif_file_name = os.path.join(
-            "contour_movies", f"average_contour_{shot}_{refx}{refy}.gif"
+            "density_scan/contour_movies", f"average_contour_{shot}_{refx}{refy}.gif"
         )
         im.show_movie_with_contours(
             average_ds,
@@ -217,7 +225,9 @@ def get_contour_parameters(shot, refx, refy, average_ds, do_plots):
         )
 
         fig, ax = plt.subplots(figsize=(5, 5))
-        contour_file_name = os.path.join("contours", f"contour_{shot}_{refx}{refy}.eps")
+        contour_file_name = os.path.join(
+            "density_scan/contours", f"contour_{shot}_{refx}{refy}.eps"
+        )
         im.plot_contour_at_zero(average_ds.cond_av, contour_ds, ax, contour_file_name)
         plt.close(fig)
 
@@ -225,7 +235,9 @@ def get_contour_parameters(shot, refx, refy, average_ds, do_plots):
 
 
 def plot_results(file_suffix):
-    results_file_name = os.path.join("results", f"results_{file_suffix}.json")
+    results_file_name = os.path.join(
+        "density_scan/results", f"results_{file_suffix}.json"
+    )
     results = im.ResultManager.from_json(filename=results_file_name)
     if len(results.shots) == 0:
         return

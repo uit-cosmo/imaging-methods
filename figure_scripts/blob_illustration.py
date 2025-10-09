@@ -71,4 +71,4 @@ def plot_cond_av(shot, refx, refy, plot_inset_lcfs=False):
 
 
 # plot_cond_av(1160616009, 6, 5)
-movie_2dca_with_contours(1140613026, 4, 5)
+movie_2dca_with_contours(1150916025, 6, 5, run_2dca=True)

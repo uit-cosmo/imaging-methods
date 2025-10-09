@@ -90,54 +90,53 @@ discharges = [
         1110201027, 0.73, np.nan, np.nan, 1.05, 1.35, np.nan, "none", "EDA-H"
     ),
     PlasmaDischarge(
-        1120712027, 0.74, 0.76, np.nan, 1.05, 1.35, np.nan, "none", "EDA-H"
+        1120712027, 0.74, 0.76, np.nan, 1.42, 1.55, np.nan, "none", "EDA-H"
     ),
-    PlasmaDischarge(1120926017, 0.78, 1.1, np.nan, 1.05, 1.35, np.nan, "none", "EDA-H"),
     PlasmaDischarge(
         1140613026, np.nan, np.nan, np.nan, 0.7, 1.2, np.nan, "none", "I-mode"
     ),
     PlasmaDischarge(
         1140613027, np.nan, np.nan, np.nan, 0.7, 1.2, np.nan, "none", "I-mode"
     ),
-    PlasmaDischarge(1150916025, 0.5, 0.5, 0.3, 0.65, 1.35, np.nan, "none", "I-mode"),
+    PlasmaDischarge(1150916025, 0.5, 0.5, 0.3, 0.65, 0.95, np.nan, "none", "I-mode"),
     PlasmaDischarge(1150618021, 0.6, 0.8, 0.3, 0.65, 1.35, np.nan, "none", "H-mode"),
     PlasmaDischarge(1150618036, 0.6, 1.6, 0.6, 0.65, 1.1, np.nan, "none", "H-mode"),
     PlasmaDischarge(1140228006, 0.786, 5.42, np.nan, 1.18, 1.5, 0.32, "-", "IWL"),
-    PlasmaDischarge(1140228007, 0.786, 5.42, np.nan, 1.18, 1.5, 0.32, "-", "IWL"),
-    PlasmaDischarge(1140228008, 0.787, 5.421, np.nan, 1.18, 1.5, 0.32, "-", "IWL"),
-    PlasmaDischarge(1140228010, 0.788, 5.426, np.nan, 1.08, 1.4, 0.32, "-", "IWL"),
-    PlasmaDischarge(1140228011, 0.786, 5.426, np.nan, 1.08, 1.4, 0.32, "-", "IWL"),
-    PlasmaDischarge(1140228012, 0.787, 5.428, np.nan, 1.08, 1.4, 0.32, "-", "IWL"),
-    PlasmaDischarge(1140228013, 0.788, 5.424, np.nan, 1.08, 1.4, 0.32, "-", "IWL"),
+    PlasmaDischarge(1140228007, 0.786, 5.42, np.nan, 1.22, 1.5, 0.32, "-", "IWL"),
+    PlasmaDischarge(1140228008, 0.787, 5.421, np.nan, 1.22, 1.5, 0.32, "-", "IWL"),
+    PlasmaDischarge(1140228010, 0.788, 5.426, np.nan, 1.20, 1.4, 0.32, "-", "IWL"),
+    PlasmaDischarge(1140228011, 0.786, 5.426, np.nan, 1.15, 1.4, 0.32, "-", "IWL"),
+    PlasmaDischarge(1140228012, 0.787, 5.428, np.nan, 1.15, 1.4, 0.32, "-", "IWL"),
+    PlasmaDischarge(1140228013, 0.788, 5.424, np.nan, 1.15, 1.4, 0.32, "-", "IWL"),
     PlasmaDischarge(1140228019, 0.792, 5.404, np.nan, 1.08, 1.4, 0.32, "-", "IWL"),
-    PlasmaDischarge(1140228020, 0.792, 5.419, np.nan, 0.55, 1.05, 0.50, "-", "IWL"),
-    PlasmaDischarge(1140228024, 0.99, 6.372, np.nan, 1.08, 1.5, 0.42, "-", "IWL"),
-    PlasmaDischarge(1140228025, 0.99, 6.368, np.nan, 0.98, 1.4, 0.42, "-", "IWL"),
-    PlasmaDischarge(1140228026, 0.99, 6.375, np.nan, 0.53, 1.0, 0.47, "-", "IWL"),
-    PlasmaDischarge(1140228027, 0.99, 6.374, np.nan, 0.53, 1.0, 0.47, "-", "IWL"),
-    PlasmaDischarge(1140612019, 0.991, 5.692, np.nan, 1.18, 1.5, 0.32, "-", "IWL"),
-    PlasmaDischarge(1140612020, 0.992, 5.69, np.nan, 1.18, 1.5, 0.32, "-", "IWL"),
-    PlasmaDischarge(1140612021, 0.993, 5.689, np.nan, 1.18, 1.5, 0.32, "-", "IWL"),
-    PlasmaDischarge(1140612024, 0.993, 5.692, np.nan, 1.18, 1.5, 0.32, "-", "IWL"),
-    PlasmaDischarge(1140612025, 0.984, 5.691, np.nan, 1.18, 1.5, 0.32, "-", "IWL"),
-    PlasmaDischarge(1140612026, 0.993, 5.691, np.nan, 1.18, 1.5, 0.32, "-", "IWL"),
-    PlasmaDischarge(1140612027, 0.991, 5.69, np.nan, 1.18, 1.5, 0.32, "-", "IWL"),
-    PlasmaDischarge(1140612029, 1.19, 6.736, np.nan, 1.18, 1.5, 0.32, "-", "IWL"),
+    PlasmaDischarge(1140228020, 0.792, 5.419, np.nan, 0.65, 1.05, 0.50, "-", "IWL"),
+    PlasmaDischarge(1140228024, 0.99, 6.372, np.nan, 1.15, 1.5, 0.42, "-", "IWL"),
+    PlasmaDischarge(1140228025, 0.99, 6.368, np.nan, 1.05, 1.4, 0.42, "-", "IWL"),
+    PlasmaDischarge(1140228026, 0.99, 6.375, np.nan, 0.65, 1.0, 0.47, "-", "IWL"),
+    PlasmaDischarge(1140228027, 0.99, 6.374, np.nan, 0.65, 1.0, 0.47, "-", "IWL"),
+    PlasmaDischarge(1140612019, 0.991, 5.692, np.nan, 1.30, 1.5, 0.32, "-", "IWL"),
+    PlasmaDischarge(1140612020, 0.992, 5.69, np.nan, 1.25, 1.5, 0.32, "-", "IWL"),
+    PlasmaDischarge(1140612021, 0.993, 5.689, np.nan, 1.22, 1.5, 0.32, "-", "IWL"),
+    PlasmaDischarge(1140612024, 0.993, 5.692, np.nan, 1.22, 1.5, 0.32, "-", "IWL"),
+    PlasmaDischarge(1140612025, 0.984, 5.691, np.nan, 1.22, 1.5, 0.32, "-", "IWL"),
+    PlasmaDischarge(1140612026, 0.993, 5.691, np.nan, 1.22, 1.5, 0.32, "-", "IWL"),
+    PlasmaDischarge(1140612027, 0.991, 5.69, np.nan, 1.22, 1.5, 0.32, "-", "IWL"),
+    PlasmaDischarge(1140612029, 1.19, 6.736, np.nan, 1.22, 1.35, 0.32, "-", "IWL"),
     PlasmaDischarge(
-        1140619002, 0.68, 4.067, np.nan, 1.15, 1.5, 0.35, "not to sepx", "IWL"
+        1140619002, 0.68, 4.067, np.nan, 1.22, 1.5, 0.35, "not to sepx", "IWL"
     ),
     PlasmaDischarge(
-        1140619003, 0.677, 4.067, np.nan, 1.15, 1.5, 0.35, "t=0.6 to 25 eV", "IWL"
+        1140619003, 0.677, 4.067, np.nan, 1.22, 1.5, 0.35, "t=0.6 to 25 eV", "IWL"
     ),
     PlasmaDischarge(
-        1140619008, 0.4, 4.07, np.nan, 1.15, 1.5, 0.35, "t=0.6 to 70 eV", "IWL"
+        1140619008, 0.4, 4.07, np.nan, 1.22, 1.5, 0.35, "t=0.6 to 70 eV", "IWL"
     ),
-    PlasmaDischarge(1140619012, 0.886, 5.028, np.nan, 1.15, 1.5, 0.35, "-", "IWL"),
-    PlasmaDischarge(1140619013, 0.887, 5.09, np.nan, 1.15, 1.5, 0.35, "-", "IWL"),
-    PlasmaDischarge(1140619014, 0.887, 5.092, np.nan, 1.15, 1.5, 0.35, "-", "IWL"),
-    PlasmaDischarge(1140619015, 0.724, 6.644, np.nan, 1.15, 1.5, 0.35, "-", "IWL"),
-    PlasmaDischarge(1140619018, 1.091, 6.636, np.nan, 1.15, 1.5, 0.35, "-", "IWL"),
-    PlasmaDischarge(1140619019, 1.129, 6.635, np.nan, 1.15, 1.5, 0.35, "-", "IWL"),
+    PlasmaDischarge(1140619012, 0.886, 5.028, np.nan, 1.22, 1.5, 0.35, "-", "IWL"),
+    PlasmaDischarge(1140619013, 0.887, 5.09, np.nan, 1.22, 1.5, 0.35, "-", "IWL"),
+    PlasmaDischarge(1140619014, 0.887, 5.092, np.nan, 1.22, 1.5, 0.35, "-", "IWL"),
+    PlasmaDischarge(1140619015, 0.724, 6.644, np.nan, 1.22, 1.5, 0.35, "-", "IWL"),
+    PlasmaDischarge(1140619018, 1.091, 6.636, np.nan, 1.22, 1.5, 0.35, "-", "IWL"),
+    PlasmaDischarge(1140619019, 1.129, 6.635, np.nan, 1.22, 1.5, 0.35, "-", "IWL"),
 ]
 # Add discharges to manager
 for discharge in discharges:

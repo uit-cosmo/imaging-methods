@@ -145,7 +145,7 @@ class PlasmaDischargeManager:
             self.get_discharge_by_shot(shot).t_start,
             self.get_discharge_by_shot(shot).t_end,
         )
-        if not np.isnan(t_start) and not np.isnan(t_end):
+        if preprocessed and not np.isnan(t_start) and not np.isnan(t_end):
             return ds.sel(time=slice(t_start, t_end))
         else:
             return ds

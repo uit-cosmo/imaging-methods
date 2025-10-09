@@ -8,14 +8,6 @@ params = plt.rcParams
 cp.set_rcparams_dynamo(params, 1)
 plt.rcParams.update(params)
 
-manager = PlasmaDischargeManager()
-manager.load_from_json("density_scan/plasma_discharges.json")
-shots = manager.get_shot_list_by_confinement(["IWL"])
-shots.extend([123, 1234])
-list = (manager.get_shot_list_by_confinement(["IWL"])).append(123)
-for shot in manager.get_shot_list_by_confinement(["IWL"]):
-    manager.get_data_from_tree(shot)
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Plot average")
     parser.add_argument("shot", type=int, help="Shot number")

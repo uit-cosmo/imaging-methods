@@ -1,3 +1,4 @@
+from imaging_methods import movie_2dca_with_contours, plot_skewness_and_flatness
 from utils import *
 from method_parameters import method_parameters
 
@@ -6,9 +7,7 @@ from functools import partial
 import traceback
 
 
-def preprocess_data():
-    shots = manager.get_shot_list_by_confinement(["IWL"])
-    shots.extend([1120712027, 1120926017, 1150916025])
+def preprocess_data(shots):
     for shot in shots:
         file_name = os.path.join("../data", f"apd_{shot}_preprocessed.nc")
         if os.path.exists(file_name):
@@ -22,11 +21,13 @@ def preprocess_data():
 
 
 def compute_and_store_conditional_averages(shot, refx, refy):
-    file_name = os.path.join("averages", f"average_ds_{shot}_{refx}{refy}.nc")
+    file_name = os.path.join(
+        "density_scan/averages", f"average_ds_{shot}_{refx}{refy}.nc"
+    )
     if os.path.exists(file_name):
         # print(file_name, " already exists, reusing...")
         return
-    ds = manager.read_shot_data(shot, data_folder="../data", preprocessed=True)
+    ds = manager.read_shot_data(shot, data_folder="data", preprocessed=True)
     events, average_ds = im.find_events_and_2dca(
         ds,
         refx,
@@ -55,15 +56,12 @@ def process_point(args, manager):
         return None
 
 
-def run_parallel(force_redo=False):
+def run_parallel(shots, force_redo=False):
     # Create a list of all (shot, refx, refy) combinations
     tasks = []
-    # for shot in manager.get_imode_shot_list():
-    for shot in manager.get_shot_list_by_confinement(["IWL"]).extend(
-        [1120712027, 1120926017, 1150916025]
-    ):
-        for refx in range(9):
-            for refy in range(10):
+    for shot in shots:
+        for refx in [6]:  # range(9):
+            for refy in [5]:  # range(10):
                 if (
                     results.get_blob_params_for_shot(shot, refx, refy) is None
                     or force_redo
@@ -72,7 +70,7 @@ def run_parallel(force_redo=False):
 
     # Use multiprocessing Pool to parallelize
     num_processes = mp.cpu_count()  # Use all available CPU cores
-    num_processes = 6  # mp.cpu_count()  # Use all available CPU cores
+    num_processes = 2  # mp.cpu_count()  # Use all available CPU cores
     with mp.Pool(processes=num_processes) as pool:
         process_results = pool.map(partial(process_point, manager=manager), tasks)
 
@@ -85,8 +83,8 @@ def run_parallel(force_redo=False):
         results.add_blob_params(shot, refx, refy, bp)
 
 
-def run_single_thread(force_redo=False):
-    for shot in manager.get_ohmic_shot_list():
+def run_single_thread(shots, force_redo=False):
+    for shot in shots:
         for refx in range(9):
             for refy in range(10):
                 try:
@@ -109,8 +107,20 @@ def run_single_thread(force_redo=False):
 
 if __name__ == "__main__":
     manager = im.PlasmaDischargeManager()
-    manager.load_from_json("plasma_discharges.json")
-    results = im.ResultManager.from_json("results.json")
-    preprocess_data()
-    # run_parallel(force_redo=True)
-    results.to_json("results.json")
+    manager.load_from_json("density_scan/plasma_discharges.json")
+
+    results = im.ResultManager.from_json("density_scan/results.json")
+    shots = [1150916025]
+    run_parallel(shots)
+    for shot in shots:
+        ds = manager.read_shot_data(shot, preprocessed=True)
+        fig, ax = plt.subplots(
+            1, 2, figsize=(2 * 3.3, 1 * 3.3), gridspec_kw={"wspace": 0.5}
+        )
+        plot_skewness_and_flatness(ds, shot, fig, ax)
+        plt.savefig("skewness_{}.pdf".format(shot), bbox_inches="tight")
+        plt.show()
+        movie_2dca_with_contours(shot, 6, 5)
+
+    # run_parallel(shots, force_redo=True)
+    # results.to_json("density_scan/results.json")

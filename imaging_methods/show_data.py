@@ -6,6 +6,8 @@ import xarray as xr
 from matplotlib import animation
 from typing import Union, Any
 from scipy import interpolate
+
+from .cond_av import find_events_and_2dca
 from .utils import *
 
 
@@ -296,17 +298,23 @@ def show_movie_with_contours(
         fig.clf()
 
 
-def movie_2dca_with_contours(shot, refx, refy):
+def movie_2dca_with_contours(shot, refx, refy, run_2dca=False):
     from .contours import get_contour_evolution
     from .discharge import PlasmaDischargeManager
 
     manager = PlasmaDischargeManager()
     manager.load_from_json("density_scan/plasma_discharges.json")
     ds = manager.read_shot_data(shot, preprocessed=True)
+    ds = ds.sel(time=slice(0.85, 0.96))
 
-    average = xr.open_dataset(
-        "density_scan/averages/average_ds_{}_{}{}.nc".format(shot, refx, refy)
-    )
+    if run_2dca:
+        events, average = find_events_and_2dca(
+            ds, refx, refy, 2, window_size=60, check_max=1, single_counting=True
+        )
+    else:
+        average = xr.open_dataset(
+            "density_scan/averages/average_ds_{}_{}{}.nc".format(shot, refx, refy)
+        )
 
     contour_ds = get_contour_evolution(
         average.cond_av,
@@ -325,8 +333,9 @@ def movie_2dca_with_contours(shot, refx, refy):
         ax=ax,
         gif_name=output_name,
         interpolation="spline16",
-        show=True,
+        show=False,
     )
+    fig.clf()
 
 
 def plot_skewness_and_flatness(ds, shot, fig=None, ax=None):
