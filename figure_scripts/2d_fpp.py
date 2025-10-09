@@ -19,7 +19,7 @@ start_index = int(100 / dt)
 taup = 1e10
 
 
-def get_realization(shape_x, taup):
+def get_realization(shape_x, taup, vx=1, vy=0):
     # Blobmodel
     model = bm.Model(
         Nx=1,
@@ -33,11 +33,14 @@ def get_realization(shape_x, taup):
         periodic_y=False,
         t_drain=taup,
         blob_factory=bm.DefaultBlobFactory(
-            A_dist=bm.DistributionEnum.exp, vy_dist=bm.DistributionEnum.zeros
+            A_dist=bm.DistributionEnum.exp,
+            vy_dist=bm.DistributionEnum.deg,
+            vy_parameter=vy,
+            vx_parameter=vx,
         ),
         verbose=True,
         t_init=0,
-        one_dimensional=True,  # Sets Ly = 0, Ny = 1, and checks vy = 0, and sets the y blob shape to 1.
+        one_dimensional=False,  # Sets Ly = 0, Ny = 1, and checks vy = 0, and sets the y blob shape to 1.
     )
     ds = model.make_realization(speed_up=True, error=1e-10)
     ds = ds.isel(t=slice(start_index, int(1e50)))
@@ -51,44 +54,57 @@ def get_analytical_acf(taus, shape, tau_p):
         return np.exp(-np.abs(taus) / tau)
     if shape == bm.BlobShapeEnum.gaussian:
         return np.exp(-1 / 2 * taus**2)
-    # if shape == bm.BlobShapeEnum.lorentz:
-    #    return 4/(4+taus**2)
-    # if shape == bm.BlobShapeEnum.secant:
-    #    return 2 * taus/(np.exp(taus) - np.exp(-taus))
     return np.zeros(len(taus))
 
 
-def plot_synthetic_data_acf(shape_x, taup, ax, color=None, label=None):
-    signal = get_realization(shape_x, taup)
+def plot_synthetic_data_acf(
+    shape_x,
+    taup,
+    ax,
+    color=None,
+    label=None,
+    plot_analytical=True,
+    plot_vertical_velocity=True,
+):
+    signal = get_realization(shape_x, taup, vx=1, vy=0)
     taus, acf = fppa.corr_fun(signal, signal, dt)
     window_size = 3
     mask = np.abs(taus) < window_size
     taus, acf = taus[mask], acf[mask]
     ax.plot(taus, acf, color=color, label=label, ls="-")
-    ax.plot(taus, get_analytical_acf(taus, shape_x, taup), color=color, ls="--")
+
+    if plot_vertical_velocity:
+        signal = get_realization(shape_x, taup, vx=1 / np.sqrt(2), vy=1 / np.sqrt(2))
+        taus, acf = fppa.corr_fun(signal, signal, dt)
+        window_size = 3
+        mask = np.abs(taus) < window_size
+        taus, acf = taus[mask], acf[mask]
+        ax.plot(taus, acf, color=color, ls="--")
+    if plot_analytical:
+        ax.plot(taus, get_analytical_acf(taus, shape_x, taup), color=color, ls="--")
 
 
 fig, ax = plt.subplots(1, 2, figsize=(6, 3))
 
 plot_synthetic_data_acf(
-    bm.BlobShapeEnum.secant, 1e10, ax[0], color="blue", label="No damping"
+    bm.BlobShapeEnum.exp, 1e10, ax[0], color="blue", label="No damping"
 )
-plot_synthetic_data_acf(bm.BlobShapeEnum.secant, 1, ax[0], color="red", label="Damping")
+plot_synthetic_data_acf(bm.BlobShapeEnum.exp, 1, ax[0], color="red", label="Damping")
 ax[0].legend()
 ax[0].set_ylabel(r"$R_{\tilde{\Phi}}(\triangle_t)$")
 ax[0].set_xlabel(r"$\frac{v}{\ell}\triangle_t$")
-ax[0].set_title("Secant shape")
+ax[0].set_title("Exp shape")
 
 plot_synthetic_data_acf(
-    bm.BlobShapeEnum.lorentz, 1e10, ax[1], color="blue", label="No damping"
+    bm.BlobShapeEnum.gaussian, 1e10, ax[1], color="blue", label="No damping"
 )
 plot_synthetic_data_acf(
-    bm.BlobShapeEnum.lorentz, 1, ax[1], color="red", label="Damping"
+    bm.BlobShapeEnum.gaussian, 1, ax[1], color="red", label="Damping"
 )
 ax[1].legend()
 ax[1].set_ylabel(r"$R_{\tilde{\Phi}}(\triangle_t)$")
 ax[1].set_xlabel(r"$\frac{v}{\ell}\triangle_t$")
-ax[1].set_title("Lorentz shape")
+ax[1].set_title("Gaussian shape")
 
-plt.savefig("2d_fpp_acf_other_shapes.pdf", bbox_inches="tight")
+plt.savefig("2d_fpp_acf_test.pdf", bbox_inches="tight")
 plt.show()
