@@ -8,9 +8,8 @@ import fppanalysis as fppa
 import cosmoplots as cp
 
 matplotlib_params = plt.rcParams
-cp.set_rcparams_dynamo(matplotlib_params, 1)
+cp.set_rcparams_dynamo(matplotlib_params, 2)
 plt.rcParams.update(matplotlib_params)
-
 
 dt = 0.1
 T = int(1e5)
@@ -48,58 +47,71 @@ def get_realization(shape_x, taup, vx=1, vy=0):
     return signal
 
 
-def get_analytical_acf(taus, shape, tau_p):
-    tau = tau_p / (1 + tau_p)  # ell = 1, v = 1
+def get_analytical_acf(taus, shape, tau_p, w):
     if shape == bm.BlobShapeEnum.exp:
+        tau = tau_p / (1 + np.sqrt(1 + w**2) * tau_p)  # ell = 1, v = 1
         return np.exp(-np.abs(taus) / tau)
     if shape == bm.BlobShapeEnum.gaussian:
-        return np.exp(-1 / 2 * taus**2)
+        tau = 1 / np.sqrt(1 + w**2)
+        return np.exp(-1 / 2 * (taus / tau) ** 2)
     return np.zeros(len(taus))
 
 
 def plot_synthetic_data_acf(
     shape_x,
     taup,
+    w,
     ax,
     color=None,
     label=None,
     plot_analytical=True,
-    plot_vertical_velocity=True,
 ):
-    signal = get_realization(shape_x, taup, vx=1, vy=0)
+    signal = get_realization(shape_x, taup, vx=1, vy=w)
     taus, acf = fppa.corr_fun(signal, signal, dt)
     window_size = 3
     mask = np.abs(taus) < window_size
     taus, acf = taus[mask], acf[mask]
     ax.plot(taus, acf, color=color, label=label, ls="-")
 
-    if plot_vertical_velocity:
-        signal = get_realization(shape_x, taup, vx=1 / np.sqrt(2), vy=1 / np.sqrt(2))
-        taus, acf = fppa.corr_fun(signal, signal, dt)
-        window_size = 3
-        mask = np.abs(taus) < window_size
-        taus, acf = taus[mask], acf[mask]
-        ax.plot(taus, acf, color=color, ls="--")
     if plot_analytical:
-        ax.plot(taus, get_analytical_acf(taus, shape_x, taup), color=color, ls="--")
+        ax.plot(taus, get_analytical_acf(taus, shape_x, taup, w), color=color, ls="--")
 
 
-fig, ax = plt.subplots(1, 2, figsize=(6, 3))
+fig, ax = plt.subplots(1, 2)
 
 plot_synthetic_data_acf(
-    bm.BlobShapeEnum.exp, 1e10, ax[0], color="blue", label="No damping"
+    bm.BlobShapeEnum.exp, 1e10, 0, ax[0], color="blue", label=r"No damping $w/v=0$"
 )
-plot_synthetic_data_acf(bm.BlobShapeEnum.exp, 1, ax[0], color="red", label="Damping")
-ax[0].legend()
+plot_synthetic_data_acf(
+    bm.BlobShapeEnum.exp, 1, 0, ax[0], color="red", label=r"Damping $w/v=0$"
+)
+plot_synthetic_data_acf(
+    bm.BlobShapeEnum.exp, 1e10, 1, ax[0], color="green", label=r"No Damping $w/v=1$"
+)
+plot_synthetic_data_acf(
+    bm.BlobShapeEnum.exp, 1, 1, ax[0], color="black", label=r"Damping $w/v=1$"
+)
+# ax[0].legend()
 ax[0].set_ylabel(r"$R_{\tilde{\Phi}}(\triangle_t)$")
 ax[0].set_xlabel(r"$\frac{v}{\ell}\triangle_t$")
 ax[0].set_title("Exp shape")
 
 plot_synthetic_data_acf(
-    bm.BlobShapeEnum.gaussian, 1e10, ax[1], color="blue", label="No damping"
+    bm.BlobShapeEnum.gaussian, 1e10, 0, ax[1], color="blue", label=r"No damping $w/v=0$"
 )
 plot_synthetic_data_acf(
-    bm.BlobShapeEnum.gaussian, 1, ax[1], color="red", label="Damping"
+    bm.BlobShapeEnum.gaussian, 1, 0, ax[1], color="red", label=r"Damping $w/v=0$"
+)
+plot_synthetic_data_acf(
+    bm.BlobShapeEnum.gaussian,
+    1e10,
+    1,
+    ax[1],
+    color="green",
+    label=r"No Damping $w/v=1$",
+)
+plot_synthetic_data_acf(
+    bm.BlobShapeEnum.gaussian, 1, 1, ax[1], color="black", label=r"Damping $w/v=1$"
 )
 ax[1].legend()
 ax[1].set_ylabel(r"$R_{\tilde{\Phi}}(\triangle_t)$")
