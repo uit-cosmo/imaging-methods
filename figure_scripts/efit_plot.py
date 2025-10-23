@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from imaging_methods import *
 import cosmoplots as cp
 
-manager = PlasmaDischargeManager()
+manager = GPIDataAccessor()
 manager.load_from_json("density_scan/plasma_discharges.json")
 
 params = plt.rcParams
