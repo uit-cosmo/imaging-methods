@@ -78,7 +78,7 @@ def run_parallel(shots, force_redo=False):
                     tasks.append((shot, refx, refy))
 
     # Use multiprocessing Pool to parallelize
-    num_processes = mp.cpu_count() / 2  # Use half of all available CPU cores
+    num_processes = int(mp.cpu_count() / 2)  # Use half of all available CPU cores
     with mp.Pool(processes=num_processes) as pool:
         process_results = pool.map(
             partial(process_point, manager=manager, results=results), tasks
@@ -116,22 +116,14 @@ def run_single_thread(shots, force_redo=False):
 
 
 if __name__ == "__main__":
-    manager = ed.PlasmaDischargeManager(
+    manager = im.GPIDataAccessor(
         "/home/sosno/Git/experimental_database/plasma_discharges.json"
     )
 
     results = im.ResultManager.from_json("density_scan/results.json")
     shots = []
-    run_parallel(shots)
-    for shot in shots:
-        ds = manager.read_shot_data(shot, preprocessed=True)
-        fig, ax = plt.subplots(
-            1, 2, figsize=(2 * 3.3, 1 * 3.3), gridspec_kw={"wspace": 0.5}
-        )
-        plot_skewness_and_flatness(ds, shot, fig, ax)
-        plt.savefig("skewness_{}.pdf".format(shot), bbox_inches="tight")
-        plt.show()
-        movie_2dca_with_contours(shot, 6, 5)
+    shots = manager.get_ohmic_shot_list()
+    run_parallel(shots, force_redo=True)
 
     # run_parallel(shots, force_redo=True)
     results.to_json("density_scan/results.json")

@@ -5,7 +5,7 @@ import numpy as np
 import imaging_methods as im
 from method_parameters import method_parameters
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
-from .dead_pixel_mask import get_dead_pixel_mask
+from dead_pixel_mask import get_dead_pixel_mask
 
 
 def get_average(shot, refx, refy):
