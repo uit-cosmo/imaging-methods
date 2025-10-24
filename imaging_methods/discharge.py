@@ -11,7 +11,7 @@ import numpy as np
 
 class GPIDataAccessor(PlasmaDischargeManager):
     def __init__(self, file=None):
-        super.__init__(file)
+        super().__init__(file)
 
     def read_shot_data(
         self,

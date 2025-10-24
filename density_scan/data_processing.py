@@ -41,12 +41,20 @@ def compute_and_store_conditional_averages(shot, refx, refy):
     average_ds.to_netcdf(file_name)
 
 
-def process_point(args, manager):
+def process_point(args, manager, results):
     shot, refx, refy = args
     try:
         # print(f"Working on shot {shot}, refx={refx}, refy={refy}")
         compute_and_store_conditional_averages(shot, refx, refy)
-        bp = analysis(shot, refx, refy, manager, do_plots=False)
+        # bp = analysis(shot, refx, refy, manager, do_plots=False)
+        bp = update_partial_analysis(
+            shot,
+            refx,
+            refy,
+            manager,
+            results.get_blob_params_for_shot(shot, refx, refy),
+            do_plots=False,
+        )
         if bp is None:
             return None
         # Return data to be added to results
@@ -61,8 +69,8 @@ def run_parallel(shots, force_redo=False):
     # Create a list of all (shot, refx, refy) combinations
     tasks = []
     for shot in shots:
-        for refx in [6]:  # range(9):
-            for refy in [5]:  # range(10):
+        for refx in range(9):
+            for refy in range(10):
                 if (
                     results.get_blob_params_for_shot(shot, refx, refy) is None
                     or force_redo
@@ -70,10 +78,11 @@ def run_parallel(shots, force_redo=False):
                     tasks.append((shot, refx, refy))
 
     # Use multiprocessing Pool to parallelize
-    num_processes = mp.cpu_count()  # Use all available CPU cores
-    num_processes = 2  # mp.cpu_count()  # Use all available CPU cores
+    num_processes = mp.cpu_count() / 2  # Use half of all available CPU cores
     with mp.Pool(processes=num_processes) as pool:
-        process_results = pool.map(partial(process_point, manager=manager), tasks)
+        process_results = pool.map(
+            partial(process_point, manager=manager, results=results), tasks
+        )
 
     for result in process_results:
         if result is None:
