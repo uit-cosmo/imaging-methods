@@ -175,6 +175,10 @@ def plot_frames_with_contour(average, contours, t_indexes, variable="cond_av"):
 def full_analysis(
     ds, method_parameters, suffix, figures_dir="integrated_tests_figures"
 ):
+    """
+    Does a full analysis on imaging data, estimating a BlobParameters object containing all estimates. Plots figures
+    when relevant in the provided figures_dir.
+    """
     dt = im.get_dt(ds)
     t_indexes = np.linspace(100, 110, num=8) / dt
     fig = plot_frames(ds, t_indexes)
@@ -224,6 +228,8 @@ def full_analysis(
         contour_ds.center_of_mass,
         method_parameters["contouring"]["com_smoothing"],
     )
+    vcs = np.array([v[0] for v in velocity_ds.values])
+    times_with_velocity = velocity_ds.time[vcs != 0.0]
     v_c, w_c = (
         velocity_ds.isel(time=slice(10, -10)).mean(dim="time", skipna=True).values
     )
