@@ -9,9 +9,10 @@ from .discharge_manager import *
 import numpy as np
 
 
-class GPIDataAccessor:
-    def __init__(self, discharge_manager: PlasmaDischargeManager):
-        self.manager = discharge_manager
+class GPIDataAccessor(PlasmaDischargeManager):
+    def __init__(self, file=None):
+        super.__init__(file)
+
     def read_shot_data(
         self,
         shot,
@@ -30,8 +31,8 @@ class GPIDataAccessor:
             raise ValueError(f"Failed to load {file_name}: {str(e)}")
 
         t_start, t_end = (
-            self.manager.get_discharge_by_shot(shot).t_start,
-            self.manager.get_discharge_by_shot(shot).t_end,
+            self.get_discharge_by_shot(shot).t_start,
+            self.get_discharge_by_shot(shot).t_end,
         )
         if preprocessed and not np.isnan(t_start) and not np.isnan(t_end):
             return ds.sel(time=slice(t_start, t_end))

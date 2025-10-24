@@ -7,8 +7,9 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import cosmoplots as cp
 
 shot = 1120814031
-manager = GPIDataAccessor()
-manager.load_from_json("density_scan/plasma_discharges.json")
+manager = GPIDataAccessor(
+    "/home/sosno/Git/experimental_database/plasma_discharges.json"
+)
 ds = manager.read_shot_data(shot, preprocessed=True)
 
 refy = 5

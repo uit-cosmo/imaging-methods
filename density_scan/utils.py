@@ -313,10 +313,12 @@ def plot_contour_figure(refx, refy):
     subfigure_labels = [chr(97 + i) for i in range(9)]
     ax_indx = 0
 
-    manager = im.GPIDataAccessor()
-    manager.load_from_json("plasma_discharges.json")
+    manager = im.GPIDataAccessor(
+        "/home/sosno/Git/experimental_database/plasma_discharges.json"
+    )
+
     for shot in manager.get_shot_list():
-        confinement_more = manager.get_discharge_by_shot(shot).confinement_mode
+        confinement_more = manager.get_discharge_by_shot(shot).comment
         is_hmode = confinement_more == "EDA-H" or confinement_more == "ELM-free-H"
         if is_hmode:
             continue

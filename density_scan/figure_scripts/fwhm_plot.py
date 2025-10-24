@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import xarray as xr
 import os
 import numpy as np
-import phantom as ph
+import imaging_methods as im
 import cosmoplots as cp
 from collections import defaultdict
 
@@ -11,13 +11,14 @@ cp.set_rcparams_dynamo(params, 2)
 # plt.rcParams["text.usetex"] = False
 plt.rcParams.update(params)
 
-results = ph.ResultManager.from_json("results.json")
-manager = ph.PlasmaDischargeManager()
-manager.load_from_json("plasma_discharges.json")
+results = im.ResultManager.from_json("results.json")
+manager = im.GPIDataAccessor(
+    "/home/sosno/Git/experimental_database/plasma_discharges.json"
+)
 shots = [
     shot
     for shot in manager.get_shot_list()
-    if manager.get_discharge_by_shot(shot).confinement_mode == "L"
+    if manager.get_discharge_by_shot(shot).comment == "L"
 ]
 apd_data = manager.read_shot_data(shots[0], data_folder="../data")
 

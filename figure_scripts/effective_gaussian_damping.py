@@ -23,14 +23,15 @@ times = np.arange(-1, 4, step=0.01)
 
 
 def gaussian(taup, x):
-    return np.exp(-times / taup) * np.exp(-((x-times)**2))
+    return np.exp(-times / taup) * np.exp(-((x - times) ** 2))
 
 
 def one_exp(taup, x):
-    return np.heaviside(times-x, 0) * np.exp(-times / taup) * np.exp(x-times)
+    return np.heaviside(times - x, 0) * np.exp(-times / taup) * np.exp(x - times)
 
 
 fig, ax = plt.subplots(1, 2)
+
 
 def process_ax(ax, f):
     ax.plot(
@@ -41,15 +42,20 @@ def process_ax(ax, f):
     )
 
     ax.plot(times, f(taup, 1), color="black")
-    ax.plot(times, f(1e10, 0), color="blue", label=r"$\frac{v}{\ell}\tau_{\shortparallel}=\infty$")
+    ax.plot(
+        times,
+        f(1e10, 0),
+        color="blue",
+        label=r"$\frac{v}{\ell}\tau_{\shortparallel}=\infty$",
+    )
     ax.plot(times, f(1e10, 1), color="blue")
 
     ax.set_xlabel(r"$\frac{v}{\ell}(t-t_k)$")
     ax.set_yticks([0, 1])
     ax.set_yticklabels([r"$0$", r"$\frac{\varphi(t-t_k)}{\varphi_0}$"])
     ax.set_ylim([0, 1.2])
-    ax.text(0-0.25, 1.07, r"$x=0$")
-    ax.text(1-0.25, 1.07, r"$x=\ell$")
+    ax.text(0 - 0.25, 1.07, r"$x=0$")
+    ax.text(1 - 0.25, 1.07, r"$x=\ell$")
     ax.legend()
 
 

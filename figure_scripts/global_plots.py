@@ -6,8 +6,9 @@ import cosmoplots as cp
 
 # Load the dataset
 shot = 1150916025
-manager = GPIDataAccessor()
-manager.load_from_json("density_scan/plasma_discharges.json")
+manager = GPIDataAccessor(
+    "/home/sosno/Git/experimental_database/plasma_discharges.json"
+)
 ds = manager.read_shot_data(shot, preprocessed=True)
 
 fig, ax = plt.subplots(1, 2, figsize=(2 * 3.3, 1 * 3.3), gridspec_kw={"wspace": 0.5})

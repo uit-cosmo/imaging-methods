@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 import xarray as xr
 from matplotlib import animation
 from typing import Union, Any
-from scipy import interpolate
 
 from .cond_av import find_events_and_2dca
 from .utils import *
@@ -302,8 +301,9 @@ def movie_2dca_with_contours(shot, refx, refy, run_2dca=False):
     from .contours import get_contour_evolution
     from .discharge import GPIDataAccessor
 
-    manager = GPIDataAccessor()
-    manager.load_from_json("density_scan/plasma_discharges.json")
+    manager = GPIDataAccessor(
+        "/home/sosno/Git/experimental_database/plasma_discharges.json"
+    )
     ds = manager.read_shot_data(shot, preprocessed=True)
     ds = ds.sel(time=slice(0.85, 0.96))
 

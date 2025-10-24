@@ -1,15 +1,14 @@
 import numpy as np
 
-from phantom.utils import *
 import matplotlib.pyplot as plt
-from phantom.contours import *
-from phantom import *
+from imaging_methods import *
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import cosmoplots as cp
 
 shot = 1160616027
-manager = PlasmaDischargeManager()
-manager.load_from_json("density_scan/plasma_discharges.json")
+manager = GPIDataAccessor(
+    "/home/sosno/Git/experimental_database/plasma_discharges.json"
+)
 ds = manager.read_shot_data(shot, preprocessed=True)
 
 params = plt.rcParams

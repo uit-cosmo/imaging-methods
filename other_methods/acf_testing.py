@@ -1,15 +1,13 @@
 import numpy as np
 
-from phantom.utils import *
 import matplotlib.pyplot as plt
-from phantom.contours import *
-import phantom as ph
-from scipy import signal as s
+import imaging_methods as im
 import fppanalysis as fppa
 
 shot = 1160616009
-manager = ph.PlasmaDischargeManager()
-manager.load_from_json("density_scan/plasma_discharges.json")
+manager = im.GPIDataAccessor(
+    "/home/sosno/Git/experimental_database/plasma_discharges.json"
+)
 ds = manager.read_shot_data(shot)
 
 refx, refy = 6, 6
@@ -23,14 +21,14 @@ signal = ds.frames.isel(x=refx, y=refy).values
 
 fig, ax = plt.subplots(1, 2)
 
-taud, lam, times = ph.DurationTimeEstimator(
-    ph.SecondOrderStatistic.ACF, ph.Analytics.TwoSided
+taud, lam, times = im.DurationTimeEstimator(
+    im.SecondOrderStatistic.ACF, im.Analytics.TwoSided
 ).plot_and_fit(signal, 5e-7, ax[0], cutoff=cutoff)
 
 label = (rf"$\tau_d = {taud_other:.2g}\, \lambda = {lam_other:.2g}$",)
 ax[0].plot(
     times,
-    ph.autocorrelation(times, taud_other, lam_other),
+    im.autocorrelation(times, taud_other, lam_other),
     ls="--",
     color="black",
     label=label,
@@ -47,7 +45,7 @@ base, values = base[mask], values[mask]
 
 def obj_fun(params, base, expected):
     # untransformed_params = [params[0], 1 / (1 + params[1] ** 2)]
-    analytical = ph.power_spectral_density(base, params[0], params[1])
+    analytical = im.power_spectral_density(base, params[0], params[1])
     return (analytical - expected) ** 2
 
 

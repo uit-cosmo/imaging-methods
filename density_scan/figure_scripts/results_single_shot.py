@@ -18,8 +18,9 @@ plt.rcParams.update(matplotlib_params)
 mpl.rcParams["text.latex.preamble"] = r"\usepackage{amsmath}"
 
 results = im.ResultManager.from_json("results.json")
-manager = im.GPIDataAccessor()
-manager.load_from_json("plasma_discharges.json")
+manager = im.GPIDataAccessor(
+    "/home/sosno/Git/experimental_database/plasma_discharges.json"
+)
 
 # shot = 1160616027
 shot = 1140613026

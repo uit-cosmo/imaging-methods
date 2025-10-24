@@ -5,8 +5,9 @@ from imaging_methods import *
 import cosmoplots as cp
 
 shot = 1140613026
-manager = GPIDataAccessor()
-manager.load_from_json("density_scan/plasma_discharges.json")
+manager = GPIDataAccessor(
+    "/home/sosno/Git/experimental_database/plasma_discharges.json"
+)
 ds = manager.read_shot_data(shot, preprocessed=True)
 
 params = plt.rcParams

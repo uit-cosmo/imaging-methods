@@ -107,7 +107,9 @@ def run_single_thread(shots, force_redo=False):
 
 
 if __name__ == "__main__":
-    manager = ed.PlasmaDischargeManager("/home/sosno/Git/experimental_database/plasma_discharges.json")
+    manager = ed.PlasmaDischargeManager(
+        "/home/sosno/Git/experimental_database/plasma_discharges.json"
+    )
 
     results = im.ResultManager.from_json("density_scan/results.json")
     shots = []

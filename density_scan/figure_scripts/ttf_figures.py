@@ -14,12 +14,13 @@ cp.set_rcparams_dynamo(matplotlib_params, 2)
 plt.rcParams.update(matplotlib_params)
 
 results = im.ResultManager.from_json("results.json")
-manager = im.GPIDataAccessor()
-manager.load_from_json("plasma_discharges.json")
+manager = im.GPIDataAccessor(
+    "/home/sosno/Git/experimental_database/plasma_discharges.json"
+)
 shots = [
     shot
     for shot in manager.get_shot_list()
-    if manager.get_discharge_by_shot(shot).confinement_mode == "L"
+    if manager.get_discharge_by_shot(shot).comment == "L"
 ]
 apd_data = manager.read_shot_data(shots[0], data_folder="../data")
 
