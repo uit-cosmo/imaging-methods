@@ -88,3 +88,13 @@ $E(\ell_x, \ell_y, \theta) = \sum_{x, y} (\varphi(\ell_x, \ell_y, \theta; x, y) 
 ## Three-point time delay estimation (3TDE)
 
 A detailed description is provided in Phys. Plasmas 32, 042505 (2025)
+
+## Full width half maximum
+
+This method is used to estimate the radial and poloidal characteristic sizes of the average blob. The output of the 2DCA
+at time lag 0 is employed. The data points of the average structure at time lag zero are considered for the row (column)
+intersecting the reference pixel. The radial (poloidal) size is estimated as the full width half maximum  of the
+resuling curve. Due to the low spatial resolution interpolation is employed for the estimation of the full width half maximum.
+
+
+<img src="https://github.com/uit-cosmo/imaging-methods/blob/main/presentation/fwhm_example.png?raw=true" alt="2DCA" style="max-width: 40%;" />
