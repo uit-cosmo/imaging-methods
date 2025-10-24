@@ -19,7 +19,7 @@ def get_dead_pixel_mask():
         mask[::-1],
         dims=["y", "x"],
         coords={
-            "y": range(10),  # y from 0 (top) to 9 (bottom)
-            "x": range(9),  # x from 0 to 9
+            "y": range(10),
+            "x": range(9),
         },
     )
