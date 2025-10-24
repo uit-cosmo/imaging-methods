@@ -21,3 +21,62 @@ method on 2DCA data from a high Greenwald fraction Ohmic shot is:
 <img src="https://github.com/uit-cosmo/phantom/blob/main/presentation/example_contour.gif?raw=true" alt="2DCA" style="max-width: 40%;" />
 
 </td>
+
+# Blob parameters
+
+The class BlobParameters contains all the data obtained from different estimation methods. An instance of the class
+contains the data for a given shot and a given pixel. The following data is provided:
+
+-vx_c: 
+-vy_c:
+-area_c:
+-vx_2dca_tde:
+-vy_2dca_tde:
+-vx_tde:
+-vy_tde:
+-lx_f:
+-ly_f:
+-lr:
+-lz:
+-theta_f:
+-taud_psd:
+-lambda_psd:
+-number_events:
+
+# Methods
+
+## Two-dimensional conditional averaging (2DCA)
+
+A detailed description of the method is provided in the manuscript prepared to be submitted to PoP: Conditionally averaged blob structures in Alcator C-Mod.
+A summary:
+
+A reference pixel is selected, and events are identified where the signal at that pixel exceeds a given threshold.
+Within each event, the time of maximum signal amplitude is determined. A window centred at the peak is used to register 
+and store the event. Optionally we check that the reference pixel’s signal at the peak is the maximum within a spatial 
+radius. Non-compliant events are discarded. Optionally, events are selected to ensure a minimum separation,
+prioritized by peak amplitude. Once all events are determined, the events are aligned relative to the peak,
+and the average structure $\evavg$ is computed across all events. In addition to the average, the conditional 
+reproducibility can also be calculated and allows to determine the degree of variability of the events.
+
+## Contouring
+
+Applied on the output of 2DCA. This allows us to estimate the area and center-of-mass velocity without assuming
+a specific shape. At each time step of the conditionally averaged event, a contour is drawn at a specified amplitude
+level given by a fraction of the maximum amplitude. This contour defines the structure’s boundary at that moment. 
+If multiple contours are found at a given frame, the contour enclosing the maximum intensity is chosen. To reduce noise 
+and avoid pixel locking, the center of mass signals are filtered with a Hann window. The filtering also helps reducing
+the pulsating behaviour obtained when the pulse size is of the order of the spatial resolution of the imaging diagnostic
+or smaller. From this, the velocity is computed as the time derivative of the center of mass signal using a centered
+differences method. 
+
+## Ellipse fitting
+
+Applied on the output of 2DCA. 
+
+A two-dimensional Gaussian function with a tilt is fitted to the 2DCA output at time lag zero.
+
+$ \phi(x, y) = A \exp\left( -\left( \frac{(x' - x_\text{ref})^2}{\ell_x^2} + \frac{(y' - y_\text{ref})^2}{\ell_y^2} \right) \right)$
+
+where $x' = (x - x_\text{ref}) \cos \theta + (y - y_\text{ref}) \sin \theta$ and $y' = -(x - x_\text{ref}) \sin \theta + (y - y_\text{ref}) \cos \theta$. Here, $A$ is the amplitude given by the value of the conditional event at $(x_\text{ref}, y_\text{ref})$, $\ell_x$ and $\ell_y$ are the sizes along the axes, and $\theta$ is the tilt angle.
+
+The fitting process yields $\ell_x$, $\ell_y$ and $\theta$. 
