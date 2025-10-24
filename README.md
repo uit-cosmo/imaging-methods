@@ -27,21 +27,21 @@ method on 2DCA data from a high Greenwald fraction Ohmic shot is:
 The class BlobParameters contains all the data obtained from different estimation methods. An instance of the class
 contains the data for a given shot and a given pixel. The following data is provided:
 
-- vx_c
-- vy_c
-- area_c:
-- vx_2dca_tde:
-- vy_2dca_tde:
-- vx_tde:
-- vy_tde:
-- lx_f:
-- ly_f:
-- lr:
-- lz:
-- theta_f:
-- taud_psd:
-- lambda_psd:
-- number_events:
+- vx_c: contouring
+- vy_c: contouring
+- area_c: contouring
+- vx_2dca_tde: 3TDE on 2DCA output
+- vy_2dca_tde: 3TDE on 2DCA output
+- vx_tde: 3TDE cross-correlation
+- vy_tde: 3TDE cross-correlation
+- lx_f: Ellipse fitting on 2DCA
+- ly_f: Ellipse fitting on 2DCA
+- lr: Full width half maximum on 2DCA
+- lz: Full width half maximum on 2DCA
+- theta_f: Ellipse fitting on 2DCA
+- taud_psd: Power spectral density fitting for two-sided exponential function
+- lambda_psd: Power spectral density fitting for two-sided exponential function
+- number_events: Number of events detected with 2DCA
 
 # Methods
 
@@ -84,3 +84,7 @@ The fitting process yields $\ell_x$, $\ell_y$ and $\theta$.
 In order to avoid unphysically big, ellongated or tilted blobs, several penalty factors are introduced. The error function to be minimized is
 
 $E(\ell_x, \ell_y, \theta) = \sum_{x, y} (\varphi(\ell_x, \ell_y, \theta; x, y) - data(x, y))^2 + \varphi(\ell_x, \ell_y, \theta; x, y)^2(P_s + P_\theta \theta^2+P_\epsilon(1-\ell_x/\ell_y)^2)$
+
+## Three-point time delay estimation (3TDE)
+
+A detailed description is provided in Phys. Plasmas 32, 042505 (2025)
