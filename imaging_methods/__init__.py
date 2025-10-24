@@ -1,4 +1,5 @@
-from .show_data import *
+from .plotting import *
+from .plot_movies import *
 from .utils import *
 from .cond_av import *
 from .contours import *

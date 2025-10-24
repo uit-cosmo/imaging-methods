@@ -3,6 +3,7 @@ from scipy.optimize import differential_evolution
 import matplotlib.pyplot as plt
 import velocity_estimation as ve
 import warnings
+from imaging_methods import plot_2dca_zero_lag
 
 
 def rotated_blob(params, rx, ry, x, y):
@@ -229,6 +230,7 @@ def fit_ellipse_to_event(
 
 def plot_event_with_fit(
     e,
+    ds,
     refx,
     refy,
     ax,
@@ -237,8 +239,11 @@ def plot_event_with_fit(
     aspect_ratio_penalty_factor=0.1,
     theta_penalty_factor=0.1,
 ):
+    if e is None or len(e.data_vars) == 0:
+        return
+    plot_2dca_zero_lag(ds=ds, average=e, ax=ax)
     lx, ly, theta = fit_ellipse_to_event(
-        e,
+        e.cond_av,
         refx,
         refy,
         size_penalty_factor,

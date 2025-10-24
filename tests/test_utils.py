@@ -239,6 +239,7 @@ def full_analysis(
     fit_params = method_parameters["gauss_fit"]
     lx, ly, theta = im.plot_event_with_fit(
         average_ds.cond_av,
+        None,
         tdca_params["refx"],
         tdca_params["refy"],
         ax=ax,

@@ -53,7 +53,7 @@ def process_point(args, manager, results):
             refy,
             manager,
             results.get_blob_params_for_shot(shot, refx, refy),
-            do_plots=False,
+            do_plots=True,
         )
         if bp is None:
             return None
@@ -62,7 +62,8 @@ def process_point(args, manager, results):
     except Exception as e:
         print(f"Issues for shot {shot}, refx={refx}, refy={refy}")
         print(traceback.format_exc())
-        return None
+        raise e
+        # return None
 
 
 def run_parallel(shots, force_redo=False):
@@ -97,22 +98,26 @@ def run_single_thread(shots, force_redo=False):
     for shot in shots:
         for refx in range(9):
             for refy in range(10):
-                try:
-                    if (
-                        results.get_blob_params_for_shot(shot, refx, refy) is not None
-                        and not force_redo
-                    ):
-                        return
-                    print(f"Working on shot {shot} and pixel {refx}{refy}")
-                    compute_and_store_conditional_averages(shot, refx, refy)
-                    bp = analysis(shot, refx, refy, manager, do_plots=True)
-                    if bp is None:
-                        continue
-                    if shot not in results.shots:
-                        results.add_shot(manager.get_discharge_by_shot(shot), {})
-                    results.add_blob_params(shot, refx, refy, bp)
-                except KeyError:
-                    print(f"Issues for {refx} {refy}")
+                if (
+                    results.get_blob_params_for_shot(shot, refx, refy) is not None
+                    and not force_redo
+                ):
+                    return
+                print(f"Working on shot {shot} and pixel {refx}{refy}")
+                compute_and_store_conditional_averages(shot, refx, refy)
+                bp = update_partial_analysis(
+                    shot,
+                    refx,
+                    refy,
+                    manager,
+                    results.get_blob_params_for_shot(shot, refx, refy),
+                    do_plots=True,
+                )
+                if bp is None:
+                    continue
+                if shot not in results.shots:
+                    results.add_shot(manager.get_discharge_by_shot(shot), {})
+                results.add_blob_params(shot, refx, refy, bp)
 
 
 if __name__ == "__main__":
@@ -121,9 +126,8 @@ if __name__ == "__main__":
     )
 
     results = im.ResultManager.from_json("density_scan/results.json")
-    shots = []
-    shots = manager.get_ohmic_shot_list()
+    shots = [1160616011]
+    # shots = manager.get_ohmic_shot_list()
     run_parallel(shots, force_redo=True)
 
-    # run_parallel(shots, force_redo=True)
     results.to_json("density_scan/results.json")

@@ -33,7 +33,9 @@ def analysis(shot, refx, refy, manager, do_plots=True):
     v_c, w_c, area_c = get_contour_parameters(shot, refx, refy, average_ds, do_plots)
     v_2dca_tde, w_2dca_tde = get_2dca_tde_velocities(refx, refy, average_ds)
     v_tde, w_tde = get_tde_velocities(refx, refy, gpi_ds)
-    lx, ly, theta = get_gaussian_fit_sizes(shot, refx, refy, average_ds, do_plots)
+    lx, ly, theta = get_gaussian_fit_sizes(
+        shot, refx, refy, average_ds, gpi_ds, do_plots
+    )
     taud, lam = get_taud_from_psd(shot, refx, refy, gpi_ds, do_plots)
     lr, lz = get_fwhm_sizes(shot, refx, refy, average_ds, do_plots)
 
@@ -65,12 +67,12 @@ def update_partial_analysis(shot, refx, refy, manager, bp, do_plots=True):
 
     # v_c, w_c, area_c = get_contour_parameters(shot, refx, refy, average_ds, do_plots)
     # v_2dca_tde, w_2dca_tde = get_2dca_tde_velocities(refx, refy, average_ds)
-    v_tde, w_tde = get_tde_velocities(refx, refy, gpi_ds)
-    # lx, ly, theta = get_gaussian_fit_sizes(shot, refx, refy, average_ds, do_plots)
+    # v_tde, w_tde = get_tde_velocities(refx, refy, gpi_ds)
+    lx, ly, theta = get_gaussian_fit_sizes(
+        shot, refx, refy, average_ds, gpi_ds, do_plots
+    )
     # taud, lam = get_taud_from_psd(shot, refx, refy, gpi_ds, do_plots)
     # lr, lz = get_fwhm_sizes(shot, refx, refy, average_ds, do_plots)
-    bp.vx_tde = v_tde
-    bp.vy_tde = w_tde
 
     return bp
 
@@ -176,7 +178,7 @@ def get_fwhm_sizes(shot, refx, refy, average_ds, do_plot):
     return (rp_fwhm - rn_fwhm) / 100, (zp_fwhm - zn_fwhm) / 100
 
 
-def get_gaussian_fit_sizes(shot, refx, refy, average_ds, do_plots):
+def get_gaussian_fit_sizes(shot, refx, refy, average_ds, gpi_ds, do_plots):
     fit_params = method_parameters["gauss_fit"]
     ps, pe, pt = (
         fit_params["size_penalty"],
@@ -198,7 +200,8 @@ def get_gaussian_fit_sizes(shot, refx, refy, average_ds, do_plots):
         )
 
         lx, ly, theta = im.plot_event_with_fit(
-            average_ds.cond_av,
+            average_ds,
+            gpi_ds,
             refx,
             refy,
             ax=ax,
@@ -338,6 +341,7 @@ def plot_contour_figure(refx, refy):
     )
 
     for shot in manager.get_shot_list():
+        gpi_ds = manager.read_shot_data(shot)
         confinement_more = manager.get_discharge_by_shot(shot).comment
         is_hmode = confinement_more == "EDA-H" or confinement_more == "ELM-free-H"
         if is_hmode:
@@ -365,6 +369,7 @@ def plot_contour_figure(refx, refy):
         )
         lx, ly, theta = im.plot_event_with_fit(
             average_ds.cond_av,
+            gpi_ds,
             refx,
             refy,
             ax=axe,
