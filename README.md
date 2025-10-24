@@ -27,21 +27,21 @@ method on 2DCA data from a high Greenwald fraction Ohmic shot is:
 The class BlobParameters contains all the data obtained from different estimation methods. An instance of the class
 contains the data for a given shot and a given pixel. The following data is provided:
 
--vx_c: 
--vy_c:
--area_c:
--vx_2dca_tde:
--vy_2dca_tde:
--vx_tde:
--vy_tde:
--lx_f:
--ly_f:
--lr:
--lz:
--theta_f:
--taud_psd:
--lambda_psd:
--number_events:
+- vx_c
+- vy_c
+- area_c:
+- vx_2dca_tde:
+- vy_2dca_tde:
+- vx_tde:
+- vy_tde:
+- lx_f:
+- ly_f:
+- lr:
+- lz:
+- theta_f:
+- taud_psd:
+- lambda_psd:
+- number_events:
 
 # Methods
 
@@ -75,8 +75,12 @@ Applied on the output of 2DCA.
 
 A two-dimensional Gaussian function with a tilt is fitted to the 2DCA output at time lag zero.
 
-$ \phi(x, y) = A \exp\left( -\left( \frac{(x' - x_\text{ref})^2}{\ell_x^2} + \frac{(y' - y_\text{ref})^2}{\ell_y^2} \right) \right)$
+$\varphi(x, y) = A \exp\left( -\left( \frac{(x' - x_\text{ref})^2}{\ell_x^2} + \frac{(y' - y_\text{ref})^2}{\ell_y^2} \right) \right)$
 
 where $x' = (x - x_\text{ref}) \cos \theta + (y - y_\text{ref}) \sin \theta$ and $y' = -(x - x_\text{ref}) \sin \theta + (y - y_\text{ref}) \cos \theta$. Here, $A$ is the amplitude given by the value of the conditional event at $(x_\text{ref}, y_\text{ref})$, $\ell_x$ and $\ell_y$ are the sizes along the axes, and $\theta$ is the tilt angle.
 
 The fitting process yields $\ell_x$, $\ell_y$ and $\theta$. 
+
+In order to avoid unphysically big, ellongated or tilted blobs, several penalty factors are introduced. The error function to be minimized is
+
+$E(\ell_x, \ell_y, \theta) = \sum_{x, y} (\varphi(\ell_x, \ell_y, \theta; x, y) - data(x, y))^2 + \varphi(\ell_x, \ell_y, \theta; x, y)^2(P_s + P_\theta \theta^2+P_\epsilon(1-\ell_x/\ell_y)^2)$
