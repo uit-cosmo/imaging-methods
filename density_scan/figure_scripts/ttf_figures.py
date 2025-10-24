@@ -14,7 +14,7 @@ cp.set_rcparams_dynamo(matplotlib_params, 2)
 plt.rcParams.update(matplotlib_params)
 
 results = im.ResultManager.from_json("results.json")
-manager = im.PlasmaDischargeManager()
+manager = im.GPIDataAccessor()
 manager.load_from_json("plasma_discharges.json")
 shots = [
     shot

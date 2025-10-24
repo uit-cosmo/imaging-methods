@@ -5,7 +5,7 @@ from imaging_methods import *
 import cosmoplots as cp
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
-manager = PlasmaDischargeManager()
+manager = GPIDataAccessor()
 manager.load_from_json("density_scan/plasma_discharges.json")
 
 params = plt.rcParams

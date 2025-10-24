@@ -1,4 +1,5 @@
 from imaging_methods import movie_2dca_with_contours, plot_skewness_and_flatness
+import experimental_database as ed
 from utils import *
 from method_parameters import method_parameters
 
@@ -106,11 +107,10 @@ def run_single_thread(shots, force_redo=False):
 
 
 if __name__ == "__main__":
-    manager = im.PlasmaDischargeManager()
-    manager.load_from_json("density_scan/plasma_discharges.json")
+    manager = ed.PlasmaDischargeManager("/home/sosno/Git/experimental_database/plasma_discharges.json")
 
     results = im.ResultManager.from_json("density_scan/results.json")
-    shots = [1150916025]
+    shots = []
     run_parallel(shots)
     for shot in shots:
         ds = manager.read_shot_data(shot, preprocessed=True)
@@ -123,4 +123,4 @@ if __name__ == "__main__":
         movie_2dca_with_contours(shot, 6, 5)
 
     # run_parallel(shots, force_redo=True)
-    # results.to_json("density_scan/results.json")
+    results.to_json("density_scan/results.json")

@@ -1,7 +1,7 @@
-from imaging_methods import PlasmaDischargeManager, PlasmaDischarge
+from imaging_methods import GPIDataAccessor, PlasmaDischarge
 import numpy as np
 
-manager = PlasmaDischargeManager()
+manager = GPIDataAccessor()
 # Data from the provided table
 discharges = [
     PlasmaDischarge(1160616027, 0.51, 2.82, 0.80, 1.15, 1.45, 0.300, "-", "L"),

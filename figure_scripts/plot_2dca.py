@@ -26,7 +26,7 @@ if __name__ == "__main__":
     shot = args.shot
     refx = args.refx
     refy = args.refy
-    manager = PlasmaDischargeManager()
+    manager = GPIDataAccessor()
     manager.load_from_json("density_scan/plasma_discharges.json")
     for shot in manager.get_shot_list_by_confinement(["EDA-H", "ELM-free-H"]):
         print(f"Shot {shot}")

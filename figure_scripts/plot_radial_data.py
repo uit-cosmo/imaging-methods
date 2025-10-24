@@ -7,7 +7,7 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import cosmoplots as cp
 from scipy.signal import welch
 
-manager = PlasmaDischargeManager()
+manager = GPIDataAccessor()
 manager.load_from_json("density_scan/plasma_discharges.json")
 
 refy = 6

@@ -300,9 +300,9 @@ def show_movie_with_contours(
 
 def movie_2dca_with_contours(shot, refx, refy, run_2dca=False):
     from .contours import get_contour_evolution
-    from .discharge import PlasmaDischargeManager
+    from .discharge import GPIDataAccessor
 
-    manager = PlasmaDischargeManager()
+    manager = GPIDataAccessor()
     manager.load_from_json("density_scan/plasma_discharges.json")
     ds = manager.read_shot_data(shot, preprocessed=True)
     ds = ds.sel(time=slice(0.85, 0.96))

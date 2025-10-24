@@ -15,3 +15,4 @@ shapely~=2.1.0
 closedexpressions~=0.1.2
 pandas~=2.2.3
 fonttools~=4.55.8
+experimental_database~=0.0.1
