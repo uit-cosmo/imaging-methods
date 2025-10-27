@@ -329,26 +329,70 @@ def plot_event_with_fit(
     return lx, ly, theta
 
 
-def plot_contour_at_zero(e, contour_ds, ax, fig_name=None):
-    im = ax.imshow(e.sel(time=0), origin="lower", interpolation="spline16")
+def estimate_fwhm_sizes(average_ds):
+    """
+    Estimates the positions of the full-width half-maximum (FWHM) points in both positive and negative directions
+    for radial and poloidal slices of a dataset. This is done by taking 1D slices (rows or columns) through the data
+    at reference points and using linear interpolation to find where the values drop to half the peak reference value.
+    The function handles both sides of the peak separately, returning signed positions (positive for one side,
+    negative for the other). The full FWHM can be computed as the difference between positive and negative positions.
 
-    c = contour_ds.contours.sel(time=0).data
-    ax.plot(c[:, 0], c[:, 1], ls="--", color="black")
+    The function assumes the data is centered at a peak value, with values decreasing monotonically away from the center
+    until potentially plateauing or increasing (noise). It identifies the monotonic decreasing segment and interpolates within it.
 
-    # Set extent so that the middle of each pixel falls at the coordinates of said pixel.
-    pixel = e.R[0, 1] - e.R[0, 0]
-    ny, nx = e.R.shape
-    minR = np.min(e.R.values)
-    minZ = np.min(e.Z.values)
-    rmin, rmax, zmin, zmax = (
-        minR - pixel / 2,
-        minR + (nx - 1 / 2) * pixel,
-        minZ - pixel / 2,
-        minZ + (ny - 1 / 2) * pixel,
+    Parameters
+    ----------
+    average_ds : xarray.Dataset or dict-like
+        The input dataset containing averaged conditional data. Expected structure:
+        - 'cond_av': DataArray with dimensions 'x', 'y', 'time', representing the variable of interest (e.g., conditional average).
+        - 'R': DataArray with dimensions 'x', 'y', representing radial coordinates.
+        - 'Z': DataArray with dimensions 'x', 'y', representing vertical (poloidal) coordinates.
+        - 'refx': Scalar value or DataArray (int), the reference index along the 'x' dimension (radial).
+        - 'refy': Scalar value or DataArray (int), the reference index along the 'y' dimension (poloidal).
+
+    Returns
+    -------
+    rp_fwhm : float
+        Position of the half-maximum on the positive radial side (≥ 0).
+    rn_fwhm : float
+        Position of the half-maximum on the negative radial side (≤ 0).
+    zp_fwhm : float
+        Position of the half-maximum on the positive poloidal side (≥ 0).
+    zn_fwhm : float
+        Position of the half-maximum on the negative poloidal side (≤ 0).
+    """
+    refx, refy = average_ds["refx"], average_ds["refy"]
+    poloidal_var = average_ds.cond_av.isel(x=refx).sel(time=0).values
+    r_ref = average_ds.R.isel(x=refx, y=refy).item()
+    z_ref = average_ds.Z.isel(x=refx, y=refy).item()
+    poloidal_pos = average_ds.Z.isel(x=refx).values - z_ref
+    radial_var = average_ds.cond_av.isel(y=refy).sel(time=0).values
+    radial_pos = average_ds.R.isel(y=refy).values - r_ref
+    ref_val = poloidal_var[refy]
+
+    def get_last_monotounus_idx(x):
+        index = 0
+        while index + 1 < len(x):
+            if x[index + 1] > x[index]:
+                break
+            index = index + 1
+        return index
+
+    def get_fwhm(values, positions):
+        idx = get_last_monotounus_idx(values)
+        if idx == 0:
+            return 0
+        return np.interp(ref_val / 2, values[:idx][::-1], positions[:idx][::-1])
+
+    zp_fwhm = get_fwhm(poloidal_var[refy:], poloidal_pos[refy:])
+    zn_fwhm = get_fwhm(
+        poloidal_var[: (refy + 1)][::-1], poloidal_pos[: (refy + 1)][::-1]
     )
-    im.set_extent((rmin, rmax, zmin, zmax))
-    area = contour_ds.area.sel(time=0).item()
-    if fig_name is not None:
-        plt.savefig(fig_name, bbox_inches="tight")
+    rp_fwhm = get_fwhm(radial_var[refx:], radial_pos[refx:])
+    rn_fwhm = get_fwhm(radial_var[: (refx + 1)][::-1], radial_pos[: (refx + 1)][::-1])
+    assert zp_fwhm >= 0
+    assert zn_fwhm <= 0
+    assert rp_fwhm >= 0
+    assert rn_fwhm <= 0
 
-    return area
+    return rp_fwhm, rn_fwhm, zp_fwhm, zn_fwhm

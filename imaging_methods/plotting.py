@@ -39,6 +39,31 @@ def plot_2dca_zero_lag(ds, average, ax):
         plot_lcfs_area(ds, ax)
 
 
+def plot_contour_at_zero(e, contour_ds, ax, fig_name=None):
+    im = ax.imshow(e.sel(time=0), origin="lower", interpolation="spline16")
+
+    c = contour_ds.contours.sel(time=0).data
+    ax.plot(c[:, 0], c[:, 1], ls="--", color="black")
+
+    # Set extent so that the middle of each pixel falls at the coordinates of said pixel.
+    pixel = e.R[0, 1] - e.R[0, 0]
+    ny, nx = e.R.shape
+    minR = np.min(e.R.values)
+    minZ = np.min(e.Z.values)
+    rmin, rmax, zmin, zmax = (
+        minR - pixel / 2,
+        minR + (nx - 1 / 2) * pixel,
+        minZ - pixel / 2,
+        minZ + (ny - 1 / 2) * pixel,
+    )
+    im.set_extent((rmin, rmax, zmin, zmax))
+    area = contour_ds.area.sel(time=0).item()
+    if fig_name is not None:
+        plt.savefig(fig_name, bbox_inches="tight")
+
+    return area
+
+
 def plot_lcfs_area(ds, ax):
     limit_spline = interpolate.interp1d(ds["zlimit"], ds["rlimit"], kind="cubic")
     zfine = np.linspace(-8, 1, 100)

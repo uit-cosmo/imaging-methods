@@ -37,7 +37,7 @@ def analysis(shot, refx, refy, manager, do_plots=True):
         shot, refx, refy, average_ds, gpi_ds, do_plots
     )
     taud, lam = get_taud_from_psd(shot, refx, refy, gpi_ds, do_plots)
-    lr, lz = get_fwhm_sizes(shot, refx, refy, average_ds, do_plots)
+    lr, lz = plot_and_estimate_fwhm_sizes(shot, refx, refy, average_ds, do_plots)
 
     return im.BlobParameters(
         vx_c=v_c,
@@ -122,58 +122,30 @@ def get_taud_from_psd(shot, refx, refy, gpi_ds, do_plot):
     return taud, lam
 
 
-def get_fwhm_sizes(shot, refx, refy, average_ds, do_plot):
-    poloidal_var = average_ds.cond_av.isel(x=refx).sel(time=0).values
-    poloidal_pos = (
-        average_ds.Z.isel(x=refx).values - average_ds.Z.isel(x=refx, y=refy).values
-    )
-    radial_var = average_ds.cond_av.isel(y=refy).sel(time=0).values
-    radial_pos = (
-        average_ds.R.isel(y=refy).values - average_ds.R.isel(x=refx, y=refy).values
-    )
+def plot_and_estimate_fwhm_sizes(shot, average_ds):
+    rp_fwhm, rn_fwhm, zp_fwhm, zn_fwhm = im.estimate_fwhm_sizes(average_ds)
 
+    refx, refy = average_ds["refx"], average_ds["refy"]
+    poloidal_var = average_ds.cond_av.isel(x=refx).sel(time=0).values
+    r_ref = average_ds.R.isel(x=refx, y=refy).item()
+    z_ref = average_ds.Z.isel(x=refx, y=refy).item()
+    poloidal_pos = average_ds.Z.isel(x=refx).values - z_ref
+    radial_var = average_ds.cond_av.isel(y=refy).sel(time=0).values
+    radial_pos = average_ds.R.isel(y=refy).values - r_ref
     ref_val = poloidal_var[refy]
 
-    def get_last_monotounus_idx(x):
-        index = 0
-        while index + 1 < len(x):
-            if x[index + 1] > x[index]:
-                break
-            index = index + 1
-        return index
+    fig, ax = plt.subplots()
+    ax.plot(poloidal_pos, poloidal_var, label=r"$\Phi(Z-Z_*)$", color="blue")
+    ax.plot(radial_pos, radial_var, label=r"$\Phi(R-R_*)$", color="green")
 
-    def get_fwhm(values, positions):
-        idx = get_last_monotounus_idx(values)
-        if idx == 0:
-            return 0
-        return np.interp(ref_val / 2, values[:idx][::-1], positions[:idx][::-1])
+    ax.vlines([zp_fwhm, zn_fwhm], 0, ref_val, ls="--", color="blue")
+    ax.vlines([rp_fwhm, rn_fwhm], 0, ref_val, ls="--", color="green")
+    ax.set_xlabel(r"$R-R_*, Z-Z_*$")
+    ax.legend()
 
-    zp_fwhm = get_fwhm(poloidal_var[refy:], poloidal_pos[refy:])
-    zn_fwhm = get_fwhm(
-        poloidal_var[: (refy + 1)][::-1], poloidal_pos[: (refy + 1)][::-1]
-    )
-    rp_fwhm = get_fwhm(radial_var[refx:], radial_pos[refx:])
-    rn_fwhm = get_fwhm(radial_var[: (refx + 1)][::-1], radial_pos[: (refx + 1)][::-1])
-    assert zp_fwhm >= 0
-    assert zn_fwhm <= 0
-    assert rp_fwhm >= 0
-    assert rn_fwhm <= 0
-
-    if do_plot:
-        fig, ax = plt.subplots()
-        ax.plot(poloidal_pos, poloidal_var, label=r"$\Phi(Z-Z_*)$", color="blue")
-        ax.plot(radial_pos, radial_var, label=r"$\Phi(R-R_*)$", color="green")
-
-        ax.vlines([zp_fwhm, zn_fwhm], 0, ref_val, ls="--", color="blue")
-        ax.vlines([rp_fwhm, rn_fwhm], 0, ref_val, ls="--", color="green")
-        ax.set_xlabel(r"$R-R_*, Z-Z_*$")
-        ax.legend()
-
-        lr_lz_figname = os.path.join(
-            "density_scan/fwhm", f"fwhm_{shot}_{refx}{refy}.eps"
-        )
-        plt.savefig(lr_lz_figname, bbox_inches="tight")
-        plt.close(fig)
+    lr_lz_figname = os.path.join("density_scan/fwhm", f"fwhm_{shot}_{refx}{refy}.eps")
+    plt.savefig(lr_lz_figname, bbox_inches="tight")
+    plt.close(fig)
 
     return (rp_fwhm - rn_fwhm) / 100, (zp_fwhm - zn_fwhm) / 100
 
