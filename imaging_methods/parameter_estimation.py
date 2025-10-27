@@ -76,6 +76,7 @@ def fit_ellipse(
 
     Returns:
         - lx, ly, theta: Fitted semi-major/minor axes and rotation angle.
+    By convention lx < ly and theta in (0, pi)
     """
 
     def objective_function(params):
@@ -88,12 +89,10 @@ def fit_ellipse(
         )
         return np.sum((blob - data.values) ** 2) + penalty + aspect_ratio_penalty
 
-    # Initial guesses for lx, ly, and t
-    # Rough estimation
     bounds = [
-        (1e-10, 5),  # lx: 0 to 5
-        (1e-10, 5),  # ly: 0 to 5
-        (0, np.pi / 2),  # t: 0 to 2π
+        (1e-10, 5),  # lx
+        (1e-10, 5),  # ly
+        (0, np.pi / 2),  # theta
     ]
 
     result = differential_evolution(
@@ -245,6 +244,7 @@ def fit_ellipse_to_event(
         Semi-minor axis length of the fitted ellipse.
     theta : float
         Orientation angle of the ellipse (in radians).
+    By convention lx < ly and theta in (0, pi)
     """
     rx, ry = e.R.isel(x=refx, y=refy).item(), e.Z.isel(x=refx, y=refy).item()
     lx, ly, theta = fit_ellipse(
@@ -303,6 +303,7 @@ def plot_event_with_fit(
         Semi-minor axis length of the fitted ellipse.
     theta : float
         Orientation angle of the ellipse (in radians).
+    By convention lx < ly and theta in (0, pi)
     """
     if e is None or len(e.data_vars) == 0:
         return None, None, None

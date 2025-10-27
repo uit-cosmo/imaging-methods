@@ -25,8 +25,9 @@ refx, refy = 0, 0
 def test_fit():
     average = xr.open_dataset("tests/test_average_gpi.nc")
     fig, ax = plt.subplots()
-    im.plot_event_with_fit(average, None, 6, 6, ax)
+    lx, ly, theta = im.plot_event_with_fit(average, None, 6, 6, ax)
     ax.set_xlabel(r"$R$")
     ax.set_ylabel(r"$Z$")
     plt.savefig("example_fit.pdf", bbox_inches="tight")
+    print(lx, ly, theta)
     plt.show()

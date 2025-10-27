@@ -85,8 +85,9 @@ In order to avoid unphysically big, ellongated or tilted blobs, several penalty 
 
 $E(\ell_x, \ell_y, \theta) = \sum_{x, y} (\varphi(\ell_x, \ell_y, \theta; x, y) - data(x, y))^2 + \varphi(\ell_x, \ell_y, \theta; x, y)^2(P_s + P_\theta \theta^2+P_\epsilon(1-\ell_x/\ell_y)^2)$
 
-
 <img src="https://github.com/uit-cosmo/imaging-methods/blob/main/presentation/example_fit.png?raw=true" alt="2DCA" style="max-width: 40%;" />
+
+By convention, lx and ly are defined in such a way that ly is the larger of the two. $\theta \in [0, \pi]$
 
 ## Three-point time delay estimation (3TDE)
 
