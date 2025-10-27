@@ -55,7 +55,7 @@ Within each event, the time of maximum signal amplitude is determined. A window 
 and store the event. Optionally we check that the reference pixel’s signal at the peak is the maximum within a spatial 
 radius. Non-compliant events are discarded. Optionally, events are selected to ensure a minimum separation,
 prioritized by peak amplitude. Once all events are determined, the events are aligned relative to the peak,
-and the average structure $\evavg$ is computed across all events. In addition to the average, the conditional 
+and the average structure is computed across all events. In addition to the average, the conditional 
 reproducibility can also be calculated and allows to determine the degree of variability of the events.
 
 ## Contouring
@@ -75,7 +75,7 @@ Applied on the output of 2DCA.
 
 A two-dimensional Gaussian function with a tilt is fitted to the 2DCA output at time lag zero.
 
-$\varphi(x, y) = A \exp\left( -\left( \frac{(x' - x_\text{ref})^2}{\ell_x^2} + \frac{(y' - y_\text{ref})^2}{\ell_y^2} \right) \right)$
+$\varphi(x, y) = A \exp\left( -\left( \frac{x'^2}{\ell_x^2} + \frac{y'^2}{\ell_y^2} \right) \right)$
 
 where $x' = (x - x_\text{ref}) \cos \theta + (y - y_\text{ref}) \sin \theta$ and $y' = -(x - x_\text{ref}) \sin \theta + (y - y_\text{ref}) \cos \theta$. Here, $A$ is the amplitude given by the value of the conditional event at $(x_\text{ref}, y_\text{ref})$, $\ell_x$ and $\ell_y$ are the sizes along the axes, and $\theta$ is the tilt angle.
 
@@ -102,3 +102,23 @@ resuling curve. Due to the low spatial resolution interpolation is employed for 
 
 
 <img src="https://github.com/uit-cosmo/imaging-methods/blob/main/presentation/fwhm_example.png?raw=true" alt="2DCA" style="max-width: 40%;" />
+
+# Overview of blob parameters
+
+| Parameter     | Description                                    |
+|---------------|------------------------------------------------|
+| vx_c         | contouring                                     |
+| vy_c         | contouring                                     |
+| area_c       | contouring                                     |
+| vx_2dca_tde  | 3TDE on 2DCA output                            |
+| vy_2dca_tde  | 3TDE on 2DCA output                            |
+| vx_tde       | 3TDE cross-correlation                         |
+| vy_tde       | 3TDE cross-correlation                         |
+| lx_f         | Ellipse fitting on 2DCA                        |
+| ly_f         | Ellipse fitting on 2DCA                        |
+| lr           | Full width half maximum on 2DCA                |
+| lz           | Full width half maximum on 2DCA                |
+| theta_f      | Ellipse fitting on 2DCA                        |
+| taud_psd     | PSD fitting for two-sided exponential function |
+| lambda_psd   | PSD fitting for two-sided exponential function |
+| number_events| Number of events detected with 2DCA            |
