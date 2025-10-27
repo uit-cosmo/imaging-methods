@@ -216,6 +216,36 @@ def fit_ellipse_to_event(
     aspect_ratio_penalty_factor=0.1,
     theta_penalty_factor=0.1,
 ):
+    """
+    Fits an ellipse to the spatial data of an event at a specific reference point (refx, refy) and time slice (time=0).
+    The fitting is performed using a fit_ellipse function (not shown), with penalties applied to control the ellipse's size,
+    aspect ratio, and orientation.
+
+    Parameters
+    ----------
+    e : object
+        An event object (likely an xarray Dataset or similar) containing spatial data with coordinates R (radial) and Z (vertical)
+        at specific x, y, and time dimensions.
+    refx : int
+        Index of the reference point along the x dimension.
+    refy : int
+        Index of the reference point along the y dimension.
+    size_penalty_factor : float, optional
+        Penalty factor for ellipse size, passed to the fit_ellipse function. Default is 5.
+    aspect_ratio_penalty_factor : float, optional
+        Penalty factor for ellipse aspect ratio, passed to the fit_ellipse function. Default is 0.1.
+    theta_penalty_factor : float, optional
+        Penalty factor for ellipse orientation (theta), passed to the fit_ellipse function. Default is 0.1.
+
+    Returns
+    -------
+    lx : float
+        Semi-major axis length of the fitted ellipse.
+    ly : float
+        Semi-minor axis length of the fitted ellipse.
+    theta : float
+        Orientation angle of the ellipse (in radians).
+    """
     rx, ry = e.R.isel(x=refx, y=refy).item(), e.Z.isel(x=refx, y=refy).item()
     lx, ly, theta = fit_ellipse(
         e.sel(time=0),
@@ -239,8 +269,43 @@ def plot_event_with_fit(
     aspect_ratio_penalty_factor=0.1,
     theta_penalty_factor=0.1,
 ):
+    """
+    Plots an ellipse fitted to an event's data at a reference point (refx, refy) on a given matplotlib axis (ax).
+    The ellipse is computed using the fit_ellipse_to_event function, and the resulting ellipse is drawn as a dashed blue line.
+    Optionally, the plot can be saved to a file if a fig_name is provided.
+
+    Parameters
+    ----------
+    e : object
+        An event object (likely an xarray Dataset or similar) containing spatial data with coordinates R (radial) and Z (vertical)
+        at specific x, y, and time dimensions.
+    refx : int
+        Index of the reference point along the x dimension.
+    refy : int
+        Index of the reference point along the y dimension.
+    ax : matplotlib.axes.Axes
+        The matplotlib axis object on which to plot the ellipse.
+    fig_name : str, optional
+        If provided, the plot is saved to a file with this name. The file format is inferred from the extension (e.g., .png, .pdf).
+        Default is None.
+    size_penalty_factor : float, optional
+        Penalty factor for ellipse size in the fitting process, passed to fit_ellipse_to_event. Default is 5.
+    aspect_ratio_penalty_factor : float, optional
+        Penalty factor for ellipse aspect ratio in the fitting process, passed to fit_ellipse_to_event. Default is 0.1.
+    theta_penalty_factor : float, optional
+        Penalty factor for ellipse orientation (theta) in the fitting process, passed to fit_ellipse_to_event. Default is 0.1.
+
+    Returns
+    -------
+    lx : float
+        Semi-major axis length of the fitted ellipse.
+    ly : float
+        Semi-minor axis length of the fitted ellipse.
+    theta : float
+        Orientation angle of the ellipse (in radians).
+    """
     if e is None or len(e.data_vars) == 0:
-        return
+        return None, None, None
     plot_2dca_zero_lag(ds=ds, average=e, ax=ax)
     lx, ly, theta = fit_ellipse_to_event(
         e.cond_av,
