@@ -199,7 +199,6 @@ def show_movie_with_contours(
             title = r"t$={:.2f}\,$s".format(time)
         return title
 
-
     def animate_2d(i: int) -> Any:
         """
         Create the 2D plot for each frame of the animation.

@@ -3,6 +3,7 @@ import imaging_methods as im
 import matplotlib.pyplot as plt
 from blobmodel import BlobShapeEnum, BlobShapeImpl
 import velocity_estimation as ve
+import cosmoplots as cp
 
 plt.style.use(["cosmoplots.default"])
 plt.rcParams["text.latex.preamble"] = (
@@ -21,14 +22,14 @@ method_parameters = {
         "single_counting": True,
     },
     "gauss_fit": {"size_penalty": 5, "aspect_penalty": 0.2, "tilt_penalty": 0.2},
-    "contouring": {"threshold_factor": 0.3, "com_smoothing": 3},
+    "contouring": {"threshold_factor": 0.3, "com_smoothing": 10},
     "taud_estimation": {"cutoff": 1e6, "nperseg": 1e3},
 }
 
-i=0
-def estimate_velocities(
-    ds, method_parameters
-):
+i = 0
+
+
+def estimate_velocities(ds, method_parameters):
     """
     Does a full analysis on imaging data, estimating a BlobParameters object containing all estimates. Plots figures
     when relevant in the provided figures_dir.
@@ -77,8 +78,10 @@ def estimate_velocities(
 
     eo = ve.EstimationOptions()
     eo.cc_options.cc_window = method_parameters["2dca"]["window"] * dt
-    eo.cc_options.minimum_cc_value = 0.2
-    pd = ve.estimate_velocities_for_pixel(tdca_params["refx"], tdca_params["refy"], ve.CModImagingDataInterface(ds))
+    eo.cc_options.minimum_cc_value = 0
+    pd = ve.estimate_velocities_for_pixel(
+        tdca_params["refx"], tdca_params["refy"], ve.CModImagingDataInterface(ds)
+    )
     vx, vy = pd.vx, pd.vy
 
     return v_c, w_c, vx, vy
@@ -95,73 +98,116 @@ K = 1000
 
 vx_input = 1
 vy_intput = 0
-lx_input = 1/2
+lx_input = 1 / 2
 ly_input = 2
-theta_input = - np.pi/4
+theta_input = -np.pi / 4
+N = 5
 
 
-def get_velocities_for_parameters(lx, ly, theta):
-    vx_list = []
-    vy_list = []
-    vxtde_list = []
-    vytde_list = []
+def get_all_velocities(lx, ly, theta, N=N):
+    """
+    Run N realisations and return the *raw* velocity components.
 
-    N=1
+    Returns
+    -------
+    vx_all, vy_all, vxtde_all, vytde_all : list (length N)
+        One entry per Monte-Carlo realisation.
+    """
+    vx_all = []
+    vy_all = []
+    vxtde_all = []
+    vytde_all = []
+
     for _ in range(N):
-        # ---- one realisation -------------------------------------------------
         ds = make_2d_realization(
-            Lx, Ly, T,
-            nx, ny, dt, K,
+            Lx,
+            Ly,
+            T,
+            nx,
+            ny,
+            dt,
+            K,
             vx=vx_input,
             vy=vy_intput,
-            lx=lx, ly=ly,
+            lx=lx,
+            ly=ly,
             theta=theta,
             bs=bs,
         )
         ds = im.run_norm_ds(ds, method_parameters["preprocessing"]["radius"])
+
+        # estimate_velocities returns (vx, vy, vxtde, vytde)
         vx, vy, vxtde, vytde = estimate_velocities(ds, method_parameters)
 
-        vx_list.append(vx)
-        vy_list.append(vy)
-        vxtde_list.append(vxtde)
-        vytde_list.append(vytde)
+        vx_all.append(vx)
+        vy_all.append(vy)
+        vxtde_all.append(vxtde)
+        vytde_all.append(vytde)
 
-    return (
-        np.mean(vx_list),
-        np.mean(vy_list),
-        np.mean(vxtde_list),
-        np.mean(vytde_list),
-    )
+    return vx_all, vy_all, vxtde_all, vytde_all
 
-lx, ly = 1/2, 2
-thetas = np.linspace(0, np.pi/2, num=3)
 
-vx_avgs, vy_avgs, vxtde_avgs, vytde_avgs = [], [], [], []
+# --------------------------------------------------------------
+# 2.  SWEEP OVER theta
+# --------------------------------------------------------------
+lx, ly = 0.5, 2.0
+thetas = np.linspace(0, np.pi / 2, num=20)  # change num= back to 3 if you wish
+
+# Containers for *all* realisations (list of lists)
+VX_ALL = []  # len = len(thetas); each entry = list of N values
+VY_ALL = []
+VXTDE_ALL = []
+VYTDE_ALL = []
 
 for theta in thetas:
-    print(f"Processing theta = {theta:.3f} rad ({theta*180/np.pi:.1f}°)")
+    print(f"Processing theta = {theta:.3f} rad ({np.degrees(theta):.1f}°)")
+    vx, vy, vxtde, vytde = get_all_velocities(lx, ly, theta, N=N)
 
-    vx, vy, vxtde, vytde = get_velocities_for_parameters(lx, ly, theta)
-    vx_avgs.append(vx)
-    vy_avgs.append(vy)
-    vxtde_avgs.append(vxtde)
-    vytde_avgs.append(vytde)
+    VX_ALL.append(vx)
+    VY_ALL.append(vy)
+    VXTDE_ALL.append(vxtde)
+    VYTDE_ALL.append(vytde)
 
-# Convert to arrays
-vx_avgs = np.array(vx_avgs)
-vy_avgs = np.array(vy_avgs)
-vxtde_avgs = np.array(vxtde_avgs)
-vytde_avgs = np.array(vytde_avgs)
-
+# --------------------------------------------------------------
+# 3.  SCATTER PLOT
+# --------------------------------------------------------------
 fig, ax = plt.subplots()
 
-ax.plot(thetas, vx_avgs,     label=r'$v_x$',     marker='o')
-ax.plot(thetas, vy_avgs,     label=r'$w_y$',     marker='s')
-ax.plot(thetas, vxtde_avgs, label=r'$v_{\text{TDE}}$', marker='^')
-ax.plot(thetas, vytde_avgs, label=r'$w_{\text{TDE}}$', marker='d')
 
-ax.set_xlabel(r'$\theta$ (radians)')
-ax.set_ylabel('Velocity estimate (averaged over N realizations)')
-ax.legend()
+# Helper: scatter one component
+def scatter_component(theta_vals, data_per_theta, label, marker, color):
+    first = True
+    for th, vals in zip(theta_vals, data_per_theta):
+        jitter = 0  # np.random.normal(0, 0.003, size=len(vals))
+        ax.scatter(
+            np.full_like(vals, th) + jitter,
+            vals,
+            marker=marker,
+            s=40,
+            edgecolor="k",
+            linewidth=0.3,
+            label=label if first else None,  # <-- only label first
+            alpha=0.7,
+            color=color,
+        )
+        first = False
 
+
+# Choose distinct colours (you can also use a colormap)
+scatter_component(thetas, VX_ALL, r"$v_x$", "o", "#1f77b4")
+scatter_component(thetas, VY_ALL, r"$v_y$", "s", "#ff7f0e")
+scatter_component(thetas, VXTDE_ALL, r"$v_{\mathrm{TDE}}$", "^", "#2ca02c")
+scatter_component(thetas, VYTDE_ALL, r"$w_{\mathrm{TDE}}$", "d", "#d62728")
+
+ax.set_xlabel(r"$\theta$ (radians)")
+ax.set_ylabel("Velocity estimates")
+ax.legend(loc=6)
+ax.set_ylim(-0.1, 1.1)
+
+# secondary x-axis in degrees
+secax = ax.secondary_xaxis("top", functions=(np.rad2deg, np.deg2rad))
+secax.set_xlabel(r"$\theta$ (degrees)")
+
+plt.tight_layout()
+plt.savefig("barberpole.pdf")
 plt.show()
