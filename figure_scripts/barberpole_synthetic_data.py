@@ -3,12 +3,18 @@ import imaging_methods as im
 import matplotlib.pyplot as plt
 from blobmodel import BlobShapeEnum, BlobShapeImpl
 import velocity_estimation as ve
+import os
 import cosmoplots as cp
 
 plt.style.use(["cosmoplots.default"])
 plt.rcParams["text.latex.preamble"] = (
     r"\usepackage{amsmath} \usepackage{mathptmx} \usepackage{amssymb} "
 )
+
+params = plt.rcParams
+cp.set_rcparams_dynamo(params, 1)
+plt.rcParams.update(params)
+
 
 # Method parameters
 method_parameters = {
@@ -25,6 +31,9 @@ method_parameters = {
     "contouring": {"threshold_factor": 0.3, "com_smoothing": 10},
     "taud_estimation": {"cutoff": 1e6, "nperseg": 1e3},
 }
+
+data_file = "barberpole_data.npz"
+force_redo = False
 
 i = 0
 
@@ -154,19 +163,36 @@ lx, ly = 0.5, 2.0
 thetas = np.linspace(0, np.pi / 2, num=20)  # change num= back to 3 if you wish
 
 # Containers for *all* realisations (list of lists)
-VX_ALL = []  # len = len(thetas); each entry = list of N values
-VY_ALL = []
-VXTDE_ALL = []
-VYTDE_ALL = []
+vx_all = []  # len = len(thetas); each entry = list of N values
+vy_all = []
+vxtde_all = []
+vytde_all = []
 
-for theta in thetas:
-    print(f"Processing theta = {theta:.3f} rad ({np.degrees(theta):.1f}°)")
-    vx, vy, vxtde, vytde = get_all_velocities(lx, ly, theta, N=N)
+if os.path.exists(data_file) and not force_redo:
+    loaded = np.load(data_file)
+    thetas = loaded["thetas"]  # in case you want to load thetas too
+    vx_all = loaded["vx_all"]
+    vy_all = loaded["vy_all"]
+    vxtde_all = loaded["vxtde_all"]
+    vytde_all = loaded["vytde_all"]
+else:
+    for theta in thetas:
+        print(f"Processing theta = {theta:.3f} rad ({np.degrees(theta):.1f}°)")
+        vx, vy, vxtde, vytde = get_all_velocities(lx, ly, theta, N=N)
 
-    VX_ALL.append(vx)
-    VY_ALL.append(vy)
-    VXTDE_ALL.append(vxtde)
-    VYTDE_ALL.append(vytde)
+        vx_all.append(vx)
+        vy_all.append(vy)
+        vxtde_all.append(vxtde)
+        vytde_all.append(vytde)
+
+    np.savez(
+        data_file,
+        thetas=thetas,
+        vx_all=vx_all,
+        vy_all=vy_all,
+        vxtde_all=vxtde_all,
+        vytde_all=vytde_all,
+    )
 
 # --------------------------------------------------------------
 # 3.  SCATTER PLOT
@@ -193,21 +219,46 @@ def scatter_component(theta_vals, data_per_theta, label, marker, color):
         first = False
 
 
-# Choose distinct colours (you can also use a colormap)
-scatter_component(thetas, VX_ALL, r"$v_x$", "o", "#1f77b4")
-scatter_component(thetas, VY_ALL, r"$v_y$", "s", "#ff7f0e")
-scatter_component(thetas, VXTDE_ALL, r"$v_{\mathrm{TDE}}$", "^", "#2ca02c")
-scatter_component(thetas, VYTDE_ALL, r"$w_{\mathrm{TDE}}$", "d", "#d62728")
+def taumax(dx, dy, lpara, lperp, v, w, a):
+    d1 = (dx * lperp**2 * v + dy * lpara**2 * w) * np.cos(a) ** 2
+    d2 = (dx * lpara**2 * v + dy * lperp**2 * w) * np.sin(a) ** 2
+    d3 = -(lpara**2 - lperp**2) * (dy * v + dx * w) * np.cos(a) * np.sin(a)
+    n1 = (lperp**2 * v**2 + lpara**2 * w**2) * np.cos(a) ** 2
+    n2 = -2 * (lpara**2 - lperp**2) * v * w * np.sin(a) * np.cos(a)
+    n3 = (lpara**2 * v**2 + lperp**2 * w**2) * np.sin(a) ** 2
+    return (d1 + d2 + d3) / (n1 + n2 + n3)
 
-ax.set_xlabel(r"$\theta$ (radians)")
+
+def v3(lpara, lperp, v, w, a):
+    tx = taumax(1, 0, lpara, lperp, v, w, a)
+    ty = taumax(0, 1, lpara, lperp, v, w, a)
+    return tx / (tx**2 + ty**2)
+
+
+def w3(lpara, lperp, v, w, a):
+    tx = taumax(1, 0, lpara, lperp, v, w, a)
+    ty = taumax(0, 1, lpara, lperp, v, w, a)
+    return ty / (tx**2 + ty**2)
+
+
+# Choose distinct colours (you can also use a colormap)
+scatter_component(thetas / np.pi, vx_all, r"$v_c$", "o", "#1f77b4")
+scatter_component(thetas / np.pi, vy_all, r"$w_c$", "s", "#ff7f0e")
+scatter_component(thetas / np.pi, vxtde_all, r"$v_{\mathrm{TDE}}$", "^", "#2ca02c")
+scatter_component(thetas / np.pi, vytde_all, r"$w_{\mathrm{TDE}}$", "d", "#d62728")
+
+v3s = np.array([v3(lx, ly, 1, 0, t) for t in thetas])
+w3s = np.array([w3(lx, ly, 1, 0, t) for t in thetas])
+
+ax.plot(thetas / np.pi, v3s, color="#2ca02c", ls="--")
+ax.plot(thetas / np.pi, w3s, color="#d62728", ls="--")
+
+ax.set_xticks([0, 1 / 4, 1 / 2])
+ax.set_xticklabels([r"$0$", r"$1/4$", r"$1/2$"])
+ax.set_xlabel(r"$\alpha/\pi$")
 ax.set_ylabel("Velocity estimates")
-ax.legend(loc=6)
+ax.legend()  # loc=6
 ax.set_ylim(-0.1, 1.1)
 
-# secondary x-axis in degrees
-secax = ax.secondary_xaxis("top", functions=(np.rad2deg, np.deg2rad))
-secax.set_xlabel(r"$\theta$ (degrees)")
-
-plt.tight_layout()
-plt.savefig("barberpole.pdf")
+plt.savefig("barberpole.eps", bbox_inches="tight")
 plt.show()

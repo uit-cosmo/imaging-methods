@@ -228,11 +228,7 @@ def full_analysis(
         contour_ds.center_of_mass,
         method_parameters["contouring"]["com_smoothing"],
     )
-    vcs = np.array([v[0] for v in velocity_ds.values])
-    times_with_velocity = velocity_ds.time[vcs != 0.0]
-    v_c, w_c = (
-        velocity_ds.isel(time=slice(10, -10)).mean(dim="time", skipna=True).values
-    )
+    v_c, w_c = velocity_ds.sel(time=slice(-3, 3)).mean(dim="time", skipna=True).values
 
     area = im.plot_contour_at_zero(average_ds.cond_av, contour_ds, ax)
 

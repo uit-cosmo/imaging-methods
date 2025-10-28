@@ -9,14 +9,14 @@ plt.rcParams["text.latex.preamble"] = (
 )
 
 
-T = 1000
+T = 10000
 Lx = 8
 Ly = 8
 nx = 8
 ny = 8
-dt = 0.01
+dt = 0.1
 bs = BlobShapeImpl(BlobShapeEnum.gaussian, BlobShapeEnum.gaussian)
-K = T * Ly
+K = 1000
 
 # Method parameters
 method_parameters = {
@@ -25,12 +25,12 @@ method_parameters = {
         "refx": 4,
         "refy": 4,
         "threshold": 2,
-        "window": 300,
+        "window": 30,
         "check_max": 1,
         "single_counting": True,
     },
     "gauss_fit": {"size_penalty": 5, "aspect_penalty": 0.2, "tilt_penalty": 0.2},
-    "contouring": {"threshold_factor": 0.3, "com_smoothing": 3},
+    "contouring": {"threshold_factor": 0.3, "com_smoothing": 10},
     "taud_estimation": {"cutoff": 1e6, "nperseg": 1e3},
 }
 
@@ -76,7 +76,7 @@ def test_case_a():
 def test_case_b():
     vx_input = 1
     vy_intput = 0
-    aspect_ratio = 3
+    aspect_ratio = 4
     lx_input = 1 / np.sqrt(aspect_ratio)
     ly_input = np.sqrt(aspect_ratio)
     theta_input = 3 * np.pi / 4
