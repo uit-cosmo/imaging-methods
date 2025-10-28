@@ -99,17 +99,9 @@ def run_norm_ds(ds, radius):
         vectorize=True,
     )
 
-    ds_normalized = xr.Dataset(
-        {"frames": (["y", "x", "time"], normalization[0].data)},
-        coords={
-            "R": (["y", "x"], ds.R.values),
-            "Z": (["y", "x"], ds.Z.values),
-            "time": (["time"], normalization[1].data[0, 0, :]),
-        },
-    )
-    ds_normalized["frames"].attrs = ds["frames"].attrs.copy()
+    frames = np.where(np.isfinite(normalization[0].data), normalization[0].data, 0)
     new_frames = xr.DataArray(
-        normalization[0].data,
+        frames,
         dims=ds["frames"].dims,
         coords={
             "R": (["y", "x"], ds.R.values),

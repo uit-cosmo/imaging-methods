@@ -147,7 +147,7 @@ def show_movie_with_contours(
     dataset: xr.Dataset,
     contours_ds,
     apd_dataset: xr.Dataset = None,
-    variable: str = "n",
+    variable: str = "frames",
     interval: int = 100,
     gif_name: Union[str, None] = None,
     fps: int = 10,
@@ -185,11 +185,20 @@ def show_movie_with_contours(
     """
     t_dim = "t" if "t" in dataset._coord_names else "time"
     if fig is None:
-        fig = plt.figure()
+        fig = plt.figure(figsize=(5, 5))
 
     dt = get_dt(dataset)
     R, Z = dataset.R.values, dataset.Z.values
     refx, refy = int(dataset["refx"].item()), int(dataset["refy"].item())
+
+    def get_title(i):
+        time = dataset[t_dim][i]
+        if dt < 1e-3:
+            title = r"t$={:.2f}\,\mu$s".format(time * 1e6)
+        else:
+            title = r"t$={:.2f}\,$s".format(time)
+        return title
+
 
     def animate_2d(i: int) -> Any:
         """
@@ -215,7 +224,6 @@ def show_movie_with_contours(
         c = contours_ds.contours.isel(time=i).data
         line[0].set_data(c[:, 0], c[:, 1])
 
-        time = dataset[t_dim][i]
         if show_debug_info:
             l = contours_ds.length.isel(time=i).item()
             convexity_deficienty = contours_ds.convexity_deficiency.isel(time=i).item()
@@ -226,11 +234,12 @@ def show_movie_with_contours(
                 f"l = {l:.2f}, cd = {convexity_deficienty:.2f}, com = {com[0]:.2f} {com[1]:.2f}, area = {size:.2f}, Md = {max_displacement:.2f}"
             )
         else:
-            tx.set_text(r"t$={:.2f}\,\mu$s".format(time * 1e6))
+            tx.set_text(get_title(i))
 
     if ax is None:
         ax = fig.add_subplot(111)
-    tx = ax.set_title(r"t$={:.2f}\,\mu$s".format(dataset[t_dim][0] * 1e6))
+
+    tx = ax.set_title(get_title(0))
     ax.scatter(
         dataset.R.isel(x=refx, y=refy).item(),
         dataset.Z.isel(x=refx, y=refy).item(),

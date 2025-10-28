@@ -222,8 +222,8 @@ def fit_ellipse_to_event(
 
     Parameters
     ----------
-    e : object
-        An event object (likely an xarray Dataset or similar) containing spatial data with coordinates R (radial) and Z (vertical)
+    e : xr.DataArray
+        An xarray DataArray containing spatial data with coordinates R (radial) and Z (vertical)
         at specific x, y, and time dimensions.
     refx : int
         Index of the reference point along the x dimension.
@@ -276,8 +276,8 @@ def plot_event_with_fit(
 
     Parameters
     ----------
-    e : object
-        An event object (likely an xarray Dataset or similar) containing spatial data with coordinates R (radial) and Z (vertical)
+    e : xr.DataSet
+        An xarray Dataset containing spatial data with coordinates R (radial) and Z (vertical)
         at specific x, y, and time dimensions.
     refx : int
         Index of the reference point along the x dimension.
