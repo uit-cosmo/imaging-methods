@@ -37,7 +37,7 @@ def analysis(shot, refx, refy, manager, do_plots=True):
         shot, refx, refy, average_ds, gpi_ds, do_plots
     )
     taud, lam = get_taud_from_psd(shot, refx, refy, gpi_ds, do_plots)
-    lr, lz = plot_and_estimate_fwhm_sizes(shot, refx, refy, average_ds, do_plots)
+    lr, lz = plot_and_estimate_fwhm_sizes(shot, average_ds)
 
     return im.BlobParameters(
         vx_c=v_c,

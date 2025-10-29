@@ -361,7 +361,7 @@ def estimate_fwhm_sizes(average_ds):
     zn_fwhm : float
         Position of the half-maximum on the negative poloidal side (≤ 0).
     """
-    refx, refy = average_ds["refx"], average_ds["refy"]
+    refx, refy = average_ds["refx"].item(), average_ds["refy"].item()
     poloidal_var = average_ds.cond_av.isel(x=refx).sel(time=0).values
     r_ref = average_ds.R.isel(x=refx, y=refy).item()
     z_ref = average_ds.Z.isel(x=refx, y=refy).item()

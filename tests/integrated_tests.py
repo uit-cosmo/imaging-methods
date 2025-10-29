@@ -9,7 +9,7 @@ plt.rcParams["text.latex.preamble"] = (
 )
 
 
-T = 10000
+T = 1000
 Lx = 8
 Ly = 8
 nx = 8

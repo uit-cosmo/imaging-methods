@@ -29,8 +29,8 @@ def plot_cond_av(shot, refx, refy, plot_inset_lcfs=False):
         return
 
     contours = get_contour_evolution(average.cond_av, 0.3)
-    t_indexes = np.floor(np.linspace(0, average["time"].size - 7, num=8))
-    # t_indexes = np.floor(np.linspace(15, average["time"].size - 19, num=8))
+    #t_indexes = np.floor(np.linspace(0, average["time"].size - 7, num=8))
+    t_indexes = np.floor(np.linspace(15, average["time"].size - 19, num=8))
     fig, ax = plt.subplots(
         2, 4, figsize=(4 * 2.08, 2 * 2.08), gridspec_kw={"hspace": 0.4}
     )
@@ -42,7 +42,7 @@ def plot_cond_av(shot, refx, refy, plot_inset_lcfs=False):
         im = axe.imshow(
             data,
             origin="lower",
-            interpolation="spline16",
+            interpolation=None#"spline16",
         )
         im.set_extent((ds.R[0, 0], ds.R[0, -1], ds.Z[0, 0], ds.Z[-1, 0]))
         # im.set_clim(0, np.max(data))
@@ -66,10 +66,16 @@ def plot_cond_av(shot, refx, refy, plot_inset_lcfs=False):
         axe.set_title(r"$t={:.2f}\,\mu $s".format(t * 1e6))
 
     R, Z = ds.R.isel(x=refx, y=refy).item(), ds.Z.isel(x=refx, y=refy).item()
-    fig.suptitle(r"$R_*={:.2f}\,$cm $\,Z_*={:.2f}\,$cm".format(R, Z), fontsize=16)
+    # fig.suptitle(r"$R_*={:.2f}\,$cm $\,Z_*={:.2f}\,$cm".format(R, Z), fontsize=16)
     plt.savefig("blob_motion_{}_{}{}.pdf".format(shot, refx, refy), bbox_inches="tight")
     plt.show()
 
 
-# plot_cond_av(1160616009, 6, 5)
-movie_2dca_with_contours(1150916025, 6, 5, run_2dca=True)
+shot = 1140613027
+plot_cond_av(shot, 6, 5)
+import imaging_methods as im
+results = im.ResultManager.from_json("density_scan/results.json")
+bp = results.get_blob_params_for_shot(shot, 6, 5)
+print(bp)
+
+# movie_2dca_with_contours(1160616009, 6, 5, run_2dca=True)
