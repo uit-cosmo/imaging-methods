@@ -46,15 +46,16 @@ def process_point(args, manager, results):
     try:
         # print(f"Working on shot {shot}, refx={refx}, refy={refy}")
         compute_and_store_conditional_averages(shot, refx, refy)
-        bp = analysis(shot, refx, refy, manager, do_plots=False)
-        #bp = update_partial_analysis(
-        #    shot,
-        #    refx,
-        #    refy,
-        #    manager,
-        #    results.get_blob_params_for_shot(shot, refx, refy),
-        #    do_plots=True,
-        #)
+        # bp = analysis(shot, refx, refy, manager, do_plots=False)
+        bp = update_partial_analysis(
+            shot,
+            refx,
+            refy,
+            manager,
+            results.get_blob_params_for_shot(shot, refx, refy),
+            do_plots=False,
+        )
+
         if bp is None:
             return None
         # Return data to be added to results
@@ -119,8 +120,8 @@ if __name__ == "__main__":
     )
 
     results = im.ResultManager.from_json("density_scan/results.json")
-    shots = [1140613027]
+    shots = manager.get_ohmic_shot_list()
     # shots = manager.get_ohmic_shot_list()
-    run_single_thread(shots, force_redo=True)
+    run_parallel(shots, force_redo=True)
 
     results.to_json("density_scan/results.json")

@@ -29,7 +29,7 @@ def plot_cond_av(shot, refx, refy, plot_inset_lcfs=False):
         return
 
     contours = get_contour_evolution(average.cond_av, 0.3)
-    #t_indexes = np.floor(np.linspace(0, average["time"].size - 7, num=8))
+    # t_indexes = np.floor(np.linspace(0, average["time"].size - 7, num=8))
     t_indexes = np.floor(np.linspace(15, average["time"].size - 19, num=8))
     fig, ax = plt.subplots(
         2, 4, figsize=(4 * 2.08, 2 * 2.08), gridspec_kw={"hspace": 0.4}
@@ -39,11 +39,7 @@ def plot_cond_av(shot, refx, refy, plot_inset_lcfs=False):
         # axe = ax[i // 5][i % 5]
         axe = ax[i // 4][i % 4]
         data = average["cond_av"].isel(time=int(t_indexes[i])).values
-        im = axe.imshow(
-            data,
-            origin="lower",
-            interpolation=None#"spline16",
-        )
+        im = axe.imshow(data, origin="lower", interpolation=None)  # "spline16",
         im.set_extent((ds.R[0, 0], ds.R[0, -1], ds.Z[0, 0], ds.Z[-1, 0]))
         # im.set_clim(0, np.max(data))
         im.set_clim(0, max_data)
@@ -74,6 +70,7 @@ def plot_cond_av(shot, refx, refy, plot_inset_lcfs=False):
 shot = 1140613027
 plot_cond_av(shot, 6, 5)
 import imaging_methods as im
+
 results = im.ResultManager.from_json("density_scan/results.json")
 bp = results.get_blob_params_for_shot(shot, 6, 5)
 print(bp)
