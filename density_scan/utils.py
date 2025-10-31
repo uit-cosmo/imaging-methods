@@ -37,7 +37,7 @@ def analysis(shot, refx, refy, manager, do_plots=True):
         shot, refx, refy, average_ds, gpi_ds, do_plots
     )
     taud, lam = get_taud_from_psd(shot, refx, refy, gpi_ds, do_plots)
-    lr, lz = plot_and_estimate_fwhm_sizes(shot, refx, refy, average_ds, do_plots)
+    lr, lz = plot_and_estimate_fwhm_sizes(shot, average_ds)
 
     return im.BlobParameters(
         vx_c=v_c,
@@ -67,12 +67,14 @@ def update_partial_analysis(shot, refx, refy, manager, bp, do_plots=True):
 
     # v_c, w_c, area_c = get_contour_parameters(shot, refx, refy, average_ds, do_plots)
     # v_2dca_tde, w_2dca_tde = get_2dca_tde_velocities(refx, refy, average_ds)
-    # v_tde, w_tde = get_tde_velocities(refx, refy, gpi_ds)
-    lx, ly, theta = get_gaussian_fit_sizes(
-        shot, refx, refy, average_ds, gpi_ds, do_plots
-    )
+    v_tde, w_tde = get_tde_velocities(refx, refy, gpi_ds)
+    # lx, ly, theta = get_gaussian_fit_sizes(
+    #    shot, refx, refy, average_ds, gpi_ds, do_plots
+    # )
     # taud, lam = get_taud_from_psd(shot, refx, refy, gpi_ds, do_plots)
     # lr, lz = get_fwhm_sizes(shot, refx, refy, average_ds, do_plots)
+    bp.vx_tde = v_tde
+    bp.vy_tde = w_tde
 
     return bp
 
@@ -81,10 +83,27 @@ def get_tde_velocities(refx, refy, gpi_ds):
     import velocity_estimation as ve
 
     eo = ve.EstimationOptions()
-    eo.cc_options.cc_window = method_parameters["2dca"]["window"] * im.get_dt(gpi_ds)
+    eo.method = ve.TDEMethod.CA
+
+    ccf_min_lag = 1
+    ca_min = 2.5
+    ca_max = np.inf
+    eo.cache = False
+
+    eo.use_3point_method = True
+    eo.neighbour_options = ve.NeighbourOptions(
+        ccf_min_lag=ccf_min_lag, max_separation=1, min_separation=1
+    )
+
+    eo.ca_options.length_of_return = 1e-4
+    eo.ca_options.distance = 0
+    eo.ca_options.min_threshold = ca_min
+    eo.ca_options.max_threshold = ca_max
+    eo.ca_options.interpolate = True
+
     try:
         pd = ve.estimate_velocities_for_pixel(
-            refx, refy, ve.CModImagingDataInterface(gpi_ds, get_dead_pixel_mask())
+            refx, refy, ve.CModImagingDataInterface(gpi_ds, get_dead_pixel_mask()), eo
         )
         vx, vy = pd.vx / 100, pd.vy / 100
     except ValueError:

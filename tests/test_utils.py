@@ -142,7 +142,7 @@ def plot_frames(ds, t_indexes, variable="frames"):
         axe.set_ylim((ds.Z[0, 0], ds.Z[-1, 0]))
         axe.set_xlim((ds.R[0, 0], ds.R[0, -1]))
         t = ds["time"].isel(time=int(t_indexes[i])).item()
-        axe.set_title(r"$t={:.2f}\,\tau_\text{{d}}$".format(t))
+        axe.set_title(r"$t={:.1f}\,\tau_\text{{d}}$".format(t))
 
     return fig
 
@@ -167,7 +167,7 @@ def plot_frames_with_contour(average, contours, t_indexes, variable="cond_av"):
         axe.set_ylim((average.Z[0, 0], average.Z[-1, 0]))
         axe.set_xlim((average.R[0, 0], average.R[0, -1]))
         t = average["time"].isel(time=int(t_indexes[i])).item()
-        axe.set_title(r"$t={:.2f}\,\tau_\text{{d}}$".format(t))
+        axe.set_title(r"$t={:.1f}\,\tau_\text{{d}}$".format(t))
 
     return fig
 
