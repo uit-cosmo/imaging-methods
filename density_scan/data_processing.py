@@ -10,11 +10,11 @@ import traceback
 
 def preprocess_data(shots):
     for shot in shots:
-        file_name = os.path.join("../data", f"apd_{shot}_preprocessed.nc")
+        file_name = os.path.join("data", f"apd_{shot}_preprocessed.nc")
         if os.path.exists(file_name):
             continue
         print("Preprocessing data for shot {}".format(shot))
-        ds = manager.read_shot_data(shot, data_folder="../data", preprocessed=False)
+        ds = manager.read_shot_data(shot, data_folder="data", preprocessed=False)
         ds = manager.preprocess_dataset(
             ds, radius=method_parameters["preprocessing"]["radius"]
         )
@@ -126,8 +126,9 @@ if __name__ == "__main__":
     )
 
     results = im.ResultManager.from_json("density_scan/results.json")
-    shots = [1160616011]
+    shots = [1160616026]
+    preprocess_data(shots)
     # shots = manager.get_ohmic_shot_list()
-    run_parallel(shots, force_redo=True)
+    # run_parallel(shots, force_redo=True)
 
     results.to_json("density_scan/results.json")

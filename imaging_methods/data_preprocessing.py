@@ -6,7 +6,32 @@ from scipy.interpolate import LinearNDInterpolator, NearestNDInterpolator
 from imaging_methods import get_t_start_end
 
 
-def interpolate_nans_3d(ds):
+mask = [
+    [True, True, False, True, False, False, True, True, True],
+    [False, False, False, False, False, False, False, True, True],
+    [True, False, False, False, True, False, False, False, True],
+    [False, False, False, True, False, False, False, False, False],
+    [True, False, False, False, False, False, False, False, True],
+    [False, False, False, False, False, False, False, False, True],
+    [False, False, False, False, False, False, False, True, False],
+    [False, True, False, True, False, False, False, False, True],
+    [True, True, False, False, False, False, False, False, False],
+    [False, False, True, False, False, False, False, False, False],
+]
+
+
+def get_dead_pixel_mask():
+    return xr.DataArray(
+        mask[::-1],
+        dims=["y", "x"],
+        coords={
+            "y": range(10),
+            "x": range(9),
+        },
+    )
+
+
+def interpolate_nans_3d(ds, use_mask=True):
     """
     Replace NaN values in a 3D xarray dataset with linear interpolation along spatial dimensions
     using LinearNDInterpolator.
@@ -22,16 +47,17 @@ def interpolate_nans_3d(ds):
         raise ValueError(f"ds must contain 'frames' with dims ('y', 'x', 'time')")
     if ds["frames"].isnull().all():
         raise ValueError("All frame values are NaN")
-    if not ds["frames"].isnull().any():
-        return ds.copy()
 
     frames = ds["frames"].values  # Shape: (ny, nx, nt)
     ny, nx, nt = frames.shape
 
     # Get the NaN mask (constant across time)
-    nan_mask = np.isnan(frames[:, :, 0])
+    # nan_mask = np.isnan(frames[:, :, 0])
+    nan_mask = get_dead_pixel_mask().values
     if nan_mask.all():
         raise ValueError("All pixels are NaN in the first time step")
+    if not nan_mask.any():
+        return ds.copy()
 
     # Coordinate setup for all points
     y_indices, x_indices = np.indices((ny, nx))
