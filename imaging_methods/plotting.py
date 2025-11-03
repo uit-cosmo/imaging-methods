@@ -31,7 +31,7 @@ def plot_2dca_zero_lag(ds, average, ax):
     ax.set_xlim((np.min(average.R.values), average.R[0, -1]))
     ax.set_xticks([88, 89, 90, 91])
     refx, refy = average["refx"].item(), average["refy"].item()
-    # ax.set_title(r"$R_*={:.2f} $cm".format(average.R[refy, refx]))
+    ax.set_title(r"$R_*={:.2f} $cm".format(average.R[refy, refx]))
 
     if ds is not None:
         limit_spline = interpolate.interp1d(ds["zlimit"], ds["rlimit"], kind="cubic")

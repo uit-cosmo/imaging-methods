@@ -29,9 +29,8 @@ if __name__ == "__main__":
     manager = GPIDataAccessor(
         "/home/sosno/Git/experimental_database/plasma_discharges.json"
     )
-    for shot in manager.get_shot_list_by_confinement(["EDA-H", "ELM-free-H"]):
-        print(f"Shot {shot}")
-        movie_2dca_with_contours(shot, 6, 5)
+
+    movie_2dca_with_contours(shot, refx, refy)
 
     output_name = "2dca_{}_{}{}.gif".format(shot, refx, refy)
     # os.system(

@@ -97,8 +97,8 @@ def run_parallel(shots, force_redo=False):
 
 def run_single_thread(shots, force_redo=False):
     for shot in shots:
-        for refx in range(9):
-            for refy in range(10):
+        for refx in [3]:  # range(9):
+            for refy in [6]:  # range(10):
                 if (
                     results.get_blob_params_for_shot(shot, refx, refy) is not None
                     and not force_redo
@@ -106,7 +106,7 @@ def run_single_thread(shots, force_redo=False):
                     return
                 print(f"Working on shot {shot} and pixel {refx}{refy}")
                 compute_and_store_conditional_averages(shot, refx, refy)
-                bp = analysis(shot, refx, refy, manager, do_plots=False)
+                bp = analysis(shot, refx, refy, manager, do_plots=True)
                 if bp is None:
                     continue
                 if shot not in results.shots:
@@ -119,10 +119,10 @@ if __name__ == "__main__":
         "/home/sosno/Git/experimental_database/plasma_discharges.json"
     )
 
-    # results = im.ResultManager.from_json("density_scan/results.json")
+    results = im.ResultManager.from_json("density_scan/results.json")
 
-    preprocess_data(manager.get_ohmic_shot_list())
-    # shots = manager.get_ohmic_shot_list()
+    shots = [1160616025]
+    run_single_thread(shots, force_redo=True)
     # run_parallel(shots, force_redo=True)
 
-    # results.to_json("density_scan/results.json")
+    results.to_json("density_scan/results.json")

@@ -146,7 +146,7 @@ def find_maximum_interpolate(x, y):
     return max_time, spline(max_time)
 
 
-def get_maximum_time(e, refx=None, refy=None):
+def get_maximum_time(e, refx=None, refy=None, gauss_convolve=False):
     """
     Given an event e find the time at which the maximum amplitude is achieved. Data is convolved with a gaussian with
     standard deviation 3.
@@ -159,11 +159,13 @@ def get_maximum_time(e, refx=None, refy=None):
     is_in_boundaries = 0 <= refx < e.R.sizes["x"] and 0 <= refy < e.R.sizes["y"]
     if not is_in_boundaries:
         return None
-    convolved_times, convolved_data = gaussian_convolve(
-        e.isel(x=refx, y=refy), e.time, s=3
-    )
-    tau, _ = find_maximum_interpolate(convolved_times, convolved_data)
-    if tau <= np.min(convolved_times) or tau >= np.max(convolved_times):
+    if gauss_convolve:
+        times, data = gaussian_convolve(e.isel(x=refx, y=refy), e.time, s=3)
+    else:
+        times, data = e.time, e.isel(x=refx, y=refy)
+
+    tau, _ = find_maximum_interpolate(times, data)
+    if tau <= np.min(times) or tau >= np.max(times):
         warnings.warn(
             "Time delay found at the window edge, consider running 2DCA with a larger window"
         )

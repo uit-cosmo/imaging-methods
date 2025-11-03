@@ -188,6 +188,7 @@ def full_analysis(
     )
 
     tdca_params = method_parameters["2dca"]
+    refx, refy = tdca_params["refx"], tdca_params["refy"]
     events, average_ds = im.find_events_and_2dca(
         ds,
         tdca_params["refx"],
@@ -276,6 +277,23 @@ def full_analysis(
 
     results_file_name = os.path.join(figures_dir, "results_{}.eps".format(suffix))
     plt.savefig(results_file_name, bbox_inches="tight")
+    plt.close(fig)
+
+    fig, ax = plt.subplots(3, 3, figsize=(5, 5))
+
+    for i in [-1, 0, 1]:
+        for j in [-1, 0, 1]:
+            axe = ax[i + 1][j + 1]
+            values = average_ds.cond_av.isel(x=refx + i, y=refy + j).values
+            axe.plot(average_ds.time, values)
+            axe.vlines(
+                im.get_maximum_time(average_ds.cond_av, refx + i, refy + j),
+                0,
+                np.max(values),
+            )
+
+    tde_file_name = os.path.join(figures_dir, "tde_{}.eps".format(suffix))
+    plt.savefig(tde_file_name, bbox_inches="tight")
     plt.close(fig)
 
     bp = im.BlobParameters(

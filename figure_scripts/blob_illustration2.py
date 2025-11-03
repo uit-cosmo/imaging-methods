@@ -12,7 +12,7 @@ manager = GPIDataAccessor(
 )
 ds = manager.read_shot_data(shot, preprocessed=True)
 
-refy = 5
+refy = 6
 
 params = plt.rcParams
 cp.set_rcparams_dynamo(params, 2)
@@ -42,5 +42,5 @@ for refx in np.arange(1, 9):
     plot_2dca_zero_lag(ds, average, axe)
 
 
-plt.savefig("blob_motion_{}_{}.pdf".format(refy, shot), bbox_inches="tight")
+plt.savefig("cond_av_zero_lag_radial_{}_{}.pdf".format(refy, shot), bbox_inches="tight")
 plt.show()
