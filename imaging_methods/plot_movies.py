@@ -288,7 +288,6 @@ def movie_2dca_with_contours(shot, refx, refy, run_2dca=False):
         "/home/sosno/Git/experimental_database/plasma_discharges.json"
     )
     ds = manager.read_shot_data(shot, preprocessed=True)
-    ds = ds.sel(time=slice(0.85, 0.96))
 
     if run_2dca:
         events, average = find_events_and_2dca(
@@ -315,7 +314,7 @@ def movie_2dca_with_contours(shot, refx, refy, run_2dca=False):
         fig=fig,
         ax=ax,
         gif_name=output_name,
-        interpolation="spline16",
+        interpolation=None,  # "spline16",
         show=False,
     )
     fig.clf()

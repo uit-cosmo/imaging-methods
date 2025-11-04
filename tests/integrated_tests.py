@@ -16,7 +16,7 @@ nx = 8
 ny = 8
 dt = 0.1
 bs = BlobShapeImpl(BlobShapeEnum.gaussian, BlobShapeEnum.gaussian)
-K = 1000
+K = 8000
 
 # Method parameters
 method_parameters = {
