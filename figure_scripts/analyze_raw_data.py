@@ -13,32 +13,33 @@ manager = GPIDataAccessor(
 refx, refy = 6, 5
 
 
-def plot_raw_for_shot(shot):
-    ds = manager.read_shot_data(shot, preprocessed=False, data_folder="data")
+def plot_raw_for_shot(dataset, refx, refy):
     fig, ax = plt.subplots()
-    ax.plot(ds.time.values, ds.frames.isel(x=refx, y=refy).values)
+    ax.plot(dataset.time.values, dataset.frames.isel(x=refx, y=refy).values)
     ax.set_title(f"{shot}")
     plt.show()
 
 
-def plot_pdf(shot, refx, refy):
-    ds = manager.read_shot_data(shot, preprocessed=False, data_folder="data")
-    fig, ax = plt.subplots()
-    values = ds.frames.isel(x=refx, y=refy).values
+def plot_pdf(dataset, refx, refy, ax):
+    values = dataset.frames.isel(x=refx, y=refy).values
     hist, bin_edges = np.histogram(values, bins=50, density=True)
     bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2.0
     ax.plot(bin_centers, hist)
     ax.set_yscale("log")
-    ax.set_xlabel("Signal")
-    ax.set_ylabel("Probability")
-    ax.set_title(f"{refx}{refy}")
 
 
-shot = 1160616026
-plot_pdf(shot, 5, 4)
-plot_pdf(shot, 5, 6)
-plot_pdf(shot, 5, 5)
-plot_pdf(shot, 6, 5)
-plot_pdf(shot, 4, 5)
+def plot_multi_pdf(dataset):
+    fig, ax = plt.subplots(10, 9, figsize=(35, 35))
+    for x in range(9):
+        for y in range(10):
+            axe = ax[9-y, x]
+            R, Z = dataset.R.isel(x=x, y=y).item(), dataset.Z.isel(x=x, y=y).item()
+            axe.set_title("R={:.2f} Z={:.2f}".format(R, Z))
+            plot_pdf(dataset, x, y, axe)
+    plt.savefig("apd_raw_pdf_{}.pdf".format(shot), bbox_inches="tight")
 
-plt.show()
+shot = 1160927003
+ds = manager.read_shot_data(shot, preprocessed=False, data_folder="data")
+
+# plot_multi_pdf(ds)
+plot_raw_for_shot(ds, 6, 5)

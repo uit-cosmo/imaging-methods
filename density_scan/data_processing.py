@@ -97,8 +97,8 @@ def run_parallel(shots, force_redo=False):
 
 def run_single_thread(shots, force_redo=False):
     for shot in shots:
-        for refx in [3]:  # range(9):
-            for refy in [6]:  # range(10):
+        for refx in range(9):
+            for refy in range(10):
                 if (
                     results.get_blob_params_for_shot(shot, refx, refy) is not None
                     and not force_redo
@@ -126,7 +126,6 @@ if __name__ == "__main__":
     ]
 
     results = im.ResultManager.from_json("density_scan/results.json")
+    run_parallel(shots)
 
-    preprocess_data(shots)
-
-    #results.to_json("density_scan/results.json")
+    results.to_json("density_scan/results.json")
