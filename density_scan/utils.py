@@ -3,6 +3,7 @@ import xarray as xr
 import os
 import numpy as np
 import imaging_methods as im
+from build.lib.imaging_methods import BlobParameters
 from method_parameters import method_parameters
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from dead_pixel_mask import get_dead_pixel_mask
@@ -58,23 +59,23 @@ def analysis(shot, refx, refy, manager, do_plots=True):
     )
 
 
-def update_partial_analysis(shot, refx, refy, manager, bp, do_plots=True):
+def update_partial_analysis(shot, refx, refy, manager, bp: BlobParameters, do_plots=True):
     average_ds = get_average(shot, refx, refy)
     if average_ds is None:
         print(f"The dataset is empty for shot {shot}, ignoring...")
         return None
     gpi_ds = manager.read_shot_data(shot, data_folder="data")
 
-    # v_c, w_c, area_c = get_contour_parameters(shot, refx, refy, average_ds, do_plots)
+    v_c, w_c, area_c = get_contour_parameters(shot, refx, refy, average_ds, do_plots)
     # v_2dca_tde, w_2dca_tde = get_2dca_tde_velocities(refx, refy, average_ds)
-    v_tde, w_tde = get_tde_velocities(refx, refy, gpi_ds)
+    # v_tde, w_tde = get_tde_velocities(refx, refy, gpi_ds)
     # lx, ly, theta = get_gaussian_fit_sizes(
     #    shot, refx, refy, average_ds, gpi_ds, do_plots
     # )
     # taud, lam = get_taud_from_psd(shot, refx, refy, gpi_ds, do_plots)
     # lr, lz = get_fwhm_sizes(shot, refx, refy, average_ds, do_plots)
-    bp.vx_tde = v_tde
-    bp.vy_tde = w_tde
+    bp.vx_c = v_c
+    bp.vy_c = w_c
 
     return bp
 
@@ -208,6 +209,10 @@ def get_gaussian_fit_sizes(shot, refx, refy, average_ds, gpi_ds, do_plots):
 def get_2dca_tde_velocities(refx, refy, average_ds):
     v_f, w_f = im.get_3tde_velocities(average_ds.cond_av, refx, refy)
     return v_f / 100, w_f / 100
+
+
+def get_velocity_method_max(shot, refx, refy, average_ds, do_plots):
+    return
 
 
 def get_contour_parameters(shot, refx, refy, average_ds, do_plots):

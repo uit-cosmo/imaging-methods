@@ -22,13 +22,15 @@ manager = im.GPIDataAccessor(
     "/home/sosno/Git/experimental_database/plasma_discharges.json"
 )
 
-# shot = 1160616027
-shot = 1140613026
+shot = 1160616016
+# shot = 1140613026
 # shot = 1120814031
 ds = manager.read_shot_data(shot, data_folder="../data")
 
 fig, ax = plt.subplots(1, 2, figsize=(2 * 3.3, 1 * 3.3), gridspec_kw={"wspace": 0.5})
 im.plot_skewness_and_flatness(ds, shot, fig, ax)
+plt.savefig("skew_flat_{}.pdf".format(shot), bbox_inches="tight")
+plt.close(fig)
 
 ne = np.transpose(results.get_blob_param_array(shot, "number_events"))
 vx_c = np.transpose(results.get_blob_param_array(shot, "vx_c"))
@@ -42,8 +44,8 @@ ly = np.transpose(results.get_blob_param_array(shot, "ly_f"))
 theta = np.transpose(results.get_blob_param_array(shot, "theta_f"))
 
 
-def plot_velocity_field(vx, vy, title):
-    fig, ax = plt.subplots(figsize=(3, 3))
+def plot_velocity_field(vx, vy, title, file_suffix):
+    fig, ax = plt.subplots(figsize=(3.5, 3.5))
     qiv = ax.quiver(
         ds.R.values,
         ds.Z.values,
@@ -67,9 +69,14 @@ def plot_velocity_field(vx, vy, title):
     cbar = fig.colorbar(qiv, format="%.1f")
     cbar.ax.set_ylabel(r"\#Events", rotation=270, labelpad=13)
     im.add_limiter_and_lcfs(ds, ax)
-    ax.set_title(title)
+    ave_v = np.nanmean(vx[2:8, 4:7])
+    ave_w = np.nanmean(vy[2:8, 4:7])
+    ax.set_title(r"$<v>, <w> = {:.2f},\, {:.2f}$".format(ave_v, ave_w)+" m/s", pad=10)
     ax.set_ylim((ds.Z[0, 0] - 0.25, ds.Z[-1, 0] + 0.25))
     ax.set_xlim((ds.R[0, 0] - 0.25, ds.R[0, -1] + 0.25))
+
+    plt.savefig("velocity_field_{}_{}.pdf".format(shot, file_suffix), bbox_inches="tight")
+    plt.close(fig)
 
 
 def plot_ellipse_field(lx, ly, theta, title):
@@ -110,22 +117,23 @@ def plot_ellipse_field(lx, ly, theta, title):
     im.add_limiter_and_lcfs(ds, ax)
 
     # Set plot properties
-    ax.set_title(title)
+    sizes = np.sqrt(lx*ly)
+    ave_size = np.nanmean(sizes[2:8, 4:7])
+    title = r"$<\sqrt{\ell_x \ell_y}>=$"
+    ax.set_title(title + r"${:.2f}$ cm".format(ave_size*100))
     ax.set_ylim((ds.Z[0, 0] - 0.25, ds.Z[-1, 0] + 0.25))
     ax.set_xlim((ds.R[0, 0] - 0.25, ds.R[0, -1] + 0.25))
     ax.set_xlabel("R")
     ax.set_ylabel("Z")
 
-    return fig, ax
+    plt.savefig("ellipse_field_{}.pdf".format(shot), bbox_inches="tight")
+    plt.close(fig)
 
 
-plot_velocity_field(vx_c, vy_c, r"$v_c$")
+plot_velocity_field(vx_c, vy_c, r"$v_c$", file_suffix="C")
 plt.savefig("vc_{}.pdf".format(shot), bbox_inches="tight")
-plot_velocity_field(vx_2dca_tde, vy_2dca_tde, r"$v_\text{TDE}^\text{2dca}$")
-plot_velocity_field(vx_tde, vy_tde, r"$v_\text{TDE}$")
+plot_velocity_field(vx_2dca_tde, vy_2dca_tde, r"$v_\text{TDE}^\text{2dca}$", file_suffix="2DCA_TDE")
+plot_velocity_field(vx_tde, vy_tde, r"$v_\text{TDE}$", file_suffix="CCTDE")
 plot_ellipse_field(lx, ly, theta, r"Blob fit")
-
-
-plt.show()
 
 print("LOL")

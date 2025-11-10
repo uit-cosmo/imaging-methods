@@ -46,15 +46,15 @@ def process_point(args, manager, results):
     try:
         # print(f"Working on shot {shot}, refx={refx}, refy={refy}")
         compute_and_store_conditional_averages(shot, refx, refy)
-        bp = analysis(shot, refx, refy, manager, do_plots=False)
-        # bp = update_partial_analysis(
-        #    shot,
-        #    refx,
-        #    refy,
-        #    manager,
-        #    results.get_blob_params_for_shot(shot, refx, refy),
-        #    do_plots=False,
-        # )
+        # bp = analysis(shot, refx, refy, manager, do_plots=False)
+        bp = update_partial_analysis(
+           shot,
+           refx,
+           refy,
+           manager,
+           results.get_blob_params_for_shot(shot, refx, refy),
+           do_plots=False,
+        )
 
         if bp is None:
             return None

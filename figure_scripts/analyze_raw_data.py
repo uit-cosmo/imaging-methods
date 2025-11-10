@@ -18,6 +18,7 @@ def plot_raw_for_shot(dataset, refx, refy):
     ax.plot(dataset.time.values, dataset.frames.isel(x=refx, y=refy).values)
     ax.set_title(f"{shot}")
     plt.show()
+    plt.savefig("raw_intensity_{}_{}{}.pdf".format(shot, refx, refy), bbox_inches="tight")
 
 
 def plot_pdf(dataset, refx, refy, ax):
@@ -38,8 +39,8 @@ def plot_multi_pdf(dataset):
             plot_pdf(dataset, x, y, axe)
     plt.savefig("apd_raw_pdf_{}.pdf".format(shot), bbox_inches="tight")
 
-shot = 1160927003
+shot = 1160629026
 ds = manager.read_shot_data(shot, preprocessed=False, data_folder="data")
 
-# plot_multi_pdf(ds)
+plot_multi_pdf(ds)
 plot_raw_for_shot(ds, 6, 5)

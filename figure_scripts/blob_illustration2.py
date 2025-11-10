@@ -6,13 +6,13 @@ from imaging_methods import *
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import cosmoplots as cp
 
-shot = 1160616027
+shot = 1160629026
 manager = GPIDataAccessor(
     "/home/sosno/Git/experimental_database/plasma_discharges.json"
 )
 ds = manager.read_shot_data(shot, preprocessed=True)
 
-refy = 6
+refy = 5
 
 params = plt.rcParams
 cp.set_rcparams_dynamo(params, 2)
