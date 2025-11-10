@@ -118,9 +118,15 @@ if __name__ == "__main__":
     manager = im.GPIDataAccessor(
         "/home/sosno/Git/experimental_database/plasma_discharges.json"
     )
+    
+    shots = [
+        1160629026,
+        1160629031,
+        1160927003,
+    ]
 
     results = im.ResultManager.from_json("density_scan/results.json")
 
-    run_parallel(manager.get_ohmic_shot_list(), force_redo=True)
+    preprocess_data(shots)
 
-    results.to_json("density_scan/results.json")
+    #results.to_json("density_scan/results.json")
