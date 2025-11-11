@@ -46,15 +46,15 @@ def process_point(args, manager, results):
     try:
         # print(f"Working on shot {shot}, refx={refx}, refy={refy}")
         compute_and_store_conditional_averages(shot, refx, refy)
-        # bp = analysis(shot, refx, refy, manager, do_plots=False)
-        bp = update_partial_analysis(
-           shot,
-           refx,
-           refy,
-           manager,
-           results.get_blob_params_for_shot(shot, refx, refy),
-           do_plots=False,
-        )
+        bp = analysis(shot, refx, refy, manager, do_plots=True)
+        # bp = update_partial_analysis(
+        #   shot,
+        #   refx,
+        #   refy,
+        #   manager,
+        #   results.get_blob_params_for_shot(shot, refx, refy),
+        #   do_plots=False,
+        # )
 
         if bp is None:
             return None
@@ -118,14 +118,12 @@ if __name__ == "__main__":
     manager = im.GPIDataAccessor(
         "/home/sosno/Git/experimental_database/plasma_discharges.json"
     )
-    
+
     shots = [
-        1160629026,
-        1160629031,
-        1160927003,
+        1160616026,
     ]
 
     results = im.ResultManager.from_json("density_scan/results.json")
-    run_parallel(shots)
+    run_parallel(shots, force_redo=True)
 
     results.to_json("density_scan/results.json")

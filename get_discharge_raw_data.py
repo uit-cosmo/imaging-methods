@@ -8,12 +8,12 @@ def retrieve_data_from_tree(shot, send_to_fusion=False):
 
     try:
         # subprocess.run(["ssh", "mfe", f"python3 gpi_apd.py {shot}"])
-        #result = subprocess.run(
+        # result = subprocess.run(
         #    ["scp", "-pr", f"mfe:~/apd_{shot}.nc", "data/"],
         #    check=True,  # Raise error on non-zero exit
         #    capture_output=True,  # Capture stdout/stderr
         #    text=True,  # Decode as text
-        #)
+        # )
 
         result = subprocess.run(
             ["scp", "-pr", f"data/apd_{shot}.nc", "fusion:~/imaging-methods/data/"],

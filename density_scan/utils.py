@@ -29,9 +29,12 @@ def analysis(shot, refx, refy, manager, do_plots=True):
     if average_ds is None:
         print(f"The dataset is empty for shot {shot}, ignoring...")
         return None
+    average_ds = im.preprocess_average_ds(average_ds, threshold=1)
     gpi_ds = manager.read_shot_data(shot, data_folder="data")
 
-    v_c, w_c, area_c = get_contour_parameters(shot, refx, refy, average_ds, do_plots)
+    v_c, w_c, area_c = get_contour_parameters(
+        shot, refx, refy, average_ds, do_plots, gpi_ds
+    )
     v_2dca_tde, w_2dca_tde = get_2dca_tde_velocities(refx, refy, average_ds)
     v_tde, w_tde = get_tde_velocities(refx, refy, gpi_ds)
     lx, ly, theta = get_gaussian_fit_sizes(
@@ -59,14 +62,18 @@ def analysis(shot, refx, refy, manager, do_plots=True):
     )
 
 
-def update_partial_analysis(shot, refx, refy, manager, bp: BlobParameters, do_plots=True):
+def update_partial_analysis(
+    shot, refx, refy, manager, bp: BlobParameters, do_plots=True
+):
     average_ds = get_average(shot, refx, refy)
     if average_ds is None:
         print(f"The dataset is empty for shot {shot}, ignoring...")
         return None
     gpi_ds = manager.read_shot_data(shot, data_folder="data")
 
-    v_c, w_c, area_c = get_contour_parameters(shot, refx, refy, average_ds, do_plots)
+    v_c, w_c, area_c = get_contour_parameters(
+        shot, refx, refy, average_ds, do_plots, gpi_ds
+    )
     # v_2dca_tde, w_2dca_tde = get_2dca_tde_velocities(refx, refy, average_ds)
     # v_tde, w_tde = get_tde_velocities(refx, refy, gpi_ds)
     # lx, ly, theta = get_gaussian_fit_sizes(
@@ -215,7 +222,7 @@ def get_velocity_method_max(shot, refx, refy, average_ds, do_plots):
     return
 
 
-def get_contour_parameters(shot, refx, refy, average_ds, do_plots):
+def get_contour_parameters(shot, refx, refy, average_ds, do_plots, gpi_ds):
     contour_ds = im.get_contour_evolution(
         average_ds.cond_av,
         method_parameters["contouring"]["threshold_factor"],
@@ -236,6 +243,7 @@ def get_contour_parameters(shot, refx, refy, average_ds, do_plots):
         im.show_movie_with_contours(
             average_ds,
             contour_ds,
+            gpi_ds,
             "cond_av",
             lims=(0, 3),
             gif_name=gif_file_name,

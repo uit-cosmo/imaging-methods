@@ -200,3 +200,43 @@ def find_events_and_2dca(
         return processed, cond_av_ds
 
     return processed, xr.Dataset()
+
+
+def preprocess_average_ds(
+    average_ds: xr.Dataset, var_name: str = "cond_av", threshold: float = 0.0
+) -> xr.Dataset:
+    """
+    Normalize average_ds.var_name with the maximum of each pixel, pixels under threshold are set to 0.
+    """
+    if var_name not in average_ds:
+        raise ValueError(f"Dataset must contain the variable '{var_name}'")
+
+    data_var = average_ds[var_name]
+    if set(data_var.dims) != {"time", "x", "y"}:
+        raise ValueError(f"'{var_name}' must have dimensions ('time', 'x', 'y')")
+
+    # Compute max over time for each (x, y)
+    max_per_pixel = data_var.max(dim="time", skipna=True)
+
+    # Mask for normalization
+    mask = max_per_pixel > threshold
+
+    # Normalizer: max where mask, else 1 (no change)
+    normalizer = max_per_pixel.where(mask, other=1e10)
+
+    # Normalize conditionally
+    normalized_var = data_var / normalizer
+
+    # Handle potential division by zero (though unlikely with threshold)
+    normalized_var = normalized_var.where(normalizer != 0, other=0.0)
+
+    # Create new Dataset
+    processed_ds = average_ds.copy()
+    processed_ds[var_name] = normalized_var
+
+    # Update attributes
+    processed_ds.attrs["preprocessing"] = (
+        f"Normalized each pixel to max=1 over time where max > {threshold}"
+    )
+
+    return processed_ds
