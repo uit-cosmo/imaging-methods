@@ -4,6 +4,8 @@ import numpy as np
 from test_utils import *
 import cosmoplots as cp
 
+from tests.integrated_tests import MAKE_PLOTS
+
 plt.style.use(["cosmoplots.default"])
 plt.rcParams["text.latex.preamble"] = (
     r"\usepackage{amsmath} \usepackage{mathptmx} \usepackage{amssymb} "
@@ -59,7 +61,7 @@ ds = make_2d_realization(
     bs=bs,
 )
 ds = im.run_norm_ds(ds, method_parameters["preprocessing"]["radius"])
-bp = full_analysis(ds, method_parameters, "a")
+bp = full_analysis(ds, method_parameters, "a", do_plots=MAKE_PLOTS)
 print(bp)
 
 assert np.abs(bp.vx_c - vx_input) < 0.05, "Wrong contour x velocity"

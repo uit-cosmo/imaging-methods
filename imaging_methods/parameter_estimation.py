@@ -186,6 +186,16 @@ def get_3tde_velocities(e, refx, refy):
     return ve.get_2d_velocities_from_time_delays(taux, tauy, deltax, 0, 0, deltay)
 
 
+def get_2tde_velocities(e, refx, refy):
+    taux, tauy = get_delays(e, refx, refy)
+
+    deltax = e.R.isel(x=1, y=0).item() - e.R.isel(x=0, y=0).item()
+    deltay = e.Z.isel(x=0, y=1).item() - e.Z.isel(x=0, y=0).item()
+    vx = np.nan if taux == 0 else deltax / taux
+    vy = np.nan if tauy == 0 else deltay / tauy
+    return vx, vy
+
+
 def get_delays(e, refx, refy):
     ref_time = get_maximum_time(e, refx, refy)
     maxtime_right = get_maximum_time(e, refx + 1, refy)

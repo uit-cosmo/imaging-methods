@@ -9,6 +9,7 @@ plt.rcParams["text.latex.preamble"] = (
 )
 
 
+MAKE_PLOTS = False
 T = 1000
 Lx = 8
 Ly = 8
@@ -16,7 +17,7 @@ nx = 8
 ny = 8
 dt = 0.1
 bs = BlobShapeImpl(BlobShapeEnum.gaussian, BlobShapeEnum.gaussian)
-K = 8000
+K = 1000
 
 # Method parameters
 method_parameters = {
@@ -60,7 +61,7 @@ def test_case_a():
         bs=bs,
     )
     ds = im.run_norm_ds(ds, method_parameters["preprocessing"]["radius"])
-    bp = full_analysis(ds, method_parameters, "a")
+    bp = full_analysis(ds, method_parameters, "a", do_plots=MAKE_PLOTS)
     print(bp)
 
     assert np.abs(bp.vx_c - vx_input) < 0.05, "Wrong contour x velocity"
@@ -97,7 +98,7 @@ def test_case_b():
         bs=bs,
     )
     ds = im.run_norm_ds(ds, method_parameters["preprocessing"]["radius"])
-    bp = full_analysis(ds, method_parameters, "b")
+    bp = full_analysis(ds, method_parameters, "b", do_plots=MAKE_PLOTS)
     print(bp)
 
     assert np.abs(bp.vx_c - vx_input) < 0.05, "Wrong contour x velocity"
@@ -136,7 +137,7 @@ def test_case_c():
 
     sigma = 1
     ds = ds.assign(frames=ds["frames"] + sigma * np.random.random(ds.frames.shape))
-    bp = full_analysis(ds, method_parameters, "c")
+    bp = full_analysis(ds, method_parameters, "c", do_plots=MAKE_PLOTS)
     print(bp)
 
     assert np.abs(bp.vx_c - vx_input) < 0.2, "Wrong contour x velocity"
@@ -174,7 +175,7 @@ def test_case_d():
     )
     ds = im.run_norm_ds(ds, method_parameters["preprocessing"]["radius"])
 
-    bp = full_analysis(ds, method_parameters, "d")
+    bp = full_analysis(ds, method_parameters, "d", do_plots=MAKE_PLOTS)
     print(bp)
 
     assert np.abs(bp.vx_c - vx_input) < 0.2, "Wrong contour x velocity"
