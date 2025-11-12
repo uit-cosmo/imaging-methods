@@ -79,22 +79,40 @@ def make_0d_realization(duration, T=1e4, noise=0, dt=0.1, waiting_time=1):
     return times, signal
 
 
-def make_2d_realization(Lx, Ly, T, nx, ny, dt, num_blobs, vx, vy, lx, ly, theta, bs):
-    blobs = [
-        get_blob(
-            amplitude=np.random.exponential(),
-            vx=vx,
-            vy=vy,
-            posx=0,
-            posy=np.random.uniform(0, Ly),
-            lx=lx,
-            ly=ly,
-            t_init=np.random.uniform(0, T),
-            bs=bs,
-            theta=theta,
-        )
-        for _ in range(num_blobs)
-    ]
+def make_2d_realization(
+    Lx,
+    Ly,
+    T,
+    nx,
+    ny,
+    dt,
+    num_blobs,
+    vx,
+    vy,
+    lx,
+    ly,
+    theta,
+    bs,
+    blob_getter="deterministic",
+):
+    if blob_getter == "deterministic":
+        blobs = [
+            get_blob(
+                amplitude=np.random.exponential(),
+                vx=vx,
+                vy=vy,
+                posx=0,
+                posy=np.random.uniform(0, Ly),
+                lx=lx,
+                ly=ly,
+                t_init=np.random.uniform(0, T),
+                bs=bs,
+                theta=theta,
+            )
+            for _ in range(num_blobs)
+        ]
+    else:
+        blobs = [blob_getter() for _ in range(num_blobs)]
 
     bf = DeterministicBlobFactory(blobs)
 
@@ -252,6 +270,8 @@ def full_analysis(
         average_ds.cond_av, tdca_params["refx"], tdca_params["refy"]
     )
 
+    print(estimate_cc_tde_velocities(ds, refx, refy))
+
     taud, lam = im.DurationTimeEstimator(
         im.SecondOrderStatistic.PSD, im.Analytics.TwoSided
     ).estimate_duration_time(
@@ -341,3 +361,15 @@ def full_analysis(
     )
 
     return bp
+
+
+def estimate_cc_tde_velocities(ds, refx, refy):
+    import velocity_estimation as ve
+
+    eo = ve.EstimationOptions()
+    eo.method = ve.TDEMethod.CC
+
+    eo.use_3point_method = True
+
+    pd = ve.estimate_velocities_for_pixel(refx, refy, ve.CModImagingDataInterface(ds), eo)
+    return pd.vx, pd.vy

@@ -10,14 +10,14 @@ plt.rcParams["text.latex.preamble"] = (
 
 
 MAKE_PLOTS = False
-T = 1000
+T = 10000
 Lx = 8
 Ly = 8
 nx = 8
 ny = 8
 dt = 0.1
 bs = BlobShapeImpl(BlobShapeEnum.gaussian, BlobShapeEnum.gaussian)
-K = 1000
+K = 10000
 
 # Method parameters
 method_parameters = {
@@ -222,6 +222,66 @@ def test_case_e():
 
     assert np.abs(bp.vx_2dca_tde - vx_input) < 0.2, "Wrong TDE x velocity"
     assert np.abs(bp.vy_2dca_tde - vy_intput) < 0.2, "Wrong TDE y velocity"
+
+    assert np.abs(bp.taud_psd - 1) < 0.5, "Wrong duration time"
+    assert np.abs(bp.theta_f - theta_input) < 0.1, "Wrong tilt angle"
+
+
+def test_case_f():
+    """
+    Distribution of velocities
+    """
+
+    lx_input = 1
+    ly_input = 1
+    theta_input = 0
+    alpha_max = np.pi / 2
+    vx_input = 2 * np.sin(alpha_max) / (2 * alpha_max) if alpha_max != 0 else 1
+    vy_input = 0
+
+    def blob_getter():
+        alpha = np.random.uniform(-alpha_max, alpha_max)
+        u1 = np.random.uniform(0.5, 1.5)
+        u2 = np.random.uniform(-0.5, 0.5)
+        return get_blob(
+            amplitude=np.random.exponential(),
+            vx=u1,
+            vy=u2,
+            posx=0,
+            posy=np.random.uniform(0, Ly),
+            lx=1,
+            ly=1,
+            t_init=np.random.uniform(0, T),
+            bs=bs,
+            theta=0,
+        )
+
+    ds = make_2d_realization(
+        Lx,
+        Ly,
+        T,
+        nx,
+        ny,
+        dt,
+        K,
+        vx=vx_input,
+        vy=vy_input,
+        lx=lx_input,
+        ly=ly_input,
+        theta=theta_input,
+        bs=bs,
+        blob_getter=blob_getter,
+    )
+    ds = im.run_norm_ds(ds, method_parameters["preprocessing"]["radius"])
+    bp = full_analysis(ds, method_parameters, "a", do_plots=MAKE_PLOTS)
+    print(bp)
+    return
+
+    assert np.abs(bp.vx_c - vx_input) < 0.05, "Wrong contour x velocity"
+    assert np.abs(bp.vy_c - vy_input) < 0.05, "Wrong contour y velocity"
+
+    assert np.abs(bp.vx_2dca_tde - vx_input) < 0.2, "Wrong TDE x velocity"
+    assert np.abs(bp.vy_2dca_tde - vy_input) < 0.2, "Wrong TDE y velocity"
 
     assert np.abs(bp.taud_psd - 1) < 0.5, "Wrong duration time"
     assert np.abs(bp.theta_f - theta_input) < 0.1, "Wrong tilt angle"
