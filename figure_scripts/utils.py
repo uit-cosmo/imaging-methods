@@ -53,22 +53,40 @@ def get_blob(
     )
 
 
-def make_2d_realization(Lx, Ly, T, nx, ny, dt, num_blobs, vx, vy, lx, ly, theta, bs):
-    blobs = [
-        get_blob(
-            amplitude=np.random.exponential(),
-            vx=vx,
-            vy=vy,
-            posx=0,
-            posy=np.random.uniform(0, Ly),
-            lx=lx,
-            ly=ly,
-            t_init=np.random.uniform(0, T),
-            bs=bs,
-            theta=theta,
-        )
-        for _ in range(num_blobs)
-    ]
+def make_2d_realization(
+        Lx,
+        Ly,
+        T,
+        nx,
+        ny,
+        dt,
+        num_blobs,
+        vx,
+        vy,
+        lx,
+        ly,
+        theta,
+        bs,
+        blob_getter="deterministic",
+):
+    if blob_getter == "deterministic":
+        blobs = [
+            get_blob(
+                amplitude=np.random.exponential(),
+                vx=vx,
+                vy=vy,
+                posx=0,
+                posy=np.random.uniform(0, Ly),
+                lx=lx,
+                ly=ly,
+                t_init=np.random.uniform(0, T),
+                bs=bs,
+                theta=theta,
+            )
+            for _ in range(num_blobs)
+        ]
+    else:
+        blobs = [blob_getter() for _ in range(num_blobs)]
 
     bf = DeterministicBlobFactory(blobs)
 

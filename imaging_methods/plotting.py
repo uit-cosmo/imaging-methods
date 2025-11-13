@@ -12,7 +12,7 @@ def plot_2dca_zero_lag(ds, average, ax):
     im = ax.imshow(
         data,
         origin="lower",
-        interpolation="spline16",
+        interpolation=None#"spline16",
     )
 
     half_pixel = (

@@ -19,7 +19,7 @@ cp.set_rcparams_dynamo(params, 1)
 plt.rcParams.update(params)
 
 fig, ax = plt.subplots(1, 3, sharey=True)
-plt.subplots_adjust(wspace=0, hspace=0)
+plt.subplots_adjust(wspace=0.1, hspace=0)
 
 
 def get_average(shot, refx, refy):
@@ -42,6 +42,12 @@ for refx in np.arange(4, 7):
     average = get_average(shot, refx, refy)
     plot_2dca_zero_lag(ds, average, axe)
 
+ax[0].set_ylabel(r"$Z$")
+ax[0].set_xlabel(r"$R$")
+ax[1].set_xlabel(r"$R$")
+ax[2].set_xlabel(r"$R$")
+ax[2].set_xticks([88, 89, 90, 91])
 
-plt.savefig("cond_av_zero_lag_radial_{}_{}.pdf".format(refy, shot), bbox_inches="tight")
+
+plt.savefig("cond_av_zero_lag_radial_{}_{}_no_interp.pdf".format(refy, shot), bbox_inches="tight")
 plt.show()
