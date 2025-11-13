@@ -49,5 +49,8 @@ ax[2].set_xlabel(r"$R$")
 ax[2].set_xticks([88, 89, 90, 91])
 
 
-plt.savefig("cond_av_zero_lag_radial_{}_{}_no_interp.pdf".format(refy, shot), bbox_inches="tight")
+plt.savefig(
+    "cond_av_zero_lag_radial_{}_{}_no_interp.pdf".format(refy, shot),
+    bbox_inches="tight",
+)
 plt.show()

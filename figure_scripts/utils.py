@@ -54,20 +54,20 @@ def get_blob(
 
 
 def make_2d_realization(
-        Lx,
-        Ly,
-        T,
-        nx,
-        ny,
-        dt,
-        num_blobs,
-        vx,
-        vy,
-        lx,
-        ly,
-        theta,
-        bs,
-        blob_getter="deterministic",
+    Lx,
+    Ly,
+    T,
+    nx,
+    ny,
+    dt,
+    num_blobs,
+    vx,
+    vy,
+    lx,
+    ly,
+    theta,
+    bs,
+    blob_getter="deterministic",
 ):
     if blob_getter == "deterministic":
         blobs = [
@@ -99,7 +99,7 @@ def make_2d_realization(
         T=T,
         num_blobs=num_blobs,
         blob_shape=BlobShapeImpl(),
-        periodic_y=False,
+        periodic_y=True,  # Set to true so that high vertical velocities makes sense
         t_drain=1e10,
         blob_factory=bf,
         verbose=True,

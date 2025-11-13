@@ -371,5 +371,7 @@ def estimate_cc_tde_velocities(ds, refx, refy):
 
     eo.use_3point_method = True
 
-    pd = ve.estimate_velocities_for_pixel(refx, refy, ve.CModImagingDataInterface(ds), eo)
+    pd = ve.estimate_velocities_for_pixel(
+        refx, refy, ve.CModImagingDataInterface(ds), eo
+    )
     return pd.vx, pd.vy

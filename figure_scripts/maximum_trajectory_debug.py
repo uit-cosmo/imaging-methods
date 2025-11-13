@@ -111,7 +111,7 @@ def movie(
 
 
 average = get_average(shot, refx, refy)
-average = preprocess_average_ds(average, threshold=1)
+# average = preprocess_average_ds(average, threshold=1)
 
 contour_ds = get_contour_evolution(
     average.cond_av, 0.8, max_displacement_threshold=None, com_method="global"
@@ -161,10 +161,25 @@ ax[1].vlines(-tauy, np.nanmin(com_da.values[:, 1]), np.nanmax(com_da.values[:, 1
 plt.savefig("trajectories.pdf", bbox_inches="tight")
 
 fig, ax = plt.subplots()
+max_cond_av = average.cond_av.max().item()
 
-ax.plot(average.time.values, average.cond_av.isel(x=refx - 1, y=refy), color="blue")
-ax.plot(average.time.values, average.cond_av.isel(x=refx, y=refy), color="red")
-ax.plot(average.time.values, average.cond_av.isel(x=refx + 1, y=refy), color="black")
+ax.plot(
+    average.time.values,
+    average.cond_av.isel(x=refx - 1, y=refy) / max_cond_av,
+    color="blue",
+)
+ax.plot(
+    average.time.values, average.cond_av.isel(x=refx, y=refy) / max_cond_av, color="red"
+)
+ax.plot(
+    average.time.values,
+    average.cond_av.isel(x=refx + 1, y=refy) / max_cond_av,
+    color="black",
+)
+ax.plot(
+    average.time.values, average.cond_repr.max(dim=["x", "y"]), color="black", ls="--"
+)
+
 
 plt.savefig("pixel_intensity.pdf", bbox_inches="tight")
 plt.show()

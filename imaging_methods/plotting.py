@@ -9,11 +9,7 @@ def plot_2dca_zero_lag(ds, average, ax):
     zfine = np.linspace(-8, 1, 100)
 
     data = average["cond_av"].sel(time=0).values
-    im = ax.imshow(
-        data,
-        origin="lower",
-        interpolation=None#"spline16",
-    )
+    im = ax.imshow(data, origin="lower", interpolation=None)  # "spline16",
 
     half_pixel = (
         0.38 / 2

@@ -17,57 +17,22 @@ params = plt.rcParams
 cp.set_rcparams_dynamo(params, 1)
 plt.rcParams.update(params)
 
-T = 1000
+T = 10000
 Lx = 8
 Ly = 8
 nx = 8
 ny = 8
 dt = 0.1
 bs = BlobShapeImpl(BlobShapeEnum.gaussian, BlobShapeEnum.gaussian)
-K = 1000
+K = 10000
 
 vx_input = 1
 vy_intput = 0
 lx_input = 1
 ly_input = 1
 
-alpha_max = np.pi / 4
-vx_input = 2 * np.sin(alpha_max) / (2 * alpha_max) if alpha_max != 0 else 1
-vy_input = 0
-
-
-def blob_getter():
-    alpha = np.random.uniform(-alpha_max, alpha_max)
-    return get_blob(
-        amplitude=np.random.exponential(),
-        vx=1,#np.random.uniform(0.5, 1.5),
-        vy=0,#np.random.uniform(-1, 1),
-        posx=0,
-        posy=np.random.uniform(0, Ly),
-        lx=1,
-        ly=1,
-        t_init=np.random.uniform(0, T),
-        bs=bs,
-        theta=0,
-    )
-
-
-ds = make_2d_realization(
-    Lx,
-    Ly,
-    T,
-    nx,
-    ny,
-    dt,
-    K,
-    vx=vx_input,
-    vy=vy_intput,
-    lx=lx_input,
-    ly=ly_input,
-    theta=0,
-    bs=bs,
-    blob_getter=blob_getter
-)
+rand_coeff = 0.5
+ds = make_decoherence_realization(rand_coeff=rand_coeff)
 ds = im.run_norm_ds(ds, method_parameters["preprocessing"]["radius"])
 
 tdca_params = method_parameters["2dca"]
@@ -92,11 +57,13 @@ velocity_ds = im.get_contour_velocity(
     method_parameters["contouring"]["com_smoothing"],
 )
 
-vx_c, vy_c, vx_cc_tde, vy_cc_tde, confidence, vx_2dca_tde, vy_2dca_tde, cond_repr = estimate_velocities(ds, method_parameters)
+vx_c, vy_c, vx_cc_tde, vy_cc_tde, confidence, vx_2dca_tde, vy_2dca_tde, cond_repr = (
+    estimate_velocities(ds, method_parameters)
+)
 
-gif_file_name = "contours_decoherence_synthetic.gif"
+gif_file_name = "contours_decoherence_synthetic_{}.gif".format(rand_coeff)
 
-plot_contours = False
+plot_contours = True
 
 if plot_contours:
     im.show_movie_with_contours(
@@ -116,7 +83,7 @@ if plot_contours:
         apd_dataset=None,
         variable="cond_repr",
         lims=(0, 1),
-        gif_name="cond_repr.gif",
+        gif_name="cond_repr_{}.gif".format(rand_coeff),
         interpolation="spline16",
         show=False,
     )
@@ -124,32 +91,86 @@ if plot_contours:
 print("CC 3TDE velocities: {:.2f} {:.2f}".format(vx_cc_tde, vy_cc_tde))
 print("2DCA 3TDE velocities: {:.2f} {:.2f}".format(vx_2dca_tde, vy_2dca_tde))
 print("C velocities: {:.2f} {:.2f}".format(vx_c, vy_c))
-print("Avg input velocities: {:.2f} {:.2f}".format(vx_input, vy_input))
 print("Confidence: {:.2f}".format(confidence))
-print("Cond. Repr.: {:.2f}".format(cond_repr))
+print("Cond. Repr. Index: {:.2f}".format(cond_repr))
 
 tau_x_index = int(1 / vx_c / dt)
-print("Cond repr at neighbour: {:.2f}".format(np.max(average_ds.cond_repr.isel(x=5, y=4).values)))
+print(
+    "Cond repr at neighbour: {:.2f}".format(
+        np.max(average_ds.cond_repr.isel(x=5, y=4).values)
+    )
+)
 
-fig, ax = plt.subplots()
+# === Enhanced Plotting Section ===
+fig, axes = plt.subplots(3, 1, figsize=(8, 6), sharex=True, constrained_layout=True)
 
-ax.plot(average_ds.time.values, average_ds.cond_av.isel(x=3, y=4).values)
-ax.plot(average_ds.time.values, average_ds.cond_av.isel(x=4, y=4).values)
-ax.plot(average_ds.time.values, average_ds.cond_av.isel(x=5, y=4).values)
-ax.plot(average_ds.time.values, average_ds.cond_av.isel(x=4, y=3).values)
-ax.plot(average_ds.time.values, average_ds.cond_av.isel(x=4, y=5).values)
+time = average_ds.time.values
 
-fig, ax = plt.subplots()
+# --- Plot 1: Conditional Average (cond_av) at neighboring pixels ---
+ax = axes[0]
+label_data = [
+    ("left", average_ds.cond_av.isel(x=3, y=4)),
+    ("center", average_ds.cond_av.isel(x=4, y=4)),
+    ("right", average_ds.cond_av.isel(x=5, y=4)),
+    ("down", average_ds.cond_av.isel(x=4, y=3)),
+    ("up", average_ds.cond_av.isel(x=4, y=5)),
+]
+colors = plt.cm.viridis(np.linspace(0, 0.8, len(label_data)))
 
-ax.plot(average_ds.time.values, average_ds.cond_repr.isel(x=3, y=4).values)
-ax.plot(average_ds.time.values, average_ds.cond_repr.isel(x=4, y=4).values)
-ax.plot(average_ds.time.values, average_ds.cond_repr.isel(x=5, y=4).values)
-ax.plot(average_ds.time.values, average_ds.cond_repr.isel(x=4, y=3).values)
-ax.plot(average_ds.time.values, average_ds.cond_repr.isel(x=4, y=5).values)
+for (label, data), color in zip(label_data, colors):
+    ax.plot(time, data, label=label, color=color, lw=1.5)
 
-fig, ax = plt.subplots()
+ax.set_ylabel(r"$\langle n \rangle$ (cond. avg.)")
+ax.set_title("Conditional Average at Neighboring Pixels")
+ax.legend(fontsize=9, loc="upper right", frameon=True, fancybox=False, edgecolor="k")
+ax.grid(True, which="both", ls="--", alpha=0.5)
 
-ax.plot(average_ds.time.values, average_ds.cond_av.max(dim=["x", "y"]).values)
-ax.plot(average_ds.time.values, average_ds.cond_repr.max(dim=["x", "y"]).values)
+# --- Plot 2: Conditional Representation (cond_repr) ---
 
+label_data = [
+    ("left", average_ds.cond_repr.isel(x=3, y=4)),
+    ("center", average_ds.cond_repr.isel(x=4, y=4)),
+    ("right", average_ds.cond_repr.isel(x=5, y=4)),
+    ("down", average_ds.cond_repr.isel(x=4, y=3)),
+    ("up", average_ds.cond_repr.isel(x=4, y=5)),
+]
+ax = axes[1]
+for (label, data), color in zip(label_data, colors):
+    ax.plot(time, data.values, color=color, lw=1.5)
+
+ax.set_ylabel("Cond. Repr.")
+ax.set_title("Conditional Reproducibility at Neighboring Pixels")
+ax.legend(fontsize=9, loc="upper right")
+ax.grid(True, which="both", ls="--", alpha=0.5)
+
+# --- Plot 3: Global Maxima over Space ---
+ax = axes[2]
+ax.plot(
+    time,
+    average_ds.cond_av.max(dim=["x", "y"]) / average_ds.cond_av.max(),
+    label="Max of cond. avg.",
+    color="tab:blue",
+    lw=2,
+)
+ax.plot(
+    time,
+    average_ds.cond_repr.max(dim=["x", "y"]),
+    label="Max of cond. repr.",
+    color="tab:orange",
+    lw=2,
+)
+
+ax.set_xlabel("Time")
+ax.set_ylabel("Spatial Maximum")
+ax.set_title("Global Spatial Maxima Over Time")
+ax.legend(fontsize=9)
+ax.grid(True, which="both", ls="--", alpha=0.5)
+
+# Final adjustments
+fig.suptitle(
+    "Decoherence Analysis: Conditional Statistics", fontsize=14, fontweight="bold"
+)
+plt.savefig(
+    "decoherence_analysis_random_{}.pdf".format(rand_coeff), bbox_inches="tight"
+)
 plt.show()
