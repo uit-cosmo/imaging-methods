@@ -25,7 +25,7 @@ N = 5
 # --------------------------------------------------------------
 # 2.  SWEEP OVER theta
 # --------------------------------------------------------------
-rand_coeffs = np.linspace(0, 1, num=2)
+rand_coeffs = np.linspace(0, 1, num=10)
 
 loaded = np.load(data_file)
 rand_coeffs = loaded["rand_coeffs"]

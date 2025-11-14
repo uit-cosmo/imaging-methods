@@ -78,7 +78,7 @@ def get_contour_evolution(
     event,
     threshold_factor=0.5,
     max_displacement_threshold=None,
-    com_method="com",
+    com_method="centroid",
 ):
     """
     Extract and store the evolution of a single contour, its center of mass, and geometric properties in (r, z) coordinates.
