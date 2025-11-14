@@ -7,6 +7,7 @@ from blobmodel import BlobShapeEnum, BlobShapeImpl
 import velocity_estimation as ve
 import os
 import cosmoplots as cp
+import xarray as xr
 
 plt.style.use(["cosmoplots.default"])
 plt.rcParams["text.latex.preamble"] = (
@@ -31,9 +32,16 @@ vy_intput = 0
 lx_input = 1
 ly_input = 1
 
-rand_coeff = 0.5
-ds = make_decoherence_realization(rand_coeff=rand_coeff)
-ds = im.run_norm_ds(ds, method_parameters["preprocessing"]["radius"])
+rand_coeff = 0
+force_redo = False
+
+file_name = "decoherence_{}.nc".format(rand_coeff)
+if os.path.exists(file_name):
+    ds = xr.open_dataset(file_name)
+else:
+    ds = make_decoherence_realization(rand_coeff=rand_coeff)
+    ds = im.run_norm_ds(ds, method_parameters["preprocessing"]["radius"])
+    ds.to_netcdf(file_name)
 
 tdca_params = method_parameters["2dca"]
 events, average_ds = im.find_events_and_2dca(
@@ -63,7 +71,7 @@ vx_c, vy_c, vx_cc_tde, vy_cc_tde, confidence, vx_2dca_tde, vy_2dca_tde, cond_rep
 
 gif_file_name = "contours_decoherence_synthetic_{}.gif".format(rand_coeff)
 
-plot_contours = True
+plot_contours = False
 
 if plot_contours:
     im.show_movie_with_contours(
