@@ -32,11 +32,11 @@ vy_intput = 0
 lx_input = 1
 ly_input = 1
 
-rand_coeff = 1
+rand_coeff = 0.5
 force_redo = False
 
 file_name = "decoherence_{}.nc".format(rand_coeff)
-if os.path.exists(file_name):
+if os.path.exists(file_name) and not force_redo:
     ds = xr.open_dataset(file_name)
 else:
     ds = make_decoherence_realization(rand_coeff=rand_coeff)
@@ -116,16 +116,16 @@ time = average_ds.time.values
 
 # --- Plot 1: Conditional Average (cond_av) at neighboring pixels ---
 ax = axes[0]
-label_data = [
+label_data_cond_repr = [
     ("left", average_ds.cond_av.isel(x=3, y=4)),
     ("center", average_ds.cond_av.isel(x=4, y=4)),
     ("right", average_ds.cond_av.isel(x=5, y=4)),
     ("down", average_ds.cond_av.isel(x=4, y=3)),
     ("up", average_ds.cond_av.isel(x=4, y=5)),
 ]
-colors = plt.cm.viridis(np.linspace(0, 0.8, len(label_data)))
+colors = plt.cm.viridis(np.linspace(0, 0.8, len(label_data_cond_repr)))
 
-for (label, data), color in zip(label_data, colors):
+for (label, data), color in zip(label_data_cond_repr, colors):
     ax.plot(time, data, label=label, color=color, lw=1.5)
 
 ax.set_ylabel(r"$\langle n \rangle$ (cond. avg.)")
@@ -135,7 +135,37 @@ ax.grid(True, which="both", ls="--", alpha=0.5)
 
 # --- Plot 2: Conditional Representation (cond_repr) ---
 
-label_data = [
+import fppanalysis as fppa
+
+tau, cc_left = fppa.corr_fun(
+    ds.frames.isel(x=4, y=4).values, ds.frames.isel(x=3, y=4), dt
+)
+_, cc_center = fppa.corr_fun(
+    ds.frames.isel(x=4, y=4).values, ds.frames.isel(x=4, y=4), dt
+)
+_, cc_right = fppa.corr_fun(
+    ds.frames.isel(x=4, y=4).values, ds.frames.isel(x=5, y=4), dt
+)
+_, cc_down = fppa.corr_fun(
+    ds.frames.isel(x=4, y=4).values, ds.frames.isel(x=4, y=3), dt
+)
+_, cc_up = fppa.corr_fun(ds.frames.isel(x=4, y=4).values, ds.frames.isel(x=4, y=5), dt)
+
+
+def get_analytical_ccf(taus, shape, tau_p, w):
+    tau = 1 / np.sqrt(1 + w**2)
+    return np.exp(-1 / 2 * (taus / tau) ** 2)
+
+
+label_data_cc = [
+    ("left", cc_left),
+    ("center", cc_center),
+    ("right", cc_right),
+    ("down", cc_down),
+    ("up", cc_up),
+]
+
+label_data_cond_repr = [
     ("left", average_ds.cond_repr.isel(x=3, y=4)),
     ("center", average_ds.cond_repr.isel(x=4, y=4)),
     ("right", average_ds.cond_repr.isel(x=5, y=4)),
@@ -143,11 +173,13 @@ label_data = [
     ("up", average_ds.cond_repr.isel(x=4, y=5)),
 ]
 ax = axes[1]
-for (label, data), color in zip(label_data, colors):
-    ax.plot(time, data.values, color=color, lw=1.5)
+for (label, data), color in zip(label_data_cc, colors):
+    ax.plot(tau, data, color=color, lw=1.5)
 
-ax.set_ylabel("Cond. Repr.")
-ax.set_title("Conditional Reproducibility at Neighboring Pixels")
+ax.set_xlim(-3, 3)
+
+ax.set_ylabel("CCF")
+ax.set_title("Cross correlation function")
 ax.legend(fontsize=9, loc="upper right")
 ax.grid(True, which="both", ls="--", alpha=0.5)
 

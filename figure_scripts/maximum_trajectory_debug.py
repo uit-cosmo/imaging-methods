@@ -6,13 +6,13 @@ from imaging_methods import *
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import cosmoplots as cp
 
-shot = 1160616026
+shot = 1160616027
 manager = GPIDataAccessor(
     "/home/sosno/Git/experimental_database/plasma_discharges.json"
 )
 ds = manager.read_shot_data(shot, preprocessed=True)
 
-refx, refy = 6, 5
+refx, refy = 4, 5
 
 params = plt.rcParams
 cp.set_rcparams_dynamo(params, 2)
@@ -113,8 +113,22 @@ def movie(
 average = get_average(shot, refx, refy)
 # average = preprocess_average_ds(average, threshold=1)
 
+
+def get_coherence_index(average_ds, field="cond_repr"):
+    right = np.max(average_ds[field].isel(x=refx + 1, y=refy).values)
+    left = np.max(average_ds[field].isel(x=refx - 1, y=refy).values)
+    up = np.max(average_ds[field].isel(x=refx, y=refy + 1).values)
+    down = np.max(average_ds[field].isel(x=refx, y=refy - 1).values)
+    neigh = max(right, down, up, left)
+    ref = average_ds[field].isel(x=refx, y=refy).max().item()
+    return neigh / ref
+
+
+print("Cond. av. index {:.2f}".format(get_coherence_index(average, "cond_av")))
+print("Cond. repr. index {:.2f}".format(get_coherence_index(average, "cond_repr")))
+
 contour_ds = get_contour_evolution(
-    average.cond_av, 0.8, max_displacement_threshold=None, com_method="global"
+    average.cond_av, 0.3, max_displacement_threshold=None, com_method="centroid"
 )
 
 velocity_ds = get_contour_velocity(
