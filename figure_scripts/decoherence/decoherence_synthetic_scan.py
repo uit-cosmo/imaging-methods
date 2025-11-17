@@ -76,7 +76,7 @@ ax.set_xlabel(r"$r$")
 ax.set_ylabel("Velocity estimates")
 ax.legend()  # loc=6
 # ax.set_xlim(0, 1.2)
-# ax.set_ylim(0, 2)
+ax.set_ylim(-0.2, 2)
 
 plt.savefig("decoherence_scan.pdf", bbox_inches="tight")
 plt.show()

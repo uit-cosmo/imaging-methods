@@ -33,7 +33,7 @@ method_parameters = {
 }
 
 data_file = "barberpole_data.npz"
-force_redo = False
+force_redo = True
 
 i = 0
 
@@ -46,6 +46,7 @@ def estimate_velocities(ds, method_parameters):
     dt = im.get_dt(ds)
 
     tdca_params = method_parameters["2dca"]
+    refx, refy = tdca_params["refx"], tdca_params["refy"]
     events, average_ds = im.find_events_and_2dca(
         ds,
         tdca_params["refx"],
@@ -83,7 +84,17 @@ def estimate_velocities(ds, method_parameters):
         )
         i += 1
 
-    v_c, w_c = velocity_ds.sel(time=slice(-3, 3)).mean(dim="time", skipna=True).values
+    distances_vector = contour_ds.center_of_mass.values - [
+        average_ds.R.isel(x=refx, y=refy).item(),
+        average_ds.Z.isel(x=refx, y=refy).item(),
+    ]
+    distances = np.sqrt((distances_vector**2).sum(axis=1))
+
+    v_c, w_c = (
+        velocity_ds.sel(time=contour_ds.time[distances < 1])
+        .mean(dim="time", skipna=True)
+        .values
+    )
 
     eo = ve.EstimationOptions()
     eo.cc_options.cc_window = method_parameters["2dca"]["window"] * dt
