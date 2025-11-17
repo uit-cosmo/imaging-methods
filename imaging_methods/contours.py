@@ -82,6 +82,7 @@ def get_contour_evolution(
 ):
     """
     Extract and store the evolution of a single contour, its center of mass, and geometric properties in (r, z) coordinates.
+    The contours are defined at a level given by threshold_factor times the maximum amplitude of the event.
     Returns None if the maximum frame-to-frame COM displacement exceeds max_displacement_threshold.
 
     Parameters

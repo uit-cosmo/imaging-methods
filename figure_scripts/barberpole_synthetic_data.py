@@ -23,7 +23,7 @@ method_parameters = {
         "refx": 4,
         "refy": 4,
         "threshold": 2,
-        "window": 30,
+        "window": 60,
         "check_max": 1,
         "single_counting": True,
     },
@@ -94,6 +94,7 @@ def estimate_velocities(ds, method_parameters):
     common_times = valid_times[valid_times.isin(velocity_ds.time)]
 
     v_c, w_c = velocity_ds.sel(time=common_times).mean(dim="time", skipna=True).values
+    v_c, w_c = velocity_ds.sel(time=slice(-3, 3)).mean(dim="time", skipna=True).values
 
     eo = ve.EstimationOptions()
     eo.cc_options.cc_window = method_parameters["2dca"]["window"] * dt
