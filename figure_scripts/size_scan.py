@@ -32,7 +32,7 @@ method_parameters = {
     "taud_estimation": {"cutoff": 1e6, "nperseg": 1e3},
 }
 
-data_file = "barberpole_data.npz"
+data_file = "size_scan_data.npz"
 force_redo = False
 
 i = 0
@@ -114,15 +114,16 @@ ny = 8
 dt = 0.1
 bs = BlobShapeImpl(BlobShapeEnum.gaussian, BlobShapeEnum.gaussian)
 K = 5000
-
-lx_input = 1 / 2
-ly_input = 2
-theta_input = -np.pi / 4
-N = 5
 NSR = 0.1
 
+vx_input = 1
+vy_intput = 0
+lx_input = 1
+ly_input = 1
+N = 5
 
-def get_all_velocities(lx, ly, theta, N=N):
+
+def get_all_velocities(l, N=N):
     """
     Run N realisations and return the *raw* velocity components.
 
@@ -137,8 +138,8 @@ def get_all_velocities(lx, ly, theta, N=N):
     vytde_all = []
 
     for _ in range(N):
-        alpha = np.random.uniform(-np.pi / 4, np.pi / 4)
-        vx_input, vy_input = np.cos(alpha), np.sin(alpha)
+        theta = np.random.uniform(-np.pi / 4, np.pi / 4)
+        vx_input, vy_input = np.cos(theta), np.sin(theta)
         ds = make_2d_realization(
             Lx,
             Ly,
@@ -149,10 +150,11 @@ def get_all_velocities(lx, ly, theta, N=N):
             K,
             vx=vx_input,
             vy=vy_input,
-            lx=lx,
-            ly=ly,
-            theta=theta + alpha,
+            lx=l,
+            ly=l,
+            theta=0,
             bs=bs,
+            periodic_y=False,  # Use only for w=0 so periodicity doesn't matter, for large blobs, periodicity has issues.
         )
         ds_mean = ds.frames.mean().item()
         ds = ds.assign(
@@ -161,6 +163,7 @@ def get_all_velocities(lx, ly, theta, N=N):
         ds = im.run_norm_ds(ds, method_parameters["preprocessing"]["radius"])
 
         # estimate_velocities returns (vx, vy, vxtde, vytde)
+        method_parameters["contouring"]["threshold_factor"] = 0.3 + 0.6 * l / 4
         vx, vy, vxtde, vytde = estimate_velocities(ds, method_parameters)
 
         vx_all.append(vx - vx_input)
@@ -171,29 +174,24 @@ def get_all_velocities(lx, ly, theta, N=N):
     return vx_all, vy_all, vxtde_all, vytde_all
 
 
-# --------------------------------------------------------------
-# 2.  SWEEP OVER theta
-# --------------------------------------------------------------
-lx, ly = 0.5, 2.0
-thetas = np.linspace(0, np.pi / 2, num=20)  # change num= back to 3 if you wish
+sizes = np.logspace(-1, np.log10(4), num=10)
 
-# Containers for *all* realisations (list of lists)
-vx_all = []  # len = len(thetas); each entry = list of N values
+vx_all = []
 vy_all = []
 vxtde_all = []
 vytde_all = []
 
 if os.path.exists(data_file) and not force_redo:
     loaded = np.load(data_file)
-    thetas = loaded["thetas"]  # in case you want to load thetas too
+    sizes = loaded["sizes"]
     vx_all = loaded["vx_all"]
     vy_all = loaded["vy_all"]
     vxtde_all = loaded["vxtde_all"]
     vytde_all = loaded["vytde_all"]
 else:
-    for theta in thetas:
-        print(f"Processing theta = {theta:.3f} rad ({np.degrees(theta):.1f}°)")
-        vx, vy, vxtde, vytde = get_all_velocities(lx, ly, theta, N=N)
+    for size in sizes:
+        print(f"Processing size = {size:.3f}")
+        vx, vy, vxtde, vytde = get_all_velocities(size, N=N)
 
         vx_all.append(vx)
         vy_all.append(vy)
@@ -202,7 +200,7 @@ else:
 
     np.savez(
         data_file,
-        thetas=thetas,
+        sizes=sizes,
         vx_all=vx_all,
         vy_all=vy_all,
         vxtde_all=vxtde_all,
@@ -234,51 +232,22 @@ def scatter_component(theta_vals, data_per_theta, label, marker, color):
         first = False
 
 
-def taumax(dx, dy, lpara, lperp, v, w, a):
-    d1 = (dx * lperp**2 * v + dy * lpara**2 * w) * np.cos(a) ** 2
-    d2 = (dx * lpara**2 * v + dy * lperp**2 * w) * np.sin(a) ** 2
-    d3 = -(lpara**2 - lperp**2) * (dy * v + dx * w) * np.cos(a) * np.sin(a)
-    n1 = (lperp**2 * v**2 + lpara**2 * w**2) * np.cos(a) ** 2
-    n2 = -2 * (lpara**2 - lperp**2) * v * w * np.sin(a) * np.cos(a)
-    n3 = (lpara**2 * v**2 + lperp**2 * w**2) * np.sin(a) ** 2
-    return (d1 + d2 + d3) / (n1 + n2 + n3)
-
-
-def v3(lpara, lperp, v, w, a):
-    tx = taumax(1, 0, lpara, lperp, v, w, a)
-    ty = taumax(0, 1, lpara, lperp, v, w, a)
-    return tx / (tx**2 + ty**2)
-
-
-def w3(lpara, lperp, v, w, a):
-    tx = taumax(1, 0, lpara, lperp, v, w, a)
-    ty = taumax(0, 1, lpara, lperp, v, w, a)
-    return ty / (tx**2 + ty**2)
-
-
 # Choose distinct colours (you can also use a colormap)
 # labelc = r"$\sqrt{(v_c-v)^2+(w_c-w)^2}$"
 # labeltde = r"$\sqrt{(v_{\mathrm{TDE}}-v)^2+(w_{\mathrm{TDE}}-w)^2}$"
 labelc = r"$E_c$"
 labeltde = r"$E_{\mathrm{TDE}}$"
+scatter_component(1 / sizes, np.sqrt(vx_all**2 + vy_all**2), labelc, "o", "#1f77b4")
 scatter_component(
-    thetas / np.pi, np.sqrt(vx_all**2 + vy_all**2), labelc, "o", "#1f77b4"
-)
-scatter_component(
-    thetas / np.pi, np.sqrt(vxtde_all**2 + vytde_all**2), labeltde, "^", "#2ca02c"
+    1 / sizes, np.sqrt(vxtde_all**2 + vytde_all**2), labeltde, "^", "#2ca02c"
 )
 
-v3s = np.array([v3(lx, ly, 1, 0, t) for t in thetas])
-w3s = np.array([w3(lx, ly, 1, 0, t) for t in thetas])
-
-ax.plot(thetas / np.pi, np.sqrt((v3s - 1) ** 2 + w3s**2), color="#2ca02c", ls="--")
-
-ax.set_xticks([0, 1 / 4, 1 / 2])
-ax.set_xticklabels([r"$0$", r"$1/4$", r"$1/2$"])
-ax.set_xlabel(r"$\alpha/\pi$")
+ax.set_xlabel(r"$\Delta/\ell$")
 ax.set_ylabel("Error")
 ax.legend()  # loc=6
-ax.set_ylim(-0.1, 1.1)
+ax.set_xscale("log")
+ax.set_xticks([1 / 4, 1, 10])
+ax.set_xticklabels([r"$1/4$", r"$1$", r"$10$"])
 
-plt.savefig("barberpole.eps", bbox_inches="tight")
+plt.savefig("size_scan.eps", bbox_inches="tight")
 plt.show()

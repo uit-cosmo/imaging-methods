@@ -26,7 +26,7 @@ method_parameters = {
         "refx": 4,
         "refy": 4,
         "threshold": 2,
-        "window": 30,
+        "window": 60,
         "check_max": 1,
         "single_counting": True,
     },
@@ -39,10 +39,10 @@ figures_dir = "integrated_tests_figures"
 
 
 def test_case_a():
-    vx_input = 1
-    vy_intput = 0
-    lx_input = 1
-    ly_input = 1
+    vx_input = 1.1
+    vy_intput = 0.88
+    lx_input = 0.1
+    ly_input = 0.1
     theta_input = 0
 
     ds = make_2d_realization(

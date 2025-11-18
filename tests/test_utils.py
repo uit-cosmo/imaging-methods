@@ -249,7 +249,10 @@ def full_analysis(
         contour_ds.center_of_mass,
         method_parameters["contouring"]["com_smoothing"],
     )
-    v_c, w_c = velocity_ds.sel(time=slice(-3, 3)).mean(dim="time", skipna=True).values
+
+    v_c, w_c = im.get_average_velocity_for_near_com(
+        average_ds, contour_ds, velocity_ds, distance=1
+    )
 
     fit_params = method_parameters["gauss_fit"]
     lx, ly, theta = im.fit_ellipse_to_event(
