@@ -117,3 +117,67 @@ def make_2d_realization(
             "time": (["time"], ds.t.values),
         },
     )
+
+def make_2d_realization_test(
+    Lx,
+    Ly,
+    T,
+    nx,
+    ny,
+    dt,
+    num_blobs,
+    vx,
+    vy,
+    lx,
+    ly,
+    theta,
+    bs,
+    blob_getter="deterministic",
+):
+    if blob_getter == "deterministic":
+        blobs = [
+            get_blob(
+                amplitude=np.random.exponential(),
+                vx=vx,
+                vy=vy,
+                posx=0,
+                posy=np.random.uniform(0, Ly),
+                lx=lx,
+                ly=ly,
+                t_init=np.random.uniform(0, T),
+                bs=bs,
+                theta=theta,
+            )
+            for _ in range(num_blobs)
+        ]
+    else:
+        blobs = [blob_getter() for _ in range(num_blobs)]
+
+    bf = DeterministicBlobFactory(blobs)
+
+    model = Model(
+        Nx=nx,
+        Ny=ny,
+        Lx=Lx,
+        Ly=Ly,
+        dt=dt,
+        T=T,
+        num_blobs=num_blobs,
+        blob_shape=BlobShapeImpl(),
+        periodic_y=False,
+        t_drain=1e10,
+        blob_factory=bf,
+        verbose=True,
+        t_init=0,
+    )
+    ds = model.make_realization(speed_up=True, error=1e-10)
+    grid_r, grid_z = np.meshgrid(ds.x.values, ds.y.values)
+
+    return xr.Dataset(
+        {"frames": (["y", "x", "time"], ds.n.values)},
+        coords={
+            "R": (["y", "x"], grid_r),
+            "Z": (["y", "x"], grid_z),
+            "time": (["time"], ds.t.values),
+        },
+    )

@@ -75,8 +75,8 @@ def test_case_a():
 
 
 def test_case_b():
-    vx_input = 1
-    vy_intput = 0
+    alpha = np.random.uniform(-np.pi / 8, np.pi / 8)
+    vx_input, vy_input = np.cos(alpha), np.sin(alpha)
     aspect_ratio = 4
     lx_input = 1 / np.sqrt(aspect_ratio)
     ly_input = np.sqrt(aspect_ratio)
@@ -91,7 +91,7 @@ def test_case_b():
         dt,
         K,
         vx=vx_input,
-        vy=vy_intput,
+        vy=vy_input,
         lx=lx_input,
         ly=ly_input,
         theta=theta_input,
@@ -102,7 +102,7 @@ def test_case_b():
     print(bp)
 
     assert np.abs(bp.vx_c - vx_input) < 0.05, "Wrong contour x velocity"
-    assert np.abs(bp.vy_c - vy_intput) < 0.05, "Wrong contour y velocity"
+    assert np.abs(bp.vy_c - vy_input) < 0.05, "Wrong contour y velocity"
 
     # No TDE velocity asserts as TDE will be wrong due to barberpole effects.
 

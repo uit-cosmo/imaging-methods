@@ -33,7 +33,7 @@ method_parameters = {
 }
 
 data_file = "size_scan_data.npz"
-force_redo = False
+force_redo = True
 
 i = 0
 
@@ -120,7 +120,7 @@ vx_input = 1
 vy_intput = 0
 lx_input = 1
 ly_input = 1
-N = 5
+N = 1
 
 
 def get_all_velocities(l, N=N):
@@ -206,6 +206,11 @@ else:
         vxtde_all=vxtde_all,
         vytde_all=vytde_all,
     )
+
+vx_all = np.array(vx_all)
+vy_all = np.array(vy_all)
+vxtde_all = np.array(vxtde_all)
+vytde_all = np.array(vytde_all)
 
 # --------------------------------------------------------------
 # 3.  SCATTER PLOT

@@ -33,7 +33,7 @@ method_parameters = {
 }
 
 data_file = "barberpole_data.npz"
-force_redo = False
+force_redo = True
 
 i = 0
 
@@ -107,17 +107,14 @@ def estimate_velocities(ds, method_parameters):
 
 
 T = 5000
-Lx = 8
-Ly = 8
+Lx = 4
+Ly = 4
 nx = 8
 ny = 8
 dt = 0.1
 bs = BlobShapeImpl(BlobShapeEnum.gaussian, BlobShapeEnum.gaussian)
 K = 5000
 
-lx_input = 1 / 2
-ly_input = 2
-theta_input = -np.pi / 4
 N = 5
 NSR = 0.1
 
@@ -137,9 +134,9 @@ def get_all_velocities(lx, ly, theta, N=N):
     vytde_all = []
 
     for _ in range(N):
-        alpha = np.random.uniform(-np.pi / 4, np.pi / 4)
+        alpha = np.random.uniform(-np.pi / 8, np.pi / 8)
         vx_input, vy_input = np.cos(alpha), np.sin(alpha)
-        ds = make_2d_realization(
+        ds = make_2d_realization_test(
             Lx,
             Ly,
             T,
@@ -174,8 +171,8 @@ def get_all_velocities(lx, ly, theta, N=N):
 # --------------------------------------------------------------
 # 2.  SWEEP OVER theta
 # --------------------------------------------------------------
-lx, ly = 0.5, 2.0
-thetas = np.linspace(0, np.pi / 2, num=20)  # change num= back to 3 if you wish
+lx, ly = 0.5, 2
+thetas = np.linspace(0, np.pi / 2, num=10)  # change num= back to 3 if you wish
 
 # Containers for *all* realisations (list of lists)
 vx_all = []  # len = len(thetas); each entry = list of N values
@@ -208,6 +205,11 @@ else:
         vxtde_all=vxtde_all,
         vytde_all=vytde_all,
     )
+
+vx_all = np.array(vx_all)
+vy_all = np.array(vy_all)
+vxtde_all = np.array(vxtde_all)
+vytde_all = np.array(vytde_all)
 
 # --------------------------------------------------------------
 # 3.  SCATTER PLOT

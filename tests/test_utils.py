@@ -273,8 +273,6 @@ def full_analysis(
         average_ds.cond_av, tdca_params["refx"], tdca_params["refy"]
     )
 
-    print(estimate_cc_tde_velocities(ds, refx, refy))
-
     taud, lam = im.DurationTimeEstimator(
         im.SecondOrderStatistic.PSD, im.Analytics.TwoSided
     ).estimate_duration_time(
