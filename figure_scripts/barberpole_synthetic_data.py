@@ -28,7 +28,7 @@ method_parameters = {
         "single_counting": True,
     },
     "gauss_fit": {"size_penalty": 5, "aspect_penalty": 0.2, "tilt_penalty": 0.2},
-    "contouring": {"threshold_factor": 0.3, "com_smoothing": 10},
+    "contouring": {"threshold_factor": 0.5, "com_smoothing": 10},
     "taud_estimation": {"cutoff": 1e6, "nperseg": 1e3},
 }
 
@@ -107,15 +107,15 @@ def estimate_velocities(ds, method_parameters):
 
 
 T = 5000
-Lx = 4
-Ly = 4
+Lx = 8
+Ly = 8
 nx = 8
 ny = 8
 dt = 0.1
 bs = BlobShapeImpl(BlobShapeEnum.gaussian, BlobShapeEnum.gaussian)
 K = 5000
 
-N = 5
+N = 1
 NSR = 0.1
 
 
@@ -136,7 +136,7 @@ def get_all_velocities(lx, ly, theta, N=N):
     for _ in range(N):
         alpha = np.random.uniform(-np.pi / 8, np.pi / 8)
         vx_input, vy_input = np.cos(alpha), np.sin(alpha)
-        ds = make_2d_realization_test(
+        ds = make_2d_realization(
             Lx,
             Ly,
             T,

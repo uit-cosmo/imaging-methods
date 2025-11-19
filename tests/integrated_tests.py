@@ -75,7 +75,7 @@ def test_case_a():
 
 
 def test_case_b():
-    alpha = np.random.uniform(-np.pi / 8, np.pi / 8)
+    alpha = np.pi/8
     vx_input, vy_input = np.cos(alpha), np.sin(alpha)
     aspect_ratio = 4
     lx_input = 1 / np.sqrt(aspect_ratio)
@@ -94,7 +94,7 @@ def test_case_b():
         vy=vy_input,
         lx=lx_input,
         ly=ly_input,
-        theta=theta_input,
+        theta=theta_input+alpha,
         bs=bs,
     )
     ds = im.run_norm_ds(ds, method_parameters["preprocessing"]["radius"])
