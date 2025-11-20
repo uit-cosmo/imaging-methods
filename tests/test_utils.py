@@ -223,6 +223,7 @@ def full_analysis(
         average_ds.cond_av,
         method_parameters["contouring"]["threshold_factor"],
         max_displacement_threshold=None,
+        com_method="global"
     )
 
     if do_plots:

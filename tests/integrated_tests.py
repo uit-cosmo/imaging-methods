@@ -9,7 +9,7 @@ plt.rcParams["text.latex.preamble"] = (
 )
 
 
-MAKE_PLOTS = False
+MAKE_PLOTS = True
 T = 10000
 Lx = 8
 Ly = 8
@@ -23,8 +23,8 @@ K = 10000
 method_parameters = {
     "preprocessing": {"radius": 1000},
     "2dca": {
-        "refx": 4,
-        "refy": 4,
+        "refx": 8,
+        "refy": 8,
         "threshold": 2,
         "window": 60,
         "check_max": 1,
@@ -80,14 +80,14 @@ def test_case_b():
     aspect_ratio = 4
     lx_input = 1 / np.sqrt(aspect_ratio)
     ly_input = np.sqrt(aspect_ratio)
-    theta_input = 3 * np.pi / 4
+    theta_input = np.pi / 4
 
     ds = make_2d_realization(
         Lx,
         Ly,
         T,
-        nx,
-        ny,
+        16,
+        16,
         dt,
         K,
         vx=vx_input,

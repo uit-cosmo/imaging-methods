@@ -20,8 +20,8 @@ plt.rcParams.update(params)
 method_parameters = {
     "preprocessing": {"radius": 1000},
     "2dca": {
-        "refx": 4,
-        "refy": 4,
+        "refx": 8,
+        "refy": 8,
         "threshold": 2,
         "window": 60,
         "check_max": 1,
@@ -33,7 +33,7 @@ method_parameters = {
 }
 
 data_file = "barberpole_data.npz"
-force_redo = True
+force_redo = False
 
 i = 0
 
@@ -109,13 +109,13 @@ def estimate_velocities(ds, method_parameters):
 T = 5000
 Lx = 8
 Ly = 8
-nx = 8
-ny = 8
+nx = 16
+ny = 16
 dt = 0.1
 bs = BlobShapeImpl(BlobShapeEnum.gaussian, BlobShapeEnum.gaussian)
 K = 5000
 
-N = 1
+N = 5
 NSR = 0.1
 
 
@@ -134,7 +134,7 @@ def get_all_velocities(lx, ly, theta, N=N):
     vytde_all = []
 
     for _ in range(N):
-        alpha = np.random.uniform(-np.pi / 8, np.pi / 8)
+        alpha = np.random.uniform(-np.pi/4, np.pi/4)
         vx_input, vy_input = np.cos(alpha), np.sin(alpha)
         ds = make_2d_realization(
             Lx,
@@ -172,7 +172,7 @@ def get_all_velocities(lx, ly, theta, N=N):
 # 2.  SWEEP OVER theta
 # --------------------------------------------------------------
 lx, ly = 0.5, 2
-thetas = np.linspace(0, np.pi / 2, num=10)  # change num= back to 3 if you wish
+thetas = np.linspace(0, np.pi / 2, num=20)  # change num= back to 3 if you wish
 
 # Containers for *all* realisations (list of lists)
 vx_all = []  # len = len(thetas); each entry = list of N values
@@ -282,5 +282,5 @@ ax.set_ylabel("Error")
 ax.legend()  # loc=6
 ax.set_ylim(-0.1, 1.1)
 
-plt.savefig("barberpole.eps", bbox_inches="tight")
+plt.savefig("barberpole.png", bbox_inches="tight")
 plt.show()
