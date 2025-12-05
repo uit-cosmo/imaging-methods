@@ -282,5 +282,5 @@ ax.set_ylabel("Error")
 ax.legend()  # loc=6
 ax.set_ylim(-0.1, 1.1)
 
-plt.savefig("barberpole.png", bbox_inches="tight")
+plt.savefig("barberpole.eps", bbox_inches="tight")
 plt.show()

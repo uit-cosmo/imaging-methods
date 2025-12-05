@@ -32,7 +32,7 @@ vy_intput = 0
 lx_input = 1
 ly_input = 1
 
-rand_coeff = 0.5
+rand_coeff = 0
 force_redo = False
 
 file_name = "decoherence_{}.nc".format(rand_coeff)

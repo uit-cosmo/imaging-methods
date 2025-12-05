@@ -1,5 +1,6 @@
 import numpy as np
 import xarray as xr
+import scipy.signal as ssi
 
 
 def find_events_and_2dca(
@@ -57,6 +58,13 @@ def find_events_and_2dca(
                     - number_events (int): The total number of valid events included in the average.
             If no valid events are found, returns an empty xarray.Dataset.
     """
+    if window_size % 2 == 0:
+        window_size += 1
+    half_window = (window_size - 1)// 2
+    dt = float(ds["time"][1].values - ds["time"][0].values)
+    rel_times_idx = np.arange(window_size) - half_window
+    rel_times = rel_times_idx * dt
+
     ref_ts = ds.frames.isel(x=refx, y=refy)
 
     above_threshold = ref_ts > threshold
@@ -71,7 +79,6 @@ def find_events_and_2dca(
     if verbose:
         print("Found {} events".format(len(events)))
     candidate_events = []
-    half_window = window_size // 2
     discarded_events_zero_len = 0
     discarded_events_not_max = 0
     discarded_events_truncated = 0
@@ -159,20 +166,46 @@ def find_events_and_2dca(
             )
         )
 
+    # === Spatiotemporal cross-correlation on full dataset ===
+    nx = ds.sizes["x"]
+    ny = ds.sizes["y"]
+    n_lags = window_size
+
+    # Preallocate
+    corr_array = np.zeros((n_lags, nx, ny))
+
+    # Indices for slicing
+    start_idx = ds.sizes["time"] - half_window
+    end_idx = ds.sizes["time"] + half_window + 1
+
+    for i in range(nx):
+        for j in range(ny):
+            pixel = ds.frames.isel(x=i, y=j).values
+            cov_sums_full = ssi.correlate(ref_ts.values, pixel, mode='full')
+            corr_array[:, i, j] = cov_sums_full[start_idx:end_idx] / len(ref_ts)
+
+    cross_corr = xr.DataArray(
+        corr_array,
+        dims=["time", "x", "y"],
+        coords={
+            "time": rel_times,
+            "R": ds.R,
+            "Z": ds.Z,
+        },
+        name="cross_corr"
+    )
+
     # Processed events are the same as events in windows but with a time base relative to their maximum,
     # to make averaging possible
     processed = []
     event_id = 0
     for win in windows:
-        # Create relative time coordinates centered on peak
-        time_length = win.sizes["time"]
-        half_window = (time_length - 1) // 2
-        relative_time = np.arange(time_length) - half_window
+
         abs_time = win.time[half_window].item()
 
         # Assign new time coordinates
         dt = float(ds["time"][1].values - ds["time"][0].values)
-        win = win.assign_coords(time=relative_time * dt)
+        win = win.assign_coords(time=rel_times)
         win["event_id"] = event_id
         win["refx"] = refx
         win["refy"] = refy
@@ -192,6 +225,7 @@ def find_events_and_2dca(
             {
                 "cond_av": conditional_average,
                 "cond_repr": conditional_average**2 / mean2,
+                "cross_corr": cross_corr
             }
         )
         cond_av_ds["refx"] = refx
