@@ -60,7 +60,7 @@ def find_events_and_2dca(
     """
     if window_size % 2 == 0:
         window_size += 1
-    half_window = (window_size - 1)// 2
+    half_window = (window_size - 1) // 2
     dt = float(ds["time"][1].values - ds["time"][0].values)
     rel_times_idx = np.arange(window_size) - half_window
     rel_times = rel_times_idx * dt
@@ -172,7 +172,7 @@ def find_events_and_2dca(
     n_lags = window_size
 
     # Preallocate
-    corr_array = np.zeros((n_lags, nx, ny))
+    corr_array = np.zeros((ny, nx, n_lags))
 
     # Indices for slicing
     start_idx = ds.sizes["time"] - half_window
@@ -181,18 +181,18 @@ def find_events_and_2dca(
     for i in range(nx):
         for j in range(ny):
             pixel = ds.frames.isel(x=i, y=j).values
-            cov_sums_full = ssi.correlate(ref_ts.values, pixel, mode='full')
-            corr_array[:, i, j] = cov_sums_full[start_idx:end_idx] / len(ref_ts)
+            cov_sums_full = ssi.correlate(pixel, ref_ts.values, mode="full")
+            corr_array[j, i, :] = cov_sums_full[start_idx:end_idx] / len(ref_ts)
 
     cross_corr = xr.DataArray(
         corr_array,
-        dims=["time", "x", "y"],
+        dims=["y", "x", "time"],
         coords={
-            "time": rel_times,
-            "R": ds.R,
-            "Z": ds.Z,
+            "R": (["y", "x"], ds.R.values),
+            "Z": (["y", "x"], ds.Z.values),
+            "time": (["time"], rel_times),
         },
-        name="cross_corr"
+        name="cross_corr",
     )
 
     # Processed events are the same as events in windows but with a time base relative to their maximum,
@@ -225,7 +225,7 @@ def find_events_and_2dca(
             {
                 "cond_av": conditional_average,
                 "cond_repr": conditional_average**2 / mean2,
-                "cross_corr": cross_corr
+                "cross_corr": cross_corr,
             }
         )
         cond_av_ds["refx"] = refx

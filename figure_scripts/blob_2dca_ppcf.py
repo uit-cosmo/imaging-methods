@@ -17,6 +17,9 @@ refy = 6
 params = plt.rcParams
 cp.set_rcparams_dynamo(params, 1)
 plt.rcParams.update(params)
+plt.rcParams["text.latex.preamble"] = (
+    r"\usepackage{amsmath} \usepackage{mathptmx} \usepackage{amssymb} "
+)
 
 fig, ax = plt.subplots(1, 3, sharey=True)
 plt.subplots_adjust(wspace=0.1, hspace=0)
@@ -42,10 +45,10 @@ for refx in np.arange(4, 7):
     average = get_average(shot, refx, refy)
     plot_2dca_zero_lag(ds, average, axe)
 
-ax[0].set_ylabel(r"$Z$")
-ax[0].set_xlabel(r"$R$")
-ax[1].set_xlabel(r"$R$")
-ax[2].set_xlabel(r"$R$")
+ax[0].set_ylabel(r"$Z\,/\,\text{cm}$")
+ax[0].set_xlabel(r"$R\,/\,\text{cm}$")
+ax[1].set_xlabel(r"$R\,/\,\text{cm}$")
+ax[2].set_xlabel(r"$R\,/\,\text{cm}$")
 ax[2].set_xticks([88, 89, 90, 91])
 
 

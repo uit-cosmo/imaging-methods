@@ -33,12 +33,12 @@ method_parameters = {
 }
 
 data_file = "barberpole_data.npz"
-force_redo = False
+force_redo = True
 
 i = 0
 
 
-def estimate_velocities(ds, method_parameters):
+def estimate_velocities(ds, method_parameters, variable):
     """
     Does a full analysis on imaging data, estimating a BlobParameters object containing all estimates. Plots figures
     when relevant in the provided figures_dir.
@@ -58,7 +58,7 @@ def estimate_velocities(ds, method_parameters):
     )
 
     contour_ds = im.get_contour_evolution(
-        average_ds.cond_av,
+        average_ds[variable],
         method_parameters["contouring"]["threshold_factor"],
         max_displacement_threshold=None,
     )
@@ -134,7 +134,7 @@ def get_all_velocities(lx, ly, theta, N=N):
     vytde_all = []
 
     for _ in range(N):
-        alpha = np.random.uniform(-np.pi/4, np.pi/4)
+        alpha = np.random.uniform(-np.pi / 4, np.pi / 4)
         vx_input, vy_input = np.cos(alpha), np.sin(alpha)
         ds = make_2d_realization(
             Lx,
@@ -158,7 +158,7 @@ def get_all_velocities(lx, ly, theta, N=N):
         ds = im.run_norm_ds(ds, method_parameters["preprocessing"]["radius"])
 
         # estimate_velocities returns (vx, vy, vxtde, vytde)
-        vx, vy, vxtde, vytde = estimate_velocities(ds, method_parameters)
+        vx, vy, vxtde, vytde = estimate_velocities(ds, method_parameters, "cross_corr")
 
         vx_all.append(vx - vx_input)
         vy_all.append(vy - vy_input)

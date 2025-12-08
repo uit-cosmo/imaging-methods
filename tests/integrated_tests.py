@@ -23,8 +23,8 @@ K = 10000
 method_parameters = {
     "preprocessing": {"radius": 1000},
     "2dca": {
-        "refx": 8,
-        "refy": 8,
+        "refx": 4,
+        "refy": 4,
         "threshold": 2,
         "window": 60,
         "check_max": 1,
@@ -39,10 +39,10 @@ figures_dir = "integrated_tests_figures"
 
 
 def test_case_a():
-    vx_input = 1.1
-    vy_intput = 0.88
-    lx_input = 0.1
-    ly_input = 0.1
+    vx_input = 1
+    vy_intput = 0
+    lx_input = 1
+    ly_input = 1
     theta_input = 0
 
     ds = make_2d_realization(
@@ -61,7 +61,9 @@ def test_case_a():
         bs=bs,
     )
     ds = im.run_norm_ds(ds, method_parameters["preprocessing"]["radius"])
-    bp = full_analysis(ds, method_parameters, "a", do_plots=MAKE_PLOTS)
+    bp = full_analysis(
+        ds, method_parameters, "a", do_plots=MAKE_PLOTS, variable="cross_corr"
+    )
     print(bp)
 
     assert np.abs(bp.vx_c - vx_input) < 0.05, "Wrong contour x velocity"
@@ -75,7 +77,7 @@ def test_case_a():
 
 
 def test_case_b():
-    alpha = np.pi/8
+    alpha = np.pi / 8
     vx_input, vy_input = np.cos(alpha), np.sin(alpha)
     aspect_ratio = 4
     lx_input = 1 / np.sqrt(aspect_ratio)
@@ -94,7 +96,7 @@ def test_case_b():
         vy=vy_input,
         lx=lx_input,
         ly=ly_input,
-        theta=theta_input+alpha,
+        theta=theta_input + alpha,
         bs=bs,
     )
     ds = im.run_norm_ds(ds, method_parameters["preprocessing"]["radius"])

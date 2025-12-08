@@ -191,7 +191,12 @@ def plot_frames_with_contour(average, contours, t_indexes, variable="cond_av"):
 
 
 def full_analysis(
-    ds, method_parameters, suffix, figures_dir="integrated_tests_figures", do_plots=True
+    ds,
+    method_parameters,
+    suffix,
+    figures_dir="integrated_tests_figures",
+    do_plots=True,
+    variable="cond_av",
 ):
     """
     Does a full analysis on imaging data, estimating a BlobParameters object containing all estimates. Plots figures
@@ -220,10 +225,10 @@ def full_analysis(
     )
 
     contour_ds = im.get_contour_evolution(
-        average_ds.cond_av,
+        average_ds[variable],
         method_parameters["contouring"]["threshold_factor"],
         max_displacement_threshold=None,
-        com_method="global"
+        com_method="global",
     )
 
     if do_plots:
@@ -239,8 +244,8 @@ def full_analysis(
             average_ds,
             contour_ds,
             apd_dataset=None,
-            variable="cond_av",
-            lims=(0, 3),
+            variable=variable,
+            lims=(0, np.max(average_ds[variable].values)),
             gif_name=contour_file_name,
             interpolation="spline16",
             show=False,
