@@ -228,7 +228,7 @@ def full_analysis(
         average_ds[variable],
         method_parameters["contouring"]["threshold_factor"],
         max_displacement_threshold=None,
-        com_method="global",
+        com_method="centroid",
     )
 
     if do_plots:

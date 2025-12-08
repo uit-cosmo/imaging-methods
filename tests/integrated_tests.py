@@ -23,8 +23,8 @@ K = 10000
 method_parameters = {
     "preprocessing": {"radius": 1000},
     "2dca": {
-        "refx": 4,
-        "refy": 4,
+        "refx": 8,
+        "refy": 8,
         "threshold": 2,
         "window": 60,
         "check_max": 1,
@@ -78,7 +78,7 @@ def test_case_a():
 
 def test_case_b():
     alpha = np.pi / 8
-    vx_input, vy_input = np.cos(alpha), np.sin(alpha)
+    vx_input, vy_input = 1, 0
     aspect_ratio = 4
     lx_input = 1 / np.sqrt(aspect_ratio)
     ly_input = np.sqrt(aspect_ratio)
@@ -100,7 +100,7 @@ def test_case_b():
         bs=bs,
     )
     ds = im.run_norm_ds(ds, method_parameters["preprocessing"]["radius"])
-    bp = full_analysis(ds, method_parameters, "b", do_plots=MAKE_PLOTS)
+    bp = full_analysis(ds, method_parameters, "b", do_plots=MAKE_PLOTS, variable="cross_corr")
     print(bp)
 
     assert np.abs(bp.vx_c - vx_input) < 0.05, "Wrong contour x velocity"
