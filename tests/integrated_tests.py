@@ -100,7 +100,9 @@ def test_case_b():
         bs=bs,
     )
     ds = im.run_norm_ds(ds, method_parameters["preprocessing"]["radius"])
-    bp = full_analysis(ds, method_parameters, "b", do_plots=MAKE_PLOTS, variable="cross_corr")
+    bp = full_analysis(
+        ds, method_parameters, "b", do_plots=MAKE_PLOTS, variable="cross_corr"
+    )
     print(bp)
 
     assert np.abs(bp.vx_c - vx_input) < 0.05, "Wrong contour x velocity"

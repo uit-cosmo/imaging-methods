@@ -7,6 +7,7 @@ from typing import Literal
 
 def compute_maximum_trajectory_da(
     average_ds: xr.Dataset,
+    variable="cond_av",
     method: Literal["parabolic"] = "parabolic",
     min_intensity: float = 0.0,
 ) -> xr.DataArray:
@@ -43,8 +44,8 @@ def compute_maximum_trajectory_da(
     if method != "parabolic":
         raise ValueError("Only method='parabolic' is currently supported")
 
-    cond_av = average_ds["cond_av"]
-    if cond_av.ndim != 3 or set(cond_av.dims) != {"time", "x", "y"}:
+    data = average_ds[variable]
+    if data.ndim != 3 or set(data.dims) != {"time", "x", "y"}:
         raise ValueError("cond_av must have dimensions (time, x, y)")
 
     try:
@@ -55,7 +56,7 @@ def compute_maximum_trajectory_da(
             "average_ds must contain 'R' and 'Z' fields for physical coordinates"
         ) from e
 
-    time_coords = cond_av["time"].values
+    time_coords = data["time"].values
 
     def get_physical_pos(
         da: xr.DataArray,
@@ -147,7 +148,7 @@ def compute_maximum_trajectory_da(
 
     # Compute raw trajectory
     raw_trajectory = np.array(
-        [parabolic_2d_interp(cond_av.isel(time=it)) for it in range(len(time_coords))]
+        [parabolic_2d_interp(data.isel(time=it)) for it in range(len(time_coords))]
     )  # Shape: (n_times, 2)
 
     # Interpolate NaNs (nearest + extrapolate)
