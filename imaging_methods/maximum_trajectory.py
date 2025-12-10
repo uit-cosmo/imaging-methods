@@ -119,7 +119,7 @@ def compute_maximum_trajectory_da(
 
 def find_maximum_for_frame(frame_da: xr.DataArray, R_da, Z_da, min_intensity: float = 0, method="parabolic"):
     if method == "parabolic":
-        ind_x, ind_y = parabolic_2d_interp(frame_da, 3, min_intensity)
+        ind_x, ind_y = parabolic_2d_interp(frame_da, min_intensity)
     elif method == "fit":
         ind_x, ind_y = parabolic_2d_fit(frame_da, 3, min_intensity)
     else:
