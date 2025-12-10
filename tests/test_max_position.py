@@ -24,8 +24,8 @@ K = 10000
 method_parameters = {
     "preprocessing": {"radius": 1000},
     "2dca": {
-        "refx": 8,
-        "refy": 8,
+        "refx": 6,
+        "refy": 5,
         "threshold": 2,
         "window": 60,
         "check_max": 1,
@@ -189,6 +189,12 @@ def movie(
 
     if file_name is not None:
         ani.save(file_name, writer="ffmpeg", fps=10)
+        os.system(
+           "gifsicle -i {} -O3 --colors 32 --lossy=150 -o {}".format(
+               file_name, file_name
+           )
+        )
+
     plt.show()
 
 
@@ -234,8 +240,8 @@ def test_real_data():
     manager = im.GPIDataAccessor(
         "/home/sosno/Git/experimental_database/plasma_discharges.json"
     )
-    # ds = manager.read_shot_data(shot, preprocessed=True, data_folder="../data")
-    ds = make_decoherence_realization(0.5)
+    ds = manager.read_shot_data(shot, preprocessed=True, data_folder="../data")
+    # ds = make_decoherence_realization(0.5)
 
     tdca_params = method_parameters["2dca"]
     events, average_ds = im.find_events_and_2dca(
@@ -285,7 +291,7 @@ def test_real_data():
         cross_corr_max.values[:, 0], cross_corr_max.values[:, 1], color="red", ls="--"
     )
 
-    plt.savefig("trajectories.eps", bbox_inches="tight")
+    plt.savefig("trajectories.pdf", bbox_inches="tight")
     plt.show()
 
     v_ca_centroid, w_ca_centroid = get_velocities_from_position(
