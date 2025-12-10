@@ -11,14 +11,14 @@ plt.rcParams["text.latex.preamble"] = (
 
 
 MAKE_PLOTS = True
-T = 10000
+T = 1000
 Lx = 8
 Ly = 8
 nx = 8
 ny = 8
 dt = 0.1
 bs = BlobShapeImpl(BlobShapeEnum.gaussian, BlobShapeEnum.gaussian)
-K = 10000
+K = 1000
 
 # Method parameters
 method_parameters = {
@@ -190,16 +190,16 @@ def movie(
     if file_name is not None:
         ani.save(file_name, writer="ffmpeg", fps=10)
         os.system(
-           "gifsicle -i {} -O3 --colors 32 --lossy=150 -o {}".format(
-               file_name, file_name
-           )
+            "gifsicle -i {} -O3 --colors 32 --lossy=150 -o {}".format(
+                file_name, file_name
+            )
         )
 
     plt.show()
 
 
 def get_synthetic_data():
-    alpha = np.pi/8
+    alpha = np.pi / 8
     vx_input = np.cos(alpha)
     vy_intput = np.sin(alpha)
     lx_input = 1
@@ -273,7 +273,7 @@ def test_real_data():
 
     cross_corr_centroid = contour_cc.center_of_mass
 
-    movie(average_ds, file_name="trajectories.gif")
+    # movie(average_ds, file_name="trajectories.gif")
 
     fig, ax = plt.subplots()
 
