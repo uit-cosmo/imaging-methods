@@ -178,10 +178,12 @@ def find_events_and_2dca(
     start_idx = ds.sizes["time"] - half_window
     end_idx = ds.sizes["time"] + half_window + 1
 
+    ref_ts_norm = (ref_ts.values - ref_ts.values.mean())/ref_ts.values.std()
     for i in range(nx):
         for j in range(ny):
             pixel = ds.frames.isel(x=i, y=j).values
-            cov_sums_full = ssi.correlate(pixel, ref_ts.values, mode="full")
+            pixel = (pixel - pixel.mean()) / pixel.std()
+            cov_sums_full = ssi.correlate(pixel, ref_ts_norm, mode="full")
             corr_array[j, i, :] = cov_sums_full[start_idx:end_idx] / len(ref_ts)
 
     cross_corr = xr.DataArray(

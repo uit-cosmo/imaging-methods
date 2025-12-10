@@ -224,15 +224,23 @@ def get_synthetic_data():
     ds = im.run_norm_ds(ds, method_parameters["preprocessing"]["radius"])
     return ds
 
+def get_good_times(position, signal):
+    filter = signal > 0.6*np.max(signal)
+    filter = restrict_to_largest_true_subarray(filter)
+    distances_vector = position.values - [R, Z]
+    distances = np.sqrt((distances_vector ** 2).sum(axis=1))
+    mask = distances < delta
+    return np.logical_and(mask, filter)
 
-def get_velocities_from_position(average_ds, contour, position, delta, extra_mask=None):
+def get_velocity(position, mask):
     velocity_ds = im.get_contour_velocity(
         position,
         method_parameters["contouring"]["com_smoothing"],
     )
-    v, w = im.get_average_velocity_for_near_com(
-        average_ds, contour, velocity_ds, distance=delta, extra_mask=extra_mask
-    )
+    mask = get_good_times(position, ca_max)
+    valid_times = position.time[mask]  # DataArray with wanted times
+    common_times = valid_times[valid_times.isin(velocity_ds.time)]
+    v, w = velocity_ds.sel(time=common_times).mean(dim="time", skipna=True).values
     return v, w
 
 
