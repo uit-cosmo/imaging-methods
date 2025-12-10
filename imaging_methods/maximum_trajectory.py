@@ -51,7 +51,7 @@ def compute_maximum_trajectory_da(
     average_ds : xr.Dataset
         Output from `find_events_and_2dca` containing `cond_av` (time, x, y),
         and fields `R` and `Z` for physical coordinates (dims: ('x',), ('y',), or ('x', 'y')).
-    method : {'parabolic'}, optional
+    method : {'parabolic', "fit"}, optional
         Sub-pixel interpolation method. Only 'parabolic' is currently supported.
     min_intensity : float, optional
         Frames with max intensity below this are set to NaN.
@@ -72,8 +72,6 @@ def compute_maximum_trajectory_da(
     """
     if "cond_av" not in average_ds:
         raise ValueError("average_ds must contain 'cond_av' DataArray")
-    if method != "parabolic":
-        raise ValueError("Only method='parabolic' is currently supported")
 
     data = average_ds[variable]
     if data.ndim != 3 or set(data.dims) != {"time", "x", "y"}:
@@ -91,7 +89,7 @@ def compute_maximum_trajectory_da(
 
     # Compute raw trajectory
     raw_trajectory = np.array(
-        [find_maximum_for_frame(data.isel(time=it), R_da, Z_da, min_intensity=min_intensity) for it in range(len(time_coords))]
+        [find_maximum_for_frame(data.isel(time=it), R_da, Z_da, min_intensity=min_intensity, method=method) for it in range(len(time_coords))]
     )  # Shape: (n_times, 2)
 
     # Interpolate NaNs (nearest + extrapolate)
@@ -119,8 +117,14 @@ def compute_maximum_trajectory_da(
     return final_traj
 
 
-def find_maximum_for_frame(frame_da: xr.DataArray, R_da, Z_da, min_intensity: float = 0):
-    ind_x, ind_y = parabolic_2d_fit(frame_da, 3, min_intensity)
+def find_maximum_for_frame(frame_da: xr.DataArray, R_da, Z_da, min_intensity: float = 0, method="parabolic"):
+    if method == "parabolic":
+        ind_x, ind_y = parabolic_2d_interp(frame_da, 3, min_intensity)
+    elif method == "fit":
+        ind_x, ind_y = parabolic_2d_fit(frame_da, 3, min_intensity)
+    else:
+        raise ValueError("Unsupported method {}".format(method))
+
     R = float(R_da.interp({"x": ind_x, "y": ind_y}, method="linear").values)
     Z = float(Z_da.interp({"x": ind_x, "y": ind_y}, method="linear").values)
     return R, Z

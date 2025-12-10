@@ -254,8 +254,9 @@ def test_real_data():
         window_size=tdca_params["window"],
         single_counting=tdca_params["single_counting"],
     )
-    cond_av_max = im.compute_maximum_trajectory_da(average_ds, "cond_av")
-    cross_corr_max = im.compute_maximum_trajectory_da(average_ds, "cross_corr")
+    method = "parabolic"
+    cond_av_max = im.compute_maximum_trajectory_da(average_ds, "cond_av", method=method)
+    cross_corr_max = im.compute_maximum_trajectory_da(average_ds, "cross_corr", method=method)
 
     contour_ca = im.get_contour_evolution(
         average_ds.cond_av,
