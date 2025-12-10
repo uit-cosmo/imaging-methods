@@ -175,8 +175,8 @@ def find_events_and_2dca(
     corr_array = np.zeros((ny, nx, n_lags))
 
     # Indices for slicing
-    start_idx = ds.sizes["time"] - half_window
-    end_idx = ds.sizes["time"] + half_window + 1
+    start_idx = ds.sizes["time"] - half_window - 1
+    end_idx = ds.sizes["time"] + half_window
 
     ref_ts_norm = (ref_ts.values - ref_ts.values.mean())/ref_ts.values.std()
     for i in range(nx):
