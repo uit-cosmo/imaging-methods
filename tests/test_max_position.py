@@ -14,8 +14,8 @@ MAKE_PLOTS = True
 T = 10000
 Lx = 8
 Ly = 8
-nx = 16
-ny = 16
+nx = 8
+ny = 8
 dt = 0.1
 bs = BlobShapeImpl(BlobShapeEnum.gaussian, BlobShapeEnum.gaussian)
 K = 10000
@@ -24,8 +24,8 @@ K = 10000
 method_parameters = {
     "preprocessing": {"radius": 1000},
     "2dca": {
-        "refx": 6,
-        "refy": 5,
+        "refx": 4,
+        "refy": 4,
         "threshold": 2,
         "window": 60,
         "check_max": 1,
@@ -199,8 +199,9 @@ def movie(
 
 
 def get_synthetic_data():
-    vx_input = 1
-    vy_intput = 0
+    alpha = np.pi/8
+    vx_input = np.cos(alpha)
+    vy_intput = np.sin(alpha)
     lx_input = 1
     ly_input = 1
     theta_input = 0
@@ -240,8 +241,8 @@ def test_real_data():
     manager = im.GPIDataAccessor(
         "/home/sosno/Git/experimental_database/plasma_discharges.json"
     )
-    ds = manager.read_shot_data(shot, preprocessed=True, data_folder="../data")
-    # ds = make_decoherence_realization(0.5)
+    # ds = manager.read_shot_data(shot, preprocessed=True, data_folder="../data")
+    ds = get_synthetic_data()
 
     tdca_params = method_parameters["2dca"]
     events, average_ds = im.find_events_and_2dca(
