@@ -225,15 +225,52 @@ def get_synthetic_data():
     return ds
 
 
-def get_velocities_from_position(average_ds, contour, position):
+def get_velocities_from_position(average_ds, contour, position, delta, extra_mask=None):
     velocity_ds = im.get_contour_velocity(
         position,
         method_parameters["contouring"]["com_smoothing"],
     )
     v, w = im.get_average_velocity_for_near_com(
-        average_ds, contour, velocity_ds, distance=1
+        average_ds, contour, velocity_ds, distance=delta, extra_mask=extra_mask
     )
     return v, w
+
+
+def restrict_to_largest_true_subarray(mask):
+    """
+    Restrict the True values in the mask to the range of the longest consecutive True subarray.
+
+    Parameters:
+        mask (np.ndarray): A boolean array.
+
+    Returns:
+        np.ndarray: A new boolean mask with True values only in the range of the longest consecutive True subarray.
+    """
+    # Convert the boolean array to integers (True -> 1, False -> 0)
+    mask_int = mask.astype(int)
+
+    # Find the start and end indices of the longest consecutive True subarray
+    diff = np.diff(np.concatenate(([0], mask_int, [0])))  # Add padding to detect edges
+    starts = np.where(diff == 1)[0]  # Indices where True starts
+    ends = np.where(diff == -1)[0]  # Indices where True ends
+
+    # Calculate lengths of consecutive True segments
+    lengths = ends - starts
+
+    if len(lengths) == 0:
+        # No True values in the mask
+        return np.zeros_like(mask, dtype=bool)
+
+    # Find the range of the longest consecutive True subarray
+    max_index = lengths.argmax()
+    start_idx = starts[max_index]
+    end_idx = ends[max_index] - 1  # End index is inclusive
+
+    # Create a new mask with True values only in the range [start_idx, end_idx]
+    restricted_mask = np.zeros_like(mask, dtype=bool)
+    restricted_mask[start_idx:end_idx + 1] = True
+
+    return restricted_mask
 
 
 def test_real_data():
@@ -254,8 +291,12 @@ def test_real_data():
         window_size=tdca_params["window"],
         single_counting=tdca_params["single_counting"],
     )
+    refx, refy = tdca_params["refx"], tdca_params["refy"]
+    R, Z = average_ds.R.isel(x=refx, y=refy).item(), average_ds.Z.isel(x=refx, y=refy).item()
+    delta = average_ds.R.isel(x=refx, y=refy).item() - average_ds.R.isel(x=refx - 1, y=refy).item()
     method = "parabolic"
     cond_av_max = im.compute_maximum_trajectory_da(average_ds, "cond_av", method=method)
+    average_ds.cond_av.max(dims=["x", "y"])
     cross_corr_max = im.compute_maximum_trajectory_da(average_ds, "cross_corr", method=method)
 
     contour_ca = im.get_contour_evolution(
@@ -276,6 +317,14 @@ def test_real_data():
 
     # movie(average_ds, file_name="trajectories.gif")
 
+    def get_good_times(position, signal):
+        filter = signal > 0.7*np.max(signal)
+        filter = restrict_to_largest_true_subarray(filter)
+        distances_vector = position.values - [R, Z]
+        distances = np.sqrt((distances_vector ** 2).sum(axis=1))
+        mask = distances < delta
+        return np.logical_and(mask, filter)
+
     fig, ax = plt.subplots()
 
     R, Z = (
@@ -284,6 +333,8 @@ def test_real_data():
     )
     ax.scatter(R, Z)
     ax.plot(cond_av_centroid.values[:, 0], cond_av_centroid.values[:, 1], color="blue")
+    mask = get_good_times(cond_av_centroid, signal)
+    ax.plot(cond_av_centroid.values[:, 0][mask], cond_av_centroid.values[:, 1][mask], color="blue")
     ax.plot(cond_av_max.values[:, 0], cond_av_max.values[:, 1], color="blue", ls="--")
 
     ax.plot(
@@ -296,17 +347,22 @@ def test_real_data():
     plt.savefig("trajectories.pdf", bbox_inches="tight")
     plt.show()
 
+    filter_ca = average_ds.cond_av.max(dim=["x", "y"]).values > 0.7*average_ds.cond_av.max().item()
+    filter_ca = restrict_to_largest_true_subarray(filter_ca)
     v_ca_centroid, w_ca_centroid = get_velocities_from_position(
-        average_ds, contour_ca, cond_av_centroid
+        average_ds, contour_ca, cond_av_centroid, delta, extra_mask=filter_ca
     )
     v_ca_max, w_ca_max = get_velocities_from_position(
-        average_ds, contour_ca, cond_av_max
+        average_ds, contour_ca, cond_av_max, delta, extra_mask=filter_ca
     )
+
+    filter_cc = average_ds.cross_corr.max(dim=["x", "y"]).values > 0.7*average_ds.cross_corr.max().item()
+    filter_cc = restrict_to_largest_true_subarray(filter_ca)
     v_cc_centroid, w_cc_centroid = get_velocities_from_position(
-        average_ds, contour_cc, cross_corr_centroid
+        average_ds, contour_cc, cross_corr_centroid, delta, extra_mask=filter_cc
     )
     v_cc_max, w_cc_max = get_velocities_from_position(
-        average_ds, contour_cc, cross_corr_max
+        average_ds, contour_cc, cross_corr_max, delta, extra_mask=filter_cc
     )
 
     print(

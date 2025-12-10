@@ -381,7 +381,7 @@ def get_contour_velocity(com_da, window_size=3, window_type="boxcar"):
     return velocity_da
 
 
-def get_average_velocity_for_near_com(average_ds, contour_ds, velocity_ds, distance):
+def get_average_velocity_for_near_com(average_ds, contour_ds, velocity_ds, distance, extra_mask = None):
     refx, refy = average_ds["refx"].item(), average_ds["refy"].item()
 
     distances_vector = contour_ds.center_of_mass.values - [
@@ -390,6 +390,8 @@ def get_average_velocity_for_near_com(average_ds, contour_ds, velocity_ds, dista
     ]
     distances = np.sqrt((distances_vector**2).sum(axis=1))
     mask = distances < distance
+    if extra_mask is not None:
+        mask = np.logical_and(mask, extra_mask)
     valid_times = contour_ds.time[mask]  # DataArray with wanted times
     common_times = valid_times[valid_times.isin(velocity_ds.time)]
 
