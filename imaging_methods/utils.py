@@ -257,3 +257,40 @@ def get_average_lcfs_rad_vs_time(ds):
         rvals.append(r_fine.mean())
 
     return times_in_range, np.array(rvals)
+
+
+def restrict_to_largest_true_subarray(mask):
+    """
+    Restrict the True values in the mask to the range of the longest consecutive True subarray.
+
+    Parameters:
+        mask (np.ndarray): A boolean array.
+
+    Returns:
+        np.ndarray: A new boolean mask with True values only in the range of the longest consecutive True subarray.
+    """
+    # Convert the boolean array to integers (True -> 1, False -> 0)
+    mask_int = mask.astype(int)
+
+    # Find the start and end indices of the longest consecutive True subarray
+    diff = np.diff(np.concatenate(([0], mask_int, [0])))  # Add padding to detect edges
+    starts = np.where(diff == 1)[0]  # Indices where True starts
+    ends = np.where(diff == -1)[0]  # Indices where True ends
+
+    # Calculate lengths of consecutive True segments
+    lengths = ends - starts
+
+    if len(lengths) == 0:
+        # No True values in the mask
+        return np.zeros_like(mask, dtype=bool)
+
+    # Find the range of the longest consecutive True subarray
+    max_index = lengths.argmax()
+    start_idx = starts[max_index]
+    end_idx = ends[max_index] - 1  # End index is inclusive
+
+    # Create a new mask with True values only in the range [start_idx, end_idx]
+    restricted_mask = np.zeros_like(mask, dtype=bool)
+    restricted_mask[start_idx : end_idx + 1] = True
+
+    return restricted_mask

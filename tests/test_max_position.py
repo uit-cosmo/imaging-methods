@@ -224,62 +224,6 @@ def get_synthetic_data():
     ds = im.run_norm_ds(ds, method_parameters["preprocessing"]["radius"])
     return ds
 
-def get_good_times(position, signal):
-    filter = signal > 0.6*np.max(signal)
-    filter = restrict_to_largest_true_subarray(filter)
-    distances_vector = position.values - [R, Z]
-    distances = np.sqrt((distances_vector ** 2).sum(axis=1))
-    mask = distances < delta
-    return np.logical_and(mask, filter)
-
-def get_velocity(position, mask):
-    velocity_ds = im.get_contour_velocity(
-        position,
-        method_parameters["contouring"]["com_smoothing"],
-    )
-    mask = get_good_times(position, ca_max)
-    valid_times = position.time[mask]  # DataArray with wanted times
-    common_times = valid_times[valid_times.isin(velocity_ds.time)]
-    v, w = velocity_ds.sel(time=common_times).mean(dim="time", skipna=True).values
-    return v, w
-
-
-def restrict_to_largest_true_subarray(mask):
-    """
-    Restrict the True values in the mask to the range of the longest consecutive True subarray.
-
-    Parameters:
-        mask (np.ndarray): A boolean array.
-
-    Returns:
-        np.ndarray: A new boolean mask with True values only in the range of the longest consecutive True subarray.
-    """
-    # Convert the boolean array to integers (True -> 1, False -> 0)
-    mask_int = mask.astype(int)
-
-    # Find the start and end indices of the longest consecutive True subarray
-    diff = np.diff(np.concatenate(([0], mask_int, [0])))  # Add padding to detect edges
-    starts = np.where(diff == 1)[0]  # Indices where True starts
-    ends = np.where(diff == -1)[0]  # Indices where True ends
-
-    # Calculate lengths of consecutive True segments
-    lengths = ends - starts
-
-    if len(lengths) == 0:
-        # No True values in the mask
-        return np.zeros_like(mask, dtype=bool)
-
-    # Find the range of the longest consecutive True subarray
-    max_index = lengths.argmax()
-    start_idx = starts[max_index]
-    end_idx = ends[max_index] - 1  # End index is inclusive
-
-    # Create a new mask with True values only in the range [start_idx, end_idx]
-    restricted_mask = np.zeros_like(mask, dtype=bool)
-    restricted_mask[start_idx:end_idx + 1] = True
-
-    return restricted_mask
-
 
 def test_real_data():
     shot = 1160616016
@@ -300,12 +244,16 @@ def test_real_data():
         single_counting=tdca_params["single_counting"],
     )
     refx, refy = tdca_params["refx"], tdca_params["refy"]
-    R, Z = average_ds.R.isel(x=refx, y=refy).item(), average_ds.Z.isel(x=refx, y=refy).item()
-    delta = average_ds.R.isel(x=refx, y=refy).item() - average_ds.R.isel(x=refx - 1, y=refy).item()
+    delta = (
+        average_ds.R.isel(x=refx, y=refy).item()
+        - average_ds.R.isel(x=refx - 1, y=refy).item()
+    )
+
     method = "parabolic"
     cond_av_max = im.compute_maximum_trajectory_da(average_ds, "cond_av", method=method)
-    average_ds.cond_av.max(dims=["x", "y"])
-    cross_corr_max = im.compute_maximum_trajectory_da(average_ds, "cross_corr", method=method)
+    cross_corr_max = im.compute_maximum_trajectory_da(
+        average_ds, "cross_corr", method=method
+    )
 
     contour_ca = im.get_contour_evolution(
         average_ds.cond_av,
@@ -313,7 +261,7 @@ def test_real_data():
         max_displacement_threshold=None,
         com_method="centroid",
     )
-    cond_av_centroid = contour_ca.center_of_mass
+    ca_centroid = contour_ca.center_of_mass
     contour_cc = im.get_contour_evolution(
         average_ds.cross_corr,
         method_parameters["contouring"]["threshold_factor_cc"],
@@ -321,56 +269,94 @@ def test_real_data():
         com_method="centroid",
     )
 
-    cross_corr_centroid = contour_cc.center_of_mass
+    cc_centroid = contour_cc.center_of_mass
+    ca_max = average_ds.cond_av.max(dim=["x", "y"]).values
+    cc_max = average_ds.cross_corr.max(dim=["x", "y"]).values
 
     # movie(average_ds, file_name="trajectories.gif")
-
-    def get_good_times(position, signal):
-        filter = signal > 0.7*np.max(signal)
-        filter = restrict_to_largest_true_subarray(filter)
-        distances_vector = position.values - [R, Z]
-        distances = np.sqrt((distances_vector ** 2).sum(axis=1))
-        mask = distances < delta
-        return np.logical_and(mask, filter)
-
     fig, ax = plt.subplots()
 
     R, Z = (
         ds.R.isel(x=tdca_params["refx"], y=tdca_params["refy"]).item(),
         ds.Z.isel(x=tdca_params["refx"], y=tdca_params["refy"]).item(),
     )
+
     ax.scatter(R, Z)
-    ax.plot(cond_av_centroid.values[:, 0], cond_av_centroid.values[:, 1], color="blue")
-    mask = get_good_times(cond_av_centroid, signal)
-    ax.plot(cond_av_centroid.values[:, 0][mask], cond_av_centroid.values[:, 1][mask], color="blue")
-    ax.plot(cond_av_max.values[:, 0], cond_av_max.values[:, 1], color="blue", ls="--")
+
+    is_ca_high_enough = ca_max > 0.7 * np.max(ca_max)
+    is_cc_high_enough = cc_max > 0.7 * np.max(cc_max)
+
+    mask_ca_centroid = get_combined_mask(
+        average_ds, ca_centroid, is_ca_high_enough, delta
+    )
+    mask_ca_max = get_combined_mask(average_ds, cond_av_max, is_ca_high_enough, delta)
+    mask_cc_centroid = get_combined_mask(
+        average_ds, cc_centroid, is_cc_high_enough, delta
+    )
+    mask_cc_max = get_combined_mask(
+        average_ds, cross_corr_max, is_cc_high_enough, delta
+    )
+
+    ax.plot(ca_centroid.values[:, 0], ca_centroid.values[:, 1], color="blue", lw=0.5)
+    ax.plot(
+        ca_centroid.values[:, 0][mask_ca_centroid],
+        ca_centroid.values[:, 1][mask_ca_centroid],
+        color="blue",
+        lw=1,
+    )
 
     ax.plot(
-        cross_corr_centroid.values[:, 0], cond_av_centroid.values[:, 1], color="red"
+        cond_av_max.values[:, 0],
+        cond_av_max.values[:, 1],
+        color="blue",
+        ls="--",
+        lw=0.5,
     )
     ax.plot(
-        cross_corr_max.values[:, 0], cross_corr_max.values[:, 1], color="red", ls="--"
+        cond_av_max.values[:, 0][mask_ca_max],
+        cond_av_max.values[:, 1][mask_ca_max],
+        color="blue",
+        ls="--",
+        lw=1,
     )
 
+    ax.plot(cc_centroid.values[:, 0], ca_centroid.values[:, 1], color="red", lw=0.5)
+
+    ax.plot(
+        cc_centroid.values[:, 0][mask_cc_centroid],
+        cc_centroid.values[:, 1][mask_cc_centroid],
+        color="red",
+        lw=1,
+    )
+
+    ax.plot(
+        cross_corr_max.values[:, 0],
+        cross_corr_max.values[:, 1],
+        color="red",
+        ls="--",
+        lw=0.5,
+    )
+    ax.plot(
+        cross_corr_max.values[:, 0][mask_cc_max],
+        cross_corr_max.values[:, 1][mask_cc_max],
+        color="red",
+        ls="--",
+        lw=1,
+    )
+
+    ax.set_aspect("equal", adjustable="datalim")
     plt.savefig("trajectories.pdf", bbox_inches="tight")
     plt.show()
 
-    filter_ca = average_ds.cond_av.max(dim=["x", "y"]).values > 0.7*average_ds.cond_av.max().item()
-    filter_ca = restrict_to_largest_true_subarray(filter_ca)
-    v_ca_centroid, w_ca_centroid = get_velocities_from_position(
-        average_ds, contour_ca, cond_av_centroid, delta, extra_mask=filter_ca
+    v_ca_centroid, w_ca_centroid = get_averaged_velocity_from_position(
+        ca_centroid, mask_ca_centroid
     )
-    v_ca_max, w_ca_max = get_velocities_from_position(
-        average_ds, contour_ca, cond_av_max, delta, extra_mask=filter_ca
+    v_ca_max, w_ca_max = get_averaged_velocity_from_position(cond_av_max, mask_ca_max)
+    v_cc_centroid, w_cc_centroid = get_averaged_velocity_from_position(
+        cc_centroid, mask_cc_centroid
     )
-
-    filter_cc = average_ds.cross_corr.max(dim=["x", "y"]).values > 0.7*average_ds.cross_corr.max().item()
-    filter_cc = restrict_to_largest_true_subarray(filter_ca)
-    v_cc_centroid, w_cc_centroid = get_velocities_from_position(
-        average_ds, contour_cc, cross_corr_centroid, delta, extra_mask=filter_cc
-    )
-    v_cc_max, w_cc_max = get_velocities_from_position(
-        average_ds, contour_cc, cross_corr_max, delta, extra_mask=filter_cc
+    v_cc_max, w_cc_max = get_averaged_velocity_from_position(
+        cross_corr_max, mask_cc_max
     )
 
     print(

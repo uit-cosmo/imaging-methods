@@ -178,7 +178,7 @@ def find_events_and_2dca(
     start_idx = ds.sizes["time"] - half_window - 1
     end_idx = ds.sizes["time"] + half_window
 
-    ref_ts_norm = (ref_ts.values - ref_ts.values.mean())/ref_ts.values.std()
+    ref_ts_norm = (ref_ts.values - ref_ts.values.mean()) / ref_ts.values.std()
     for i in range(nx):
         for j in range(ny):
             pixel = ds.frames.isel(x=i, y=j).values

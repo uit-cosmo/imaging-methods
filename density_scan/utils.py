@@ -227,7 +227,7 @@ def get_contour_parameters(shot, refx, refy, average_ds, do_plots, gpi_ds):
         method_parameters["contouring"]["threshold_factor"],
         max_displacement_threshold=None,
     )
-    velocity_ds = im.get_contour_velocity(
+    velocity_ds = im.get_velocity_from_position(
         contour_ds.center_of_mass,
         window_size=method_parameters["contouring"]["com_smoothing"],
     )

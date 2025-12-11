@@ -89,7 +89,16 @@ def compute_maximum_trajectory_da(
 
     # Compute raw trajectory
     raw_trajectory = np.array(
-        [find_maximum_for_frame(data.isel(time=it), R_da, Z_da, min_intensity=min_intensity, method=method) for it in range(len(time_coords))]
+        [
+            find_maximum_for_frame(
+                data.isel(time=it),
+                R_da,
+                Z_da,
+                min_intensity=min_intensity,
+                method=method,
+            )
+            for it in range(len(time_coords))
+        ]
     )  # Shape: (n_times, 2)
 
     # Interpolate NaNs (nearest + extrapolate)
@@ -117,7 +126,9 @@ def compute_maximum_trajectory_da(
     return final_traj
 
 
-def find_maximum_for_frame(frame_da: xr.DataArray, R_da, Z_da, min_intensity: float = 0, method="parabolic"):
+def find_maximum_for_frame(
+    frame_da: xr.DataArray, R_da, Z_da, min_intensity: float = 0, method="parabolic"
+):
     if method == "parabolic":
         ind_x, ind_y = parabolic_2d_interp(frame_da, min_intensity)
     elif method == "fit":
@@ -129,7 +140,10 @@ def find_maximum_for_frame(frame_da: xr.DataArray, R_da, Z_da, min_intensity: fl
     Z = float(Z_da.interp({"x": ind_x, "y": ind_y}, method="linear").values)
     return R, Z
 
-def parabolic_2d_interp(frame_da: xr.DataArray, min_intensity: float = 0) -> tuple[float, float]:
+
+def parabolic_2d_interp(
+    frame_da: xr.DataArray, min_intensity: float = 0
+) -> tuple[float, float]:
     """Return sub-pixel (R, Z) of maximum using 2D parabolic fit in index space."""
     # Find discrete maximum position
     flat_argmax = frame_da.values.argmax()
@@ -162,7 +176,7 @@ def parabolic_2d_interp(frame_da: xr.DataArray, min_intensity: float = 0) -> tup
     denominator = fx_m1 - 2 * fx_0 + fx_p1
     if denominator != 0:
         delta_x = 0.5 * (fx_m1 - fx_p1) / denominator
-    else: # All three have the same value
+    else:  # All three have the same value
         delta_x = 0.0
 
     # Parabolic fit in y (along y, fixed middle x)
@@ -177,6 +191,7 @@ def parabolic_2d_interp(frame_da: xr.DataArray, min_intensity: float = 0) -> tup
     sub_x = x_idx + delta_x
     sub_y = y_idx + delta_y
     return sub_x, sub_y
+
 
 def parabolic_2d_fit(
     frame_da: xr.DataArray, neighborhood_size: int = 5, min_intensity=0
@@ -199,7 +214,7 @@ def parabolic_2d_fit(
         neighborhood_size // 2 <= x_idx < nx - neighborhood_size // 2
         and neighborhood_size // 2 <= y_idx < ny - neighborhood_size // 2
     ):
-        return parabolic_2d_fit(frame_da, neighborhood_size-2, min_intensity)
+        return parabolic_2d_fit(frame_da, neighborhood_size - 2, min_intensity)
     # Extract neighborhood
     half_size = neighborhood_size // 2
     nb_da = frame_da.isel(

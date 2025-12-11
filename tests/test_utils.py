@@ -251,7 +251,7 @@ def full_analysis(
             show=False,
         )
 
-    velocity_ds = im.get_contour_velocity(
+    velocity_ds = im.get_velocity_from_position(
         contour_ds.center_of_mass,
         method_parameters["contouring"]["com_smoothing"],
     )

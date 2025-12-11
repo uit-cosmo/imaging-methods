@@ -131,7 +131,7 @@ contour_ds = get_contour_evolution(
     average.cond_av, 0.3, max_displacement_threshold=None, com_method="centroid"
 )
 
-velocity_ds = get_contour_velocity(
+velocity_ds = get_velocity_from_position(
     contour_ds.center_of_mass,
     window_size=3,
 )
