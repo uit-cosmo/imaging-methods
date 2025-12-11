@@ -29,7 +29,6 @@ def analysis(shot, refx, refy, manager, do_plots=True):
     if average_ds is None:
         print(f"The dataset is empty for shot {shot}, ignoring...")
         return None
-    average_ds = im.preprocess_average_ds(average_ds, threshold=1)
     gpi_ds = manager.read_shot_data(shot, data_folder="data")
 
     v_c, w_c, area_c = get_contour_parameters(
