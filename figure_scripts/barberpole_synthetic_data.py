@@ -42,6 +42,7 @@ def estimate_velocities(ds, method_parameters):
     when relevant in the provided figures_dir.
     """
     dt = im.get_dt(ds)
+    dr = im.get_dr(ds)
 
     tdca_params = method_parameters["2dca"]
     events, average_ds = im.find_events_and_2dca(
@@ -60,14 +61,20 @@ def estimate_velocities(ds, method_parameters):
             method_parameters["contouring"]["threshold_factor"],
             max_displacement_threshold=None,
         )
-        velocity_ds = im.get_velocity_from_position(
-            contour_ds.center_of_mass,
-            method_parameters["contouring"]["com_smoothing"],
-        )
-        v_c, w_c = im.get_average_velocity_for_near_com(
-            average_ds, contour_ds, velocity_ds, distance=1
-        )
-        return v_c, w_c
+        signal_high = average_ds[variable].max(dim=["x", "y"]).values > 0.75
+        mask = im.get_combined_mask(average_ds, contour_ds.center_of_mass, signal_high, dr)
+
+        v, w = im.get_averaged_velocity_from_position(position_da=contour_ds.center_of_mass, mask=mask, window_size=1)
+        return v, w
+
+
+    def get_max_pos_velocities(variable):
+        max_trajectory = im.compute_maximum_trajectory_da(average_ds, variable, method="fit")
+        signal_high = average_ds[variable].max(dim=["x", "y"]).values > 0.75
+        mask = im.get_combined_mask(average_ds, max_trajectory, signal_high, dr)
+
+        v, w = im.get_averaged_velocity_from_position(position_da=max_trajectory, mask=mask, window_size=1)
+        return v, w
 
     v_2dca, w_2dca = get_contouring_velocities("cond_av")
     v_2dcc, w_2dcc = get_contouring_velocities("cross_corr")

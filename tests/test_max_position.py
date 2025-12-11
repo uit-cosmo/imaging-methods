@@ -5,27 +5,25 @@ import cosmoplots as cp
 from imaging_methods import *
 
 plt.style.use(["cosmoplots.default"])
-plt.rcParams["text.latex.preamble"] = (
-    r"\usepackage{amsmath} \usepackage{mathptmx} \usepackage{amssymb} "
-)
+plt.rcParams["text.latex.preamble"] = r"\usepackage{amsmath} \usepackage{mathptmx} \usepackage{amssymb} "
 
 
 MAKE_PLOTS = True
-T = 1000
+T = 5000
 Lx = 8
 Ly = 8
-nx = 8
-ny = 8
+nx = 16
+ny = 16
 dt = 0.1
 bs = BlobShapeImpl(BlobShapeEnum.gaussian, BlobShapeEnum.gaussian)
-K = 1000
+K = 5000
 
 # Method parameters
 method_parameters = {
     "preprocessing": {"radius": 1000},
     "2dca": {
-        "refx": 4,
-        "refy": 4,
+        "refx": 8,
+        "refy": 8,
         "threshold": 2,
         "window": 60,
         "check_max": 1,
@@ -165,35 +163,21 @@ def movie(
         marker="s",
         color="green",
     )
-    max_scatter0 = ax[0].scatter(
-        max_ca.values[0, 0], max_ca.values[0, 1], marker="^", color="orange"
-    )
-    max_scatter1 = ax[1].scatter(
-        max_cc.values[0, 0], max_cc.values[0, 1], marker="^", color="orange"
-    )
+    max_scatter0 = ax[0].scatter(max_ca.values[0, 0], max_ca.values[0, 1], marker="^", color="orange")
+    max_scatter1 = ax[1].scatter(max_cc.values[0, 0], max_cc.values[0, 1], marker="^", color="orange")
     line0 = ax[0].plot([], [], ls="--", color="black")
     line1 = ax[1].plot([], [], ls="--", color="black")
     fig.colorbar(im0, cax=cax0)
     fig.colorbar(im1, cax=cax1)
 
-    im0.set_extent(
-        (dataset.R[0, 0], dataset.R[0, -1], dataset.Z[0, 0], dataset.Z[-1, 0])
-    )
-    im1.set_extent(
-        (dataset.R[0, 0], dataset.R[0, -1], dataset.Z[0, 0], dataset.Z[-1, 0])
-    )
+    im0.set_extent((dataset.R[0, 0], dataset.R[0, -1], dataset.Z[0, 0], dataset.Z[-1, 0]))
+    im1.set_extent((dataset.R[0, 0], dataset.R[0, -1], dataset.Z[0, 0], dataset.Z[-1, 0]))
 
-    ani = animation.FuncAnimation(
-        fig, animate_2d, frames=dataset[t_dim].values.size, interval=interval
-    )
+    ani = animation.FuncAnimation(fig, animate_2d, frames=dataset[t_dim].values.size, interval=interval)
 
     if file_name is not None:
         ani.save(file_name, writer="ffmpeg", fps=10)
-        os.system(
-            "gifsicle -i {} -O3 --colors 32 --lossy=150 -o {}".format(
-                file_name, file_name
-            )
-        )
+        os.system("gifsicle -i {} -O3 --colors 32 --lossy=150 -o {}".format(file_name, file_name))
 
     plt.show()
 
@@ -202,9 +186,9 @@ def get_synthetic_data():
     alpha = np.pi / 8
     vx_input = np.cos(alpha)
     vy_intput = np.sin(alpha)
-    lx_input = 1
-    ly_input = 1
-    theta_input = 0
+    lx_input = 1/2
+    ly_input = 2
+    theta_input = np.pi/4
 
     ds = make_2d_realization(
         Lx,
@@ -226,10 +210,8 @@ def get_synthetic_data():
 
 
 def test_real_data():
-    shot = 1160616016
-    manager = im.GPIDataAccessor(
-        "/home/sosno/Git/experimental_database/plasma_discharges.json"
-    )
+    shot = 1160616027
+    manager = im.GPIDataAccessor("/home/sosno/Git/experimental_database/plasma_discharges.json")
     # ds = manager.read_shot_data(shot, preprocessed=True, data_folder="../data")
     ds = get_synthetic_data()
 
@@ -243,18 +225,13 @@ def test_real_data():
         window_size=tdca_params["window"],
         single_counting=tdca_params["single_counting"],
     )
-    refx, refy = tdca_params["refx"], tdca_params["refy"]
-    delta = (
-        average_ds.R.isel(x=refx, y=refy).item()
-        - average_ds.R.isel(x=refx - 1, y=refy).item()
-    )
+    movie(average_ds)
 
-    method = "parabolic"
+    method = "fit"
     cond_av_max = im.compute_maximum_trajectory_da(average_ds, "cond_av", method=method)
-    cross_corr_max = im.compute_maximum_trajectory_da(
-        average_ds, "cross_corr", method=method
-    )
-
+    cross_corr_max = im.compute_maximum_trajectory_da(average_ds, "cross_corr", method=method)
+    refx, refy = tdca_params["refx"], tdca_params["refy"]
+    delta = average_ds.R.isel(x=refx, y=refy).item() - average_ds.R.isel(x=refx - 1, y=refy).item()
     contour_ca = im.get_contour_evolution(
         average_ds.cond_av,
         method_parameters["contouring"]["threshold_factor"],
@@ -268,12 +245,11 @@ def test_real_data():
         max_displacement_threshold=None,
         com_method="centroid",
     )
-
-    cc_centroid = contour_cc.center_of_mass
     ca_max = average_ds.cond_av.max(dim=["x", "y"]).values
     cc_max = average_ds.cross_corr.max(dim=["x", "y"]).values
 
-    # movie(average_ds, file_name="trajectories.gif")
+    cc_centroid = contour_cc.center_of_mass
+
     fig, ax = plt.subplots()
 
     R, Z = (
@@ -283,87 +259,52 @@ def test_real_data():
 
     ax.scatter(R, Z)
 
-    is_ca_high_enough = ca_max > 0.7 * np.max(ca_max)
-    is_cc_high_enough = cc_max > 0.7 * np.max(cc_max)
+    is_ca_high_enough = ca_max > 0.75 * np.max(ca_max)
+    is_cc_high_enough = cc_max > 0.75 * np.max(cc_max)
 
-    mask_ca_centroid = get_combined_mask(
-        average_ds, ca_centroid, is_ca_high_enough, delta
-    )
+    mask_ca_centroid = get_combined_mask(average_ds, ca_centroid, is_ca_high_enough, delta)
     mask_ca_max = get_combined_mask(average_ds, cond_av_max, is_ca_high_enough, delta)
-    mask_cc_centroid = get_combined_mask(
-        average_ds, cc_centroid, is_cc_high_enough, delta
-    )
-    mask_cc_max = get_combined_mask(
-        average_ds, cross_corr_max, is_cc_high_enough, delta
-    )
+    mask_cc_centroid = get_combined_mask(average_ds, cc_centroid, is_cc_high_enough, delta)
+    mask_cc_max = get_combined_mask(average_ds, cross_corr_max, is_cc_high_enough, delta)
 
     ax.plot(ca_centroid.values[:, 0], ca_centroid.values[:, 1], color="blue", lw=0.5)
-    ax.plot(
-        ca_centroid.values[:, 0][mask_ca_centroid],
-        ca_centroid.values[:, 1][mask_ca_centroid],
-        color="blue",
-        lw=1,
-    )
+    ax.plot(ca_centroid.values[:, 0][mask_ca_centroid], ca_centroid.values[:, 1][mask_ca_centroid], color="blue", lw=1)
+
+    ax.plot(cond_av_max.values[:, 0], cond_av_max.values[:, 1], color="blue", ls="--", lw=0.5)
+    ax.plot(cond_av_max.values[:, 0][mask_ca_max], cond_av_max.values[:, 1][mask_ca_max], color="blue", ls="--", lw=1)
 
     ax.plot(
-        cond_av_max.values[:, 0],
-        cond_av_max.values[:, 1],
-        color="blue",
-        ls="--",
-        lw=0.5,
-    )
-    ax.plot(
-        cond_av_max.values[:, 0][mask_ca_max],
-        cond_av_max.values[:, 1][mask_ca_max],
-        color="blue",
-        ls="--",
-        lw=1,
+        cc_centroid.values[:, 0], cc_centroid.values[:, 1], color="red", lw=0.5
     )
 
-    ax.plot(cc_centroid.values[:, 0], ca_centroid.values[:, 1], color="red", lw=0.5)
+    ax.plot(cc_centroid.values[:, 0][mask_cc_centroid], cc_centroid.values[:, 1][mask_cc_centroid], color="red", lw=1)
 
     ax.plot(
-        cc_centroid.values[:, 0][mask_cc_centroid],
-        cc_centroid.values[:, 1][mask_cc_centroid],
-        color="red",
-        lw=1,
+        cross_corr_max.values[:, 0], cross_corr_max.values[:, 1], color="red", ls="--", lw=0.5
     )
+    ax.plot(cross_corr_max.values[:, 0][mask_cc_max], cross_corr_max.values[:, 1][mask_cc_max], color="red", ls="--",
+            lw=1)
 
-    ax.plot(
-        cross_corr_max.values[:, 0],
-        cross_corr_max.values[:, 1],
-        color="red",
-        ls="--",
-        lw=0.5,
-    )
-    ax.plot(
-        cross_corr_max.values[:, 0][mask_cc_max],
-        cross_corr_max.values[:, 1][mask_cc_max],
-        color="red",
-        ls="--",
-        lw=1,
-    )
-
-    ax.set_aspect("equal", adjustable="datalim")
+    ax.set_aspect('equal', adjustable='datalim')
     plt.savefig("trajectories.pdf", bbox_inches="tight")
     plt.show()
 
-    v_ca_centroid, w_ca_centroid = get_averaged_velocity_from_position(
-        ca_centroid, mask_ca_centroid
-    )
-    v_ca_max, w_ca_max = get_averaged_velocity_from_position(cond_av_max, mask_ca_max)
-    v_cc_centroid, w_cc_centroid = get_averaged_velocity_from_position(
-        cc_centroid, mask_cc_centroid
-    )
-    v_cc_max, w_cc_max = get_averaged_velocity_from_position(
-        cross_corr_max, mask_cc_max
-    )
+    v_ca_centroid, w_ca_centroid = get_averaged_velocity_from_position(ca_centroid, mask_ca_centroid, window_size=1)
+    v_ca_max, w_ca_max = get_averaged_velocity_from_position(cond_av_max, mask_ca_max, window_size=1)
+    v_cc_centroid, w_cc_centroid = get_averaged_velocity_from_position(cc_centroid, mask_cc_centroid, window_size=1)
+    v_cc_max, w_cc_max = get_averaged_velocity_from_position(cross_corr_max, mask_cc_max, window_size=1)
 
     print(
-        "Ca centroid: {:.2f}, {:.2f}".format(v_ca_centroid / 100, w_ca_centroid / 100)
+        "Ca centroid: {:.4f}, {:.2f}".format(v_ca_centroid / 100, w_ca_centroid / 100)
     )
-    print("Ca max: {:.2f}, {:.2f}".format(v_ca_max / 100, w_ca_max / 100))
+    print("Ca max: {:.4f}, {:.2f}".format(v_ca_max / 100, w_ca_max / 100))
     print(
-        "Cc centroid: {:.2f}, {:.2f}".format(v_cc_centroid / 100, w_cc_centroid / 100)
+        "Cc centroid: {:.4f}, {:.2f}".format(v_cc_centroid / 100, w_cc_centroid / 100)
     )
-    print("Cc max: {:.2f}, {:.2f}".format(v_cc_max / 100, w_cc_max / 100))
+    print("Cc max: {:.4f}, {:.2f}".format(v_cc_max / 100, w_cc_max / 100))
+
+    #v_tde, w_tde = im.get_tde_velocities(refx, refy, ds)
+
+    #print("TDE: {:.4f}, {:.2f}".format(v_tde, w_tde))
+
+

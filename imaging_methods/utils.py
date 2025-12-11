@@ -42,6 +42,10 @@ def get_dt(ds):
     return float(times[1].values - times[0].values)
 
 
+def get_dr(ds):
+    return ds.R.isel(x=1, y=0).item() - ds.R.isel(x=0, y=0).item()
+
+
 def plot_ccfs_grid(
     ds, ax, refx, refy, rows, cols, delta, ccf=True, plot_tau_M=False, **kwargs
 ):
