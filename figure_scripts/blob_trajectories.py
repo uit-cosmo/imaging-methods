@@ -1,31 +1,20 @@
-from test_utils import *
 from blobmodel import BlobShapeEnum, BlobShapeImpl
 import numpy as np
 import cosmoplots as cp
 from imaging_methods import *
+from utils import *
 
 plt.style.use(["cosmoplots.default"])
 plt.rcParams["text.latex.preamble"] = (
     r"\usepackage{amsmath} \usepackage{mathptmx} \usepackage{amssymb} "
 )
 
-
-MAKE_PLOTS = True
-T = 5000
-Lx = 8
-Ly = 8
-nx = 16
-ny = 16
-dt = 0.1
-bs = BlobShapeImpl(BlobShapeEnum.gaussian, BlobShapeEnum.gaussian)
-K = 5000
-
 # Method parameters
 method_parameters = {
     "preprocessing": {"radius": 1000},
     "2dca": {
-        "refx": 8,
-        "refy": 8,
+        "refx": 6,
+        "refy": 5,
         "threshold": 2,
         "window": 60,
         "check_max": 1,
@@ -39,41 +28,6 @@ method_parameters = {
     },
     "taud_estimation": {"cutoff": 1e6, "nperseg": 1e3},
 }
-
-figures_dir = "integrated_tests_figures"
-
-
-def make_decoherence_realization(rand_coeff):
-    def blob_getter():
-        return get_blob(
-            amplitude=np.random.exponential(),
-            vx=np.random.uniform(1 - rand_coeff, 1 + rand_coeff),
-            vy=np.random.uniform(-rand_coeff, rand_coeff),
-            posx=np.random.uniform(0, Lx),
-            posy=np.random.uniform(0, Ly),
-            lx=1,
-            ly=1,
-            t_init=np.random.uniform(0, T),
-            bs=bs,
-            theta=0,  # 0 but go to the != 0 branch in the blob.py function
-        )
-
-    return make_2d_realization(
-        Lx,
-        Ly,
-        T,
-        nx,
-        ny,
-        dt,
-        K,
-        vx=0,  # velocities are overriden
-        vy=0,
-        lx=1,
-        ly=1,
-        theta=0,
-        bs=bs,
-        blob_getter=blob_getter,
-    )
 
 
 def movie(
@@ -95,8 +49,8 @@ def movie(
         dataset.cond_av,
         method_parameters["contouring"]["threshold_factor"],
     )
-    max_ca = im.compute_maximum_trajectory_da(dataset, "cond_av")
-    max_cc = im.compute_maximum_trajectory_da(dataset, "cross_corr")
+    max_ca = compute_maximum_trajectory_da(dataset, "cond_av")
+    max_cc = compute_maximum_trajectory_da(dataset, "cross_corr")
 
     def get_title(i):
         time = dataset[t_dim][i]
@@ -198,71 +152,38 @@ def movie(
     plt.show()
 
 
-def get_synthetic_data():
-    alpha = np.pi / 8
-    vx_input = np.cos(alpha)
-    vy_intput = np.sin(alpha)
-    lx_input = 1 / 2
-    ly_input = 2
-    theta_input = np.pi / 4
-
-    ds = make_2d_realization(
-        Lx,
-        Ly,
-        T,
-        nx,
-        ny,
-        dt,
-        K,
-        vx=vx_input,
-        vy=vy_intput,
-        lx=lx_input,
-        ly=ly_input,
-        theta=theta_input,
-        bs=bs,
-    )
-    ds = im.run_norm_ds(ds, method_parameters["preprocessing"]["radius"])
-    return ds
+def get_tde_velocities(ds, refx, refy):
+    eo = ve.EstimationOptions()
+    eo.cc_options.cc_window = method_parameters["2dca"]["window"] * get_dt(ds)
+    eo.cc_options.minimum_cc_value = 0
+    pd = ve.estimate_velocities_for_pixel(refx, refy, ve.CModImagingDataInterface(ds))
+    return pd.vx, pd.vy
 
 
-def test_real_data():
-    shot = 1160616027
-    manager = im.GPIDataAccessor(
+def plot_trajectories(shot, refx, refy, ax):
+    manager = GPIDataAccessor(
         "/home/sosno/Git/experimental_database/plasma_discharges.json"
     )
-    # ds = manager.read_shot_data(shot, preprocessed=True, data_folder="../data")
-    ds = get_synthetic_data()
-
-    tdca_params = method_parameters["2dca"]
-    events, average_ds = im.find_events_and_2dca(
-        ds,
-        tdca_params["refx"],
-        tdca_params["refy"],
-        threshold=tdca_params["threshold"],
-        check_max=tdca_params["check_max"],
-        window_size=tdca_params["window"],
-        single_counting=tdca_params["single_counting"],
-    )
-    movie(average_ds)
+    ds = manager.read_shot_data(shot, preprocessed=True, data_folder="../data")
+    average_ds = get_average(shot, refx, refy, method_parameters)
 
     method = "fit"
-    cond_av_max = im.compute_maximum_trajectory_da(average_ds, "cond_av", method=method)
-    cross_corr_max = im.compute_maximum_trajectory_da(
+    cond_av_max = compute_maximum_trajectory_da(average_ds, "cond_av", method=method)
+    cross_corr_max = compute_maximum_trajectory_da(
         average_ds, "cross_corr", method=method
     )
-    refx, refy = tdca_params["refx"], tdca_params["refy"]
     delta = (
         average_ds.R.isel(x=refx, y=refy).item()
         - average_ds.R.isel(x=refx - 1, y=refy).item()
     )
-    contour_ca = im.get_contour_evolution(
+    contour_ca = get_contour_evolution(
         average_ds.cond_av,
         method_parameters["contouring"]["threshold_factor"],
         max_displacement_threshold=None,
         com_method="centroid",
     )
     ca_centroid = contour_ca.center_of_mass
-    contour_cc = im.get_contour_evolution(
+    contour_cc = get_contour_evolution(
         average_ds.cross_corr,
         method_parameters["contouring"]["threshold_factor_cc"],
         max_displacement_threshold=None,
@@ -273,11 +194,9 @@ def test_real_data():
 
     cc_centroid = contour_cc.center_of_mass
 
-    fig, ax = plt.subplots()
-
     R, Z = (
-        ds.R.isel(x=tdca_params["refx"], y=tdca_params["refy"]).item(),
-        ds.Z.isel(x=tdca_params["refx"], y=tdca_params["refy"]).item(),
+        ds.R.isel(x=refx, y=refy).item(),
+        ds.Z.isel(x=refx, y=refy).item(),
     )
 
     ax.scatter(R, Z)
@@ -343,9 +262,7 @@ def test_real_data():
         lw=1,
     )
 
-    ax.set_aspect("equal", adjustable="datalim")
-    plt.savefig("trajectories.pdf", bbox_inches="tight")
-    plt.show()
+    ax.set_aspect("equal", adjustable="box")
 
     v_ca_centroid, w_ca_centroid = get_averaged_velocity_from_position(
         ca_centroid, mask_ca_centroid, window_size=1
@@ -359,7 +276,9 @@ def test_real_data():
     v_cc_max, w_cc_max = get_averaged_velocity_from_position(
         cross_corr_max, mask_cc_max, window_size=1
     )
+    v_tde, w_tde = get_tde_velocities(ds, refx, refy)
 
+    print("\n ----- ESTIMATED VELOCITIES FOR PIXEL {} {} -----\n".format(refx, refy))
     print(
         "Ca centroid: {:.4f}, {:.2f}".format(v_ca_centroid / 100, w_ca_centroid / 100)
     )
@@ -369,6 +288,27 @@ def test_real_data():
     )
     print("Cc max: {:.4f}, {:.2f}".format(v_cc_max / 100, w_cc_max / 100))
 
-    # v_tde, w_tde = im.get_tde_velocities(refx, refy, ds)
+    print("TDE: {:.4f}, {:.2f}".format(v_tde / 100, w_tde / 100))
 
-    # print("TDE: {:.4f}, {:.2f}".format(v_tde, w_tde))
+
+fig, ax = plt.subplots(3, 3, sharey=True, sharex=True, figsize=(5, 5))
+
+shot = 1160616027
+manager = GPIDataAccessor(
+    "/home/sosno/Git/experimental_database/plasma_discharges.json"
+)
+ds = manager.read_shot_data(shot, preprocessed=True, data_folder="../data")
+
+for i in np.arange(3):
+    for j in np.arange(3):
+        refx, refy = 5 + i, 4 + j
+        R, Z = (
+            ds.R.isel(x=refx, y=refy).item(),
+            ds.Z.isel(x=refx, y=refy).item(),
+        )
+        axe = ax[2 - j, i]
+        axe.set_title(r"$R_*={:.2f}\,Z_*={:.2f}$".format(R, Z), fontsize=6)
+        plot_trajectories(shot, refx, refy, axe)
+
+plt.savefig("trajectories.pdf", bbox_inches="tight")
+plt.show()
