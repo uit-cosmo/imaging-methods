@@ -44,9 +44,9 @@ def estimate_velocities(ds, method_parameters):
     when relevant in the provided figures_dir.
     """
     dt = im.get_dt(ds)
+    dr = im.get_dr(ds)
 
     tdca_params = method_parameters["2dca"]
-    refx, refy = tdca_params["refx"], tdca_params["refy"]
     events, average_ds = im.find_events_and_2dca(
         ds,
         tdca_params["refx"],
@@ -57,43 +57,39 @@ def estimate_velocities(ds, method_parameters):
         single_counting=tdca_params["single_counting"],
     )
 
-    contour_ds = im.get_contour_evolution(
-        average_ds.cond_av,
-        method_parameters["contouring"]["threshold_factor"],
-        max_displacement_threshold=None,
-    )
-
-    velocity_ds = im.get_velocity_from_position(
-        contour_ds.center_of_mass,
-        method_parameters["contouring"]["com_smoothing"],
-    )
-    do_plots = False
-
-    if do_plots:
-        global i
-        gif_file_name = "contours_{}.gif".format(i)
-        im.show_movie_with_contours(
-            average_ds,
-            contour_ds,
-            apd_dataset=None,
-            variable="cond_av",
-            lims=(0, 3),
-            gif_name=gif_file_name,
-            interpolation="spline16",
-            show=False,
+    def get_contouring_velocities(variable):
+        contour_ds = im.get_contour_evolution(
+            average_ds[variable],
+            method_parameters["contouring"]["threshold_factor"],
+            max_displacement_threshold=None,
         )
-        i += 1
+        signal_high = average_ds[variable].max(dim=["x", "y"]).values > 0.75
+        mask = im.get_combined_mask(
+            average_ds, contour_ds.center_of_mass, signal_high, 2 * dr
+        )
 
-    distances_vector = contour_ds.center_of_mass.values - [
-        average_ds.R.isel(x=refx, y=refy).item(),
-        average_ds.Z.isel(x=refx, y=refy).item(),
-    ]
-    distances = np.sqrt((distances_vector**2).sum(axis=1))
-    mask = distances < 1
-    valid_times = contour_ds.time[mask]  # DataArray with wanted times
-    common_times = valid_times[valid_times.isin(velocity_ds.time)]
+        v, w = im.get_averaged_velocity_from_position(
+            position_da=contour_ds.center_of_mass, mask=mask, window_size=1
+        )
+        return v, w
 
-    v_c, w_c = velocity_ds.sel(time=common_times).mean(dim="time", skipna=True).values
+    def get_max_pos_velocities(variable):
+        max_trajectory = im.compute_maximum_trajectory_da(
+            average_ds, variable, method="fit"
+        )
+        signal_high = average_ds[variable].max(dim=["x", "y"]).values > 0.75
+        mask = im.get_combined_mask(average_ds, max_trajectory, signal_high, dr)
+
+        v, w = im.get_averaged_velocity_from_position(
+            position_da=max_trajectory, mask=mask, window_size=1
+        )
+        return v, w
+
+    v_2dca, w_2dca = get_contouring_velocities("cond_av")
+    v_2dcc, w_2dcc = get_contouring_velocities("cross_corr")
+
+    v_2dca_max, w_2dca_max = get_max_pos_velocities("cond_av")
+    v_2dcc_max, w_2dcc_max = get_max_pos_velocities("cross_corr")
 
     eo = ve.EstimationOptions()
     eo.cc_options.cc_window = method_parameters["2dca"]["window"] * dt
@@ -103,7 +99,18 @@ def estimate_velocities(ds, method_parameters):
     )
     vx, vy = pd.vx, pd.vy
 
-    return v_c, w_c, vx, vy
+    return (
+        v_2dca,
+        w_2dca,
+        v_2dcc,
+        w_2dcc,
+        v_2dca_max,
+        w_2dca_max,
+        v_2dcc_max,
+        w_2dcc_max,
+        vx,
+        vy,
+    )
 
 
 T = 5000
@@ -123,6 +130,40 @@ ly_input = 1
 N = 1
 
 
+def get_simulation_data(l, i):
+    file_name = os.path.join("synthetic_data", "data_size_{:.2f}_{}".format(l, i))
+    if os.path.exists(file_name):
+        return xr.open_dataset(file_name)
+
+    theta = np.random.uniform(-np.pi / 4, np.pi / 4)
+    vx_input, vy_input = np.cos(theta), np.sin(theta)
+    ds = make_2d_realization(
+        Lx,
+        Ly,
+        T,
+        nx,
+        ny,
+        dt,
+        K,
+        vx=vx_input,
+        vy=vy_input,
+        lx=l,
+        ly=l,
+        theta=0,
+        bs=bs,
+        periodic_y=False,  # Use only for w=0 so periodicity doesn't matter, for large blobs, periodicity has issues.
+    )
+    ds_mean = ds.frames.mean().item()
+    ds = ds.assign(
+        frames=ds["frames"] + ds_mean * NSR * np.random.random(ds.frames.shape)
+    )
+    ds = im.run_norm_ds(ds, method_parameters["preprocessing"]["radius"])
+    ds["v_input"] = vx_input
+    ds["w_input"] = vy_input
+    ds.to_netcdf(file_name)
+    return ds
+
+
 def get_all_velocities(l, N=N):
     """
     Run N realisations and return the *raw* velocity components.
@@ -132,85 +173,141 @@ def get_all_velocities(l, N=N):
     vx_all, vy_all, vxtde_all, vytde_all : list (length N)
         One entry per Monte-Carlo realisation.
     """
-    vx_all = []
-    vy_all = []
+    v_2dca_all = []
+    w_2dca_all = []
+    v_2dcc_all = []
+    w_2dcc_all = []
+    v_2dca_max_all = []
+    w_2dca_max_all = []
+    v_2dcc_max_all = []
+    w_2dcc_max_all = []
     vxtde_all = []
     vytde_all = []
 
-    for _ in range(N):
-        theta = np.random.uniform(-np.pi / 4, np.pi / 4)
-        vx_input, vy_input = np.cos(theta), np.sin(theta)
-        ds = make_2d_realization(
-            Lx,
-            Ly,
-            T,
-            nx,
-            ny,
-            dt,
-            K,
-            vx=vx_input,
-            vy=vy_input,
-            lx=l,
-            ly=l,
-            theta=0,
-            bs=bs,
-            periodic_y=False,  # Use only for w=0 so periodicity doesn't matter, for large blobs, periodicity has issues.
-        )
-        ds_mean = ds.frames.mean().item()
-        ds = ds.assign(
-            frames=ds["frames"] + ds_mean * NSR * np.random.random(ds.frames.shape)
-        )
-        ds = im.run_norm_ds(ds, method_parameters["preprocessing"]["radius"])
+    for i in range(N):
+        ds = get_simulation_data(l, i)
+        v_input = ds["v_input"]
+        w_input = ds["w_input"]
 
-        # estimate_velocities returns (vx, vy, vxtde, vytde)
-        method_parameters["contouring"]["threshold_factor"] = 0.3 + 0.6 * l / 4
-        vx, vy, vxtde, vytde = estimate_velocities(ds, method_parameters)
+        (
+            v_2dca,
+            w_2dca,
+            v_2dcc,
+            w_2dcc,
+            v_2dca_max,
+            w_2dca_max,
+            v_2dcc_max,
+            w_2dcc_max,
+            vxtde,
+            vytde,
+        ) = estimate_velocities(ds, method_parameters)
 
-        vx_all.append(vx - vx_input)
-        vy_all.append(vy - vy_input)
-        vxtde_all.append(vxtde - vx_input)
-        vytde_all.append(vytde - vy_input)
+        v_2dca_all.append(v_2dca - v_input)
+        w_2dca_all.append(w_2dca - w_input)
+        v_2dcc_all.append(v_2dcc - v_input)
+        w_2dcc_all.append(w_2dcc - w_input)
+        v_2dca_max_all.append(v_2dca_max - v_input)
+        w_2dca_max_all.append(w_2dca_max - w_input)
+        v_2dcc_max_all.append(v_2dcc_max - v_input)
+        w_2dcc_max_all.append(w_2dcc_max - w_input)
+        vxtde_all.append(vxtde - v_input)
+        vytde_all.append(vytde - w_input)
 
-    return vx_all, vy_all, vxtde_all, vytde_all
+    return (
+        v_2dca_all,
+        w_2dca_all,
+        v_2dcc_all,
+        w_2dcc_all,
+        v_2dca_max_all,
+        w_2dca_max_all,
+        v_2dcc_max_all,
+        w_2dcc_max_all,
+        vxtde_all,
+        vytde_all,
+    )
 
 
 sizes = np.logspace(-1, np.log10(4), num=10)
 
-vx_all = []
-vy_all = []
-vxtde_all = []
-vytde_all = []
+v_2dca_all = []  # len = len(thetas); each entry = list of N values
+w_2dca_all = []
+v_2dcc_all = []  # len = len(thetas); each entry = list of N values
+w_2dcc_all = []
+v_2dca_max_all = []
+w_2dca_max_all = []
+v_2dcc_max_all = []
+w_2dcc_max_all = []
+v_tde_all = []
+w_tde_all = []
+
 
 if os.path.exists(data_file) and not force_redo:
     loaded = np.load(data_file)
-    sizes = loaded["sizes"]
-    vx_all = loaded["vx_all"]
-    vy_all = loaded["vy_all"]
-    vxtde_all = loaded["vxtde_all"]
-    vytde_all = loaded["vytde_all"]
+    thetas = loaded["thetas"]  # in case you want to load thetas too
+    v_2dca_all = loaded["v_2dca_all"]
+    w_2dca_all = loaded["w_2dca_all"]
+    v_2dcc_all = loaded["v_2dcc_all"]
+    w_2dcc_all = loaded["w_2dcc_all"]
+    v_2dca_max_all = loaded["v_2dca_max_all"]
+    w_2dca_max_all = loaded["w_2dca_max_all"]
+    v_2dcc_max_all = loaded["v_2dcc_max_all"]
+    w_2dcc_max_all = loaded["w_2dcc_max_all"]
+    v_tde_all = loaded["vxtde_all"]
+    w_tde_all = loaded["vytde_all"]
 else:
-    for size in sizes:
-        print(f"Processing size = {size:.3f}")
-        vx, vy, vxtde, vytde = get_all_velocities(size, N=N)
+    for l in sizes:
+        print(f"Processing l = {l:.3f}")
+        (
+            v_2dca,
+            w_2dca,
+            v_2dcc,
+            w_2dcc,
+            v_2dca_max,
+            w_2dca_max,
+            v_2dcc_max,
+            w_2dcc_max,
+            vxtde,
+            vytde,
+        ) = get_all_velocities(l, N=N)
 
-        vx_all.append(vx)
-        vy_all.append(vy)
-        vxtde_all.append(vxtde)
-        vytde_all.append(vytde)
+        v_2dca_all.append(v_2dca)
+        w_2dca_all.append(w_2dca)
+        v_2dcc_all.append(v_2dcc)
+        w_2dcc_all.append(w_2dcc)
+        v_2dca_max_all.append(v_2dca_max)
+        w_2dca_max_all.append(w_2dca_max)
+        v_2dcc_max_all.append(v_2dcc_max)
+        w_2dcc_max_all.append(w_2dcc_max)
+        v_tde_all.append(vxtde)
+        w_tde_all.append(vytde)
 
     np.savez(
         data_file,
         sizes=sizes,
-        vx_all=vx_all,
-        vy_all=vy_all,
-        vxtde_all=vxtde_all,
-        vytde_all=vytde_all,
+        v_2dca_all=v_2dca_all,
+        w_2dca_all=w_2dca_all,
+        v_2dcc_all=v_2dcc_all,
+        w_2dcc_all=w_2dcc_all,
+        v_2dca_max_all=v_2dca_max_all,
+        w_2dca_max_all=w_2dca_max_all,
+        v_2dcc_max_all=v_2dcc_max_all,
+        w_2dcc_max_all=w_2dcc_max_all,
+        vxtde_all=v_tde_all,
+        vytde_all=w_tde_all,
     )
 
-vx_all = np.array(vx_all)
-vy_all = np.array(vy_all)
-vxtde_all = np.array(vxtde_all)
-vytde_all = np.array(vytde_all)
+
+v_2dca_all = np.array(v_2dca_all)
+w_2dca_all = np.array(w_2dca_all)
+v_2dcc_all = np.array(v_2dcc_all)
+w_2dcc_all = np.array(w_2dcc_all)
+v_2dca_max_all = np.array(v_2dca_max_all)
+w_2dca_max_all = np.array(w_2dca_max_all)
+v_2dcc_max_all = np.array(v_2dcc_max_all)
+w_2dcc_max_all = np.array(w_2dcc_max_all)
+v_tde_all = np.array(v_tde_all)
+w_tde_all = np.array(w_tde_all)
+
 
 # --------------------------------------------------------------
 # 3.  SCATTER PLOT

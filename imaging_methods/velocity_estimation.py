@@ -154,14 +154,7 @@ def get_combined_mask(
 def get_average_velocity_for_near_com(
     average_ds, contour_ds, velocity_ds, distance, extra_mask=None
 ):
-    refx, refy = average_ds["refx"].item(), average_ds["refy"].item()
-
-    distances_vector = contour_ds.center_of_mass.values - [
-        average_ds.R.isel(x=refx, y=refy).item(),
-        average_ds.Z.isel(x=refx, y=refy).item(),
-    ]
-    distances = np.sqrt((distances_vector**2).sum(axis=1))
-    mask = distances < distance
+    mask = is_position_near_reference(average_ds, contour_ds.center_of_mass, distance)
     if extra_mask is not None:
         mask = np.logical_and(mask, extra_mask)
     valid_times = contour_ds.time[mask]  # DataArray with wanted times

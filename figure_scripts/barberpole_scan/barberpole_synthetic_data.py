@@ -1,10 +1,11 @@
-from utils import *
 import imaging_methods as im
 import matplotlib.pyplot as plt
 from blobmodel import BlobShapeEnum, BlobShapeImpl
 import velocity_estimation as ve
 import os
 import cosmoplots as cp
+import numpy as np
+import xarray as xr
 
 plt.style.use(["cosmoplots.default"])
 plt.rcParams["text.latex.preamble"] = (
@@ -14,7 +15,6 @@ plt.rcParams["text.latex.preamble"] = (
 params = plt.rcParams
 cp.set_rcparams_dynamo(params, 1)
 plt.rcParams.update(params)
-
 
 # Method parameters
 method_parameters = {
@@ -33,7 +33,7 @@ method_parameters = {
 }
 
 data_file = "barberpole_data.npz"
-force_redo = True
+force_redo = False
 
 
 def estimate_velocities(ds, method_parameters):
@@ -63,7 +63,7 @@ def estimate_velocities(ds, method_parameters):
         )
         signal_high = average_ds[variable].max(dim=["x", "y"]).values > 0.75
         mask = im.get_combined_mask(
-            average_ds, contour_ds.center_of_mass, signal_high, dr
+            average_ds, contour_ds.center_of_mass, signal_high, 2 * dr
         )
 
         v, w = im.get_averaged_velocity_from_position(
@@ -86,6 +86,9 @@ def estimate_velocities(ds, method_parameters):
     v_2dca, w_2dca = get_contouring_velocities("cond_av")
     v_2dcc, w_2dcc = get_contouring_velocities("cross_corr")
 
+    v_2dca_max, w_2dca_max = get_contouring_velocities("cond_av")
+    v_2dcc_max, w_2dcc_max = get_contouring_velocities("cross_corr")
+
     eo = ve.EstimationOptions()
     eo.cc_options.cc_window = method_parameters["2dca"]["window"] * dt
     eo.cc_options.minimum_cc_value = 0
@@ -94,7 +97,18 @@ def estimate_velocities(ds, method_parameters):
     )
     vx, vy = pd.vx, pd.vy
 
-    return v_2dca, w_2dca, v_2dcc, w_2dcc, vx, vy
+    return (
+        v_2dca,
+        w_2dca,
+        v_2dcc,
+        w_2dcc,
+        v_2dca_max,
+        w_2dca_max,
+        v_2dcc_max,
+        w_2dcc_max,
+        vx,
+        vy,
+    )
 
 
 T = 5000
@@ -157,6 +171,10 @@ def get_all_velocities(lx, ly, theta, N=N):
     w_2dca_all = []
     v_2dcc_all = []
     w_2dcc_all = []
+    v_2dca_max_all = []
+    w_2dca_max_all = []
+    v_2dcc_max_all = []
+    w_2dcc_max_all = []
     vxtde_all = []
     vytde_all = []
 
@@ -165,18 +183,42 @@ def get_all_velocities(lx, ly, theta, N=N):
         v_input = ds["v_input"]
         w_input = ds["w_input"]
 
-        v_2dca, w_2dca, v_2dcc, w_2dcc, vxtde, vytde = estimate_velocities(
-            ds, method_parameters
-        )
+        (
+            v_2dca,
+            w_2dca,
+            v_2dcc,
+            w_2dcc,
+            v_2dca_max,
+            w_2dca_max,
+            v_2dcc_max,
+            w_2dcc_max,
+            vxtde,
+            vytde,
+        ) = estimate_velocities(ds, method_parameters)
 
         v_2dca_all.append(v_2dca - v_input)
         w_2dca_all.append(w_2dca - w_input)
         v_2dcc_all.append(v_2dcc - v_input)
         w_2dcc_all.append(w_2dcc - w_input)
+        v_2dca_max_all.append(v_2dca_max - v_input)
+        w_2dca_max_all.append(w_2dca_max - w_input)
+        v_2dcc_max_all.append(v_2dcc_max - v_input)
+        w_2dcc_max_all.append(w_2dcc_max - w_input)
         vxtde_all.append(vxtde - v_input)
         vytde_all.append(vytde - w_input)
 
-    return v_2dca_all, w_2dca_all, v_2dcc_all, w_2dcc_all, vxtde_all, vytde_all
+    return (
+        v_2dca_all,
+        w_2dca_all,
+        v_2dcc_all,
+        w_2dcc_all,
+        v_2dca_max_all,
+        w_2dca_max_all,
+        v_2dcc_max_all,
+        w_2dcc_max_all,
+        vxtde_all,
+        vytde_all,
+    )
 
 
 # --------------------------------------------------------------
@@ -190,6 +232,10 @@ v_2dca_all = []  # len = len(thetas); each entry = list of N values
 w_2dca_all = []
 v_2dcc_all = []  # len = len(thetas); each entry = list of N values
 w_2dcc_all = []
+v_2dca_max_all = []
+w_2dca_max_all = []
+v_2dcc_max_all = []
+w_2dcc_max_all = []
 v_tde_all = []
 w_tde_all = []
 
@@ -200,19 +246,36 @@ if os.path.exists(data_file) and not force_redo:
     w_2dca_all = loaded["w_2dca_all"]
     v_2dcc_all = loaded["v_2dcc_all"]
     w_2dcc_all = loaded["w_2dcc_all"]
+    v_2dca_max_all = loaded["v_2dca_max_all"]
+    w_2dca_max_all = loaded["w_2dca_max_all"]
+    v_2dcc_max_all = loaded["v_2dcc_max_all"]
+    w_2dcc_max_all = loaded["w_2dcc_max_all"]
     v_tde_all = loaded["vxtde_all"]
     w_tde_all = loaded["vytde_all"]
 else:
     for theta in thetas:
         print(f"Processing theta = {theta:.3f} rad ({np.degrees(theta):.1f}°)")
-        v_2dca, w_2dca, v_2dcc, w_2dcc, vxtde, vytde = get_all_velocities(
-            lx, ly, theta, N=N
-        )
+        (
+            v_2dca,
+            w_2dca,
+            v_2dcc,
+            w_2dcc,
+            v_2dca_max,
+            w_2dca_max,
+            v_2dcc_max,
+            w_2dcc_max,
+            vxtde,
+            vytde,
+        ) = get_all_velocities(lx, ly, theta, N=N)
 
         v_2dca_all.append(v_2dca)
         w_2dca_all.append(w_2dca)
         v_2dcc_all.append(v_2dcc)
         w_2dcc_all.append(w_2dcc)
+        v_2dca_max_all.append(v_2dca_max)
+        w_2dca_max_all.append(w_2dca_max)
+        v_2dcc_max_all.append(v_2dcc_max)
+        w_2dcc_max_all.append(w_2dcc_max)
         v_tde_all.append(vxtde)
         w_tde_all.append(vytde)
 
@@ -223,6 +286,10 @@ else:
         w_2dca_all=w_2dca_all,
         v_2dcc_all=v_2dcc_all,
         w_2dcc_all=w_2dcc_all,
+        v_2dca_max_all=v_2dca_max_all,
+        w_2dca_max_all=w_2dca_max_all,
+        v_2dcc_max_all=v_2dcc_max_all,
+        w_2dcc_max_all=w_2dcc_max_all,
         vxtde_all=v_tde_all,
         vytde_all=w_tde_all,
     )
@@ -231,6 +298,10 @@ v_2dca_all = np.array(v_2dca_all)
 w_2dca_all = np.array(w_2dca_all)
 v_2dcc_all = np.array(v_2dcc_all)
 w_2dcc_all = np.array(w_2dcc_all)
+v_2dca_max_all = np.array(v_2dca_max_all)
+w_2dca_max_all = np.array(w_2dca_max_all)
+v_2dcc_max_all = np.array(v_2dcc_max_all)
+w_2dcc_max_all = np.array(w_2dcc_max_all)
 v_tde_all = np.array(v_tde_all)
 w_tde_all = np.array(w_tde_all)
 
@@ -286,20 +357,16 @@ def w3(lpara, lperp, v, w, a):
 # labeltde = r"$\sqrt{(v_{\mathrm{TDE}}-v)^2+(w_{\mathrm{TDE}}-w)^2}$"
 labelc = r"$E_c$"
 labeltde = r"$E_{\mathrm{TDE}}$"
-scatter_component(
-    thetas / np.pi, np.sqrt(v_2dca_all**2 + w_2dca_all**2), labelc, "o", "#1f77b4"
-)
-scatter_component(
-    thetas / np.pi, np.sqrt(v_2dcc_all**2 + w_2dcc_all**2), labelc, "s", "red"
-)
-scatter_component(
-    thetas / np.pi, np.sqrt(v_tde_all**2 + w_tde_all**2), labeltde, "^", "#2ca02c"
-)
+scatter_component(thetas / np.pi, v_2dca_all**2 + w_2dca_all**2, labelc, "o", "#1f77b4")
+# scatter_component(
+#    thetas / np.pi, np.sqrt(v_2dcc_all**2 + w_2dcc_all**2), labelc, "s", "red"
+# )
+scatter_component(thetas / np.pi, v_tde_all**2 + w_tde_all**2, labeltde, "D", "#2ca02c")
 
 v3s = np.array([v3(lx, ly, 1, 0, t) for t in thetas])
 w3s = np.array([w3(lx, ly, 1, 0, t) for t in thetas])
 
-ax.plot(thetas / np.pi, np.sqrt((v3s - 1) ** 2 + w3s**2), color="#2ca02c", ls="--")
+ax.plot(thetas / np.pi, (v3s - 1) ** 2 + w3s**2, color="#2ca02c", ls="--")
 
 ax.set_xticks([0, 1 / 4, 1 / 2])
 ax.set_xticklabels([r"$0$", r"$1/4$", r"$1/2$"])

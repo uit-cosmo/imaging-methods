@@ -39,7 +39,7 @@ def get_physical_pos(
 def compute_maximum_trajectory_da(
     average_ds: xr.Dataset,
     variable="cond_av",
-    method: Literal["parabolic"] = "parabolic",
+    method="parabolic",
     min_intensity: float = 0.0,
 ) -> xr.DataArray:
     """
