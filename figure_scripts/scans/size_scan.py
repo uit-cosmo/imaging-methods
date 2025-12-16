@@ -115,6 +115,7 @@ if os.path.exists(data_file) and not force_redo:
 else:
     for l in sizes:
         print(f"Processing l = {l:.3f}")
+        method_parameters["contouring"]["threshold_factor"] = 0.3 + 0.6 * l / 4
         (
             v_2dca,
             w_2dca,
@@ -184,7 +185,7 @@ def scatter_component(theta_vals, data_per_theta, label, marker, color):
             np.full_like(vals, th) + jitter,
             vals,
             marker=marker,
-            s=40,
+            s=10,
             edgecolor="k",
             linewidth=0.3,
             label=label if first else None,  # <-- only label first
@@ -201,11 +202,22 @@ labelc = r"Contouring"
 labelmax = r"Max. Track."
 labeltde = r"Time delay est."
 
-scatter_component(1 / sizes, v_2dca_all**2 + w_2dca_all**2, labelc, "o", "#1f77b4")
-scatter_component(
-    1 / sizes, v_2dca_max_all**2 + w_2dca_max_all**2, labelmax, "s", "red"
-)
+ax.fill_between([2.4, 15], -0.5, 1.3, color="lightgray", alpha=0.5)
+
+plot_ca = False
+if plot_ca:
+    scatter_component(1 / sizes, v_2dca_all**2 + w_2dca_all**2, labelc, "o", "#1f77b4")
+    scatter_component(
+        1 / sizes, v_2dca_max_all**2 + w_2dca_max_all**2, labelmax, "s", "red"
+    )
+else:
+    scatter_component(1 / sizes, v_2dcc_all**2 + w_2dcc_all**2, labelc, "o", "#1f77b4")
+    scatter_component(
+        1 / sizes, v_2dcc_max_all**2 + w_2dcc_max_all**2, labelmax, "s", "red"
+    )
+
 scatter_component(1 / sizes, v_tde_all**2 + w_tde_all**2, labeltde, "D", "#2ca02c")
+
 
 ax.set_xlabel(r"$\Delta/\ell$")
 ax.set_ylabel("Error")
@@ -218,3 +230,5 @@ ax.set_ylim(-0.2, 1.2)
 
 plt.savefig("size_scan.eps", bbox_inches="tight")
 plt.show()
+
+print("LOL")

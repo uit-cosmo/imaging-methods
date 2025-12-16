@@ -20,15 +20,15 @@ plt.rcParams.update(params)
 method_parameters = {
     "preprocessing": {"radius": 1000},
     "2dca": {
-        "refx": 8,
-        "refy": 8,
+        "refx": 4,
+        "refy": 4,
         "threshold": 2,
         "window": 60,
         "check_max": 1,
         "single_counting": True,
     },
     "gauss_fit": {"size_penalty": 5, "aspect_penalty": 0.2, "tilt_penalty": 0.2},
-    "contouring": {"threshold_factor": 0.5, "com_smoothing": 10},
+    "contouring": {"threshold_factor": 0.25, "com_smoothing": 10},
     "taud_estimation": {"cutoff": 1e6, "nperseg": 1e3},
 }
 
@@ -44,7 +44,8 @@ K = 5000
 N = 5
 NSR = 0.1
 
-l = 0.1
+l = 4
+method_parameters["contouring"]["threshold_factor"] = 0.3 + 0.6 * l / 4
 i = 0
 
 file_name = os.path.join("synthetic_data", "data_size_{:.2f}_{}".format(l, i))
@@ -108,16 +109,22 @@ contour_cc = im.get_contour_evolution(
     max_displacement_threshold=None,
 )
 
-ca_max_mask = average_ds.cond_av.max(dim=["x", "y"]).values > 0.75
-cc_max_mask = average_ds.cross_corr.max(dim=["x", "y"]).values > 0.75
+ca_max_mask = (
+    average_ds.cond_av.max(dim=["x", "y"]).values
+    > 0.75 * average_ds.cond_av.max().item()
+)
+cc_max_mask = (
+    average_ds.cross_corr.max(dim=["x", "y"]).values
+    > 0.75 * average_ds.cross_corr.max().item()
+)
 
 
 fig, ax = plt.subplots()
 
-ax.plot(contour_ca.time, contour_ca.center_of_mass.values[:, 0], color="blue")
+ax.scatter(contour_ca.time, contour_ca.center_of_mass.values[:, 0], color="blue")
 
 ca_combined_mask = im.get_combined_mask(
-    average_ds, contour_ca.center_of_mass, ca_max_mask, dr
+    average_ds, contour_ca.center_of_mass, ca_max_mask, 2 * dr
 )
 ax.plot(
     contour_ca.time[ca_combined_mask],

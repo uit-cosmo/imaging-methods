@@ -258,7 +258,9 @@ def full_analysis(
     )
 
     signal_high = average_ds[variable].max(dim=["x", "y"]).values > 0.75
-    mask = im.get_combined_mask(average_ds, contour_ds.center_of_mass, signal_high, 2*dr)
+    mask = im.get_combined_mask(
+        average_ds, contour_ds.center_of_mass, signal_high, 2 * dr
+    )
 
     v_c, w_c = im.get_averaged_velocity_from_position(
         position_da=contour_ds.center_of_mass, mask=mask, window_size=1

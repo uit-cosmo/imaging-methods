@@ -22,12 +22,12 @@ class DeterministicBlobFactory(BlobFactory):
         self.blobs = blobs
 
     def sample_blobs(
-            self,
-            Ly: float,
-            T: float,
-            num_blobs: int,
-            blob_shape: AbstractBlobShape,
-            t_drain: Union[float, NDArray],
+        self,
+        Ly: float,
+        T: float,
+        num_blobs: int,
+        blob_shape: AbstractBlobShape,
+        t_drain: Union[float, NDArray],
     ) -> List[Blob]:
         return self.blobs
 
@@ -36,7 +36,7 @@ class DeterministicBlobFactory(BlobFactory):
 
 
 def get_blob(
-        amplitude, vx, vy, posx, posy, lx, ly, t_init, theta=0, bs=BlobShapeImpl()
+    amplitude, vx, vy, posx, posy, lx, ly, t_init, theta=0, bs=BlobShapeImpl()
 ):
     return Blob(
         1,
@@ -58,21 +58,21 @@ def get_blob(
 
 
 def make_2d_realization(
-        Lx,
-        Ly,
-        T,
-        nx,
-        ny,
-        dt,
-        num_blobs,
-        vx,
-        vy,
-        lx,
-        ly,
-        theta,
-        bs,
-        blob_getter="deterministic",
-        periodic_y=True,
+    Lx,
+    Ly,
+    T,
+    nx,
+    ny,
+    dt,
+    num_blobs,
+    vx,
+    vy,
+    lx,
+    ly,
+    theta,
+    bs,
+    blob_getter="deterministic",
+    periodic_y=True,
 ):
     if blob_getter == "deterministic":
         blobs = [

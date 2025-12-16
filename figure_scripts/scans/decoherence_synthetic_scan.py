@@ -6,7 +6,7 @@ import os
 import cosmoplots as cp
 import numpy as np
 import xarray as xr
-from .scan_utils import *
+from scan_utils import *
 
 plt.style.use(["cosmoplots.default"])
 plt.rcParams["text.latex.preamble"] = (
@@ -33,8 +33,8 @@ method_parameters = {
     "taud_estimation": {"cutoff": 1e6, "nperseg": 1e3},
 }
 
-data_file = "barberpole_data.npz"
-force_redo = False
+data_file = "decoherence_data.npz"
+force_redo = True
 
 T = 5000
 Lx = 8
@@ -49,14 +49,30 @@ N = 5
 NSR = 0.1
 
 
-def get_simulation_data(lx, ly, theta, i):
+def get_simulation_data(rand_coeff, i):
     file_name = os.path.join(
-        "synthetic_data", "data_{:.2f}_{:.2f}_{:.2f}_{}".format(lx, ly, theta, i)
+        "synthetic_data", "decoherence_data_{:.2f}_{}".format(rand_coeff, i)
     )
     if os.path.exists(file_name):
         return xr.open_dataset(file_name)
+
     alpha = np.random.uniform(-np.pi / 4, np.pi / 4)
     vx_input, vy_input = np.cos(alpha), np.sin(alpha)
+
+    def blob_getter():
+        return im.get_blob(
+            amplitude=np.random.exponential(),
+            vx=np.random.uniform(vx_input - rand_coeff, vx_input + rand_coeff),
+            vy=np.random.uniform(vy_input - rand_coeff, vy_input + rand_coeff),
+            posx=np.random.uniform(0, Lx),
+            posy=np.random.uniform(0, Ly),
+            lx=1,
+            ly=1,
+            t_init=np.random.uniform(0, T),
+            bs=bs,
+            theta=0,  # 0 but go to the != 0 branch in the blob.py function
+        )
+
     ds = im.make_2d_realization(
         Lx,
         Ly,
@@ -65,13 +81,15 @@ def get_simulation_data(lx, ly, theta, i):
         ny,
         dt,
         K,
-        vx=vx_input,
-        vy=vy_input,
-        lx=lx,
-        ly=ly,
-        theta=theta + alpha,
+        vx=vx_input,  # Overriden by blob_getter
+        vy=vy_input,  # Overriden by blob_getter
+        lx=1,
+        ly=1,
+        theta=0,
         bs=bs,
+        blob_getter=blob_getter,
     )
+
     ds_mean = ds.frames.mean().item()
     ds = ds.assign(
         frames=ds["frames"] + ds_mean * NSR * np.random.random(ds.frames.shape)
@@ -86,8 +104,8 @@ def get_simulation_data(lx, ly, theta, i):
 # --------------------------------------------------------------
 # 2.  SWEEP OVER theta
 # --------------------------------------------------------------
-lx, ly = 0.5, 2
-thetas = np.linspace(0, np.pi / 2, num=20)  # change num= back to 3 if you wish
+lx, ly = 1, 1
+rand_coeffs = np.linspace(0, 2, num=10)
 
 # Containers for *all* realisations (list of lists)
 v_2dca_all = []  # len = len(thetas); each entry = list of N values
@@ -103,7 +121,7 @@ w_tde_all = []
 
 if os.path.exists(data_file) and not force_redo:
     loaded = np.load(data_file)
-    thetas = loaded["thetas"]  # in case you want to load thetas too
+    rand_coeffs = loaded["rand_coeffs"]  # in case you want to load thetas too
     v_2dca_all = loaded["v_2dca_all"]
     w_2dca_all = loaded["w_2dca_all"]
     v_2dcc_all = loaded["v_2dcc_all"]
@@ -115,8 +133,8 @@ if os.path.exists(data_file) and not force_redo:
     v_tde_all = loaded["vxtde_all"]
     w_tde_all = loaded["vytde_all"]
 else:
-    for theta in thetas:
-        print(f"Processing theta = {theta:.3f} rad ({np.degrees(theta):.1f}°)")
+    for rand_coeff in rand_coeffs:
+        print(f"Processing rand_coeff = {rand_coeff:.3f}")
         (
             v_2dca,
             w_2dca,
@@ -129,7 +147,7 @@ else:
             vxtde,
             vytde,
         ) = get_all_velocities(
-            N, lambda i: get_simulation_data(lx, ly, theta, i), method_parameters
+            N, lambda i: get_simulation_data(rand_coeff, i), method_parameters
         )
 
         v_2dca_all.append(v_2dca)
@@ -145,7 +163,7 @@ else:
 
     np.savez(
         data_file,
-        thetas=thetas,
+        rand_coeffs=rand_coeffs,
         v_2dca_all=v_2dca_all,
         w_2dca_all=w_2dca_all,
         v_2dcc_all=v_2dcc_all,
@@ -169,6 +187,7 @@ w_2dcc_max_all = np.array(w_2dcc_max_all)
 v_tde_all = np.array(v_tde_all)
 w_tde_all = np.array(w_tde_all)
 
+
 # --------------------------------------------------------------
 # 3.  SCATTER PLOT
 # --------------------------------------------------------------
@@ -176,15 +195,15 @@ fig, ax = plt.subplots()
 
 
 # Helper: scatter one component
-def scatter_component(theta_vals, data_per_theta, label, marker, color):
+def scatter_component(vals, data_per_theta, label, marker, color):
     first = True
-    for th, vals in zip(theta_vals, data_per_theta):
+    for th, vals in zip(vals, data_per_theta):
         jitter = 0  # np.random.normal(0, 0.003, size=len(vals))
         ax.scatter(
             np.full_like(vals, th) + jitter,
             vals,
             marker=marker,
-            s=10,
+            s=40,
             edgecolor="k",
             linewidth=0.3,
             label=label if first else None,  # <-- only label first
@@ -192,28 +211,6 @@ def scatter_component(theta_vals, data_per_theta, label, marker, color):
             color=color,
         )
         first = False
-
-
-def taumax(dx, dy, lpara, lperp, v, w, a):
-    d1 = (dx * lperp**2 * v + dy * lpara**2 * w) * np.cos(a) ** 2
-    d2 = (dx * lpara**2 * v + dy * lperp**2 * w) * np.sin(a) ** 2
-    d3 = -(lpara**2 - lperp**2) * (dy * v + dx * w) * np.cos(a) * np.sin(a)
-    n1 = (lperp**2 * v**2 + lpara**2 * w**2) * np.cos(a) ** 2
-    n2 = -2 * (lpara**2 - lperp**2) * v * w * np.sin(a) * np.cos(a)
-    n3 = (lpara**2 * v**2 + lperp**2 * w**2) * np.sin(a) ** 2
-    return (d1 + d2 + d3) / (n1 + n2 + n3)
-
-
-def v3(lpara, lperp, v, w, a):
-    tx = taumax(1, 0, lpara, lperp, v, w, a)
-    ty = taumax(0, 1, lpara, lperp, v, w, a)
-    return tx / (tx**2 + ty**2)
-
-
-def w3(lpara, lperp, v, w, a):
-    tx = taumax(1, 0, lpara, lperp, v, w, a)
-    ty = taumax(0, 1, lpara, lperp, v, w, a)
-    return ty / (tx**2 + ty**2)
 
 
 # Choose distinct colours (you can also use a colormap)
@@ -224,10 +221,10 @@ labeltde = r"Time delay est."
 plot_ca = True
 if plot_ca:
     scatter_component(
-        thetas / np.pi, v_2dca_all**2 + w_2dca_all**2, labelc, "o", "#1f77b4"
+        rand_coeffs, np.sqrt(v_2dca_all**2 + w_2dca_all**2), labelc, "o", "#1f77b4"
     )
     scatter_component(
-        thetas / np.pi,
+        rand_coeffs,
         np.sqrt(v_2dca_max_all**2 + w_2dca_max_all**2),
         labelmax,
         "s",
@@ -235,28 +232,24 @@ if plot_ca:
     )
 else:
     scatter_component(
-        thetas / np.pi, v_2dcc_all**2 + w_2dcc_all**2, labelc, "o", "#1f77b4"
+        rand_coeffs, np.sqrt(v_2dcc_all**2 + w_2dcc_all**2), labelc, "o", "#1f77b4"
     )
     scatter_component(
-        thetas / np.pi,
+        rand_coeffs,
         np.sqrt(v_2dcc_max_all**2 + w_2dcc_max_all**2),
         labelmax,
         "s",
         "red",
     )
 
-scatter_component(thetas / np.pi, v_tde_all**2 + w_tde_all**2, labeltde, "D", "#2ca02c")
-v3s = np.array([v3(lx, ly, 1, 0, t) for t in thetas])
-w3s = np.array([w3(lx, ly, 1, 0, t) for t in thetas])
+scatter_component(rand_coeffs, v_tde_all**2 + w_tde_all**2, labeltde, "D", "#2ca02c")
 
-ax.plot(thetas / np.pi, (v3s - 1) ** 2 + w3s**2, color="#2ca02c", ls="--")
 
-ax.set_xticks([0, 1 / 4, 1 / 2])
-ax.set_xticklabels([r"$0$", r"$1/4$", r"$1/2$"])
-ax.set_xlabel(r"$\alpha/\pi$")
+ax.set_xlabel(r"r")
 ax.set_ylabel("Error")
 ax.legend()  # loc=6
-ax.set_ylim(-0.1, 1.1)
 
-plt.savefig("barberpole.eps", bbox_inches="tight")
+ax.set_ylim(-0.2, 1.2)
+
+plt.savefig("decoherence_scan.eps", bbox_inches="tight")
 plt.show()
