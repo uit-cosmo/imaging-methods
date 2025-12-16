@@ -9,4 +9,5 @@ from .duration_time_estimation import *
 from .parameter_estimation import *
 from .data_preprocessing import *
 from .maximum_trajectory import *
-from .velocity_estimation import *
+from .synthetic_data import *
+from .velocity_estimates import *

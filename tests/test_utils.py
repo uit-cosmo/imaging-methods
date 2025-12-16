@@ -203,6 +203,7 @@ def full_analysis(
     when relevant in the provided figures_dir.
     """
     dt = im.get_dt(ds)
+    dr = im.get_dr(ds)
 
     if do_plots:
         t_indexes = np.linspace(100, 110, num=8) / dt
@@ -256,8 +257,11 @@ def full_analysis(
         method_parameters["contouring"]["com_smoothing"],
     )
 
-    v_c, w_c = im.get_average_velocity_for_near_com(
-        average_ds, contour_ds, velocity_ds, distance=1
+    signal_high = average_ds[variable].max(dim=["x", "y"]).values > 0.75
+    mask = im.get_combined_mask(average_ds, contour_ds.center_of_mass, signal_high, 2*dr)
+
+    v_c, w_c = im.get_averaged_velocity_from_position(
+        position_da=contour_ds.center_of_mass, mask=mask, window_size=1
     )
 
     fit_params = method_parameters["gauss_fit"]

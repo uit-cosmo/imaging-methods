@@ -17,7 +17,7 @@ middle_time = ds.time.values.mean() + window * 3 / 2
 ds_short = ds.sel(time=slice(middle_time - window / 2, middle_time + window / 2))
 
 
-show_movie(
+movie_dataset(
     ds_short,
     variable="frames",
     lims=(0, ds_short.frames.max().item()),

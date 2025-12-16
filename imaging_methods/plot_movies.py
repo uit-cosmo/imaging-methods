@@ -23,7 +23,7 @@ def get_dt(data) -> float:
     return float(data.time[1].values - data.time[0].values)
 
 
-def show_movie(
+def movie_dataset(
     dataset: xr.Dataset,
     variable: str = "frames",
     interval: int = 100,

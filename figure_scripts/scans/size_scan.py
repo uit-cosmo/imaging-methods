@@ -1,10 +1,10 @@
-from utils import *
-import imaging_methods as im
 import matplotlib.pyplot as plt
 from blobmodel import BlobShapeEnum, BlobShapeImpl
-import velocity_estimation as ve
 import os
 import cosmoplots as cp
+import numpy as np
+import xarray as xr
+from scan_utils import *
 
 plt.style.use(["cosmoplots.default"])
 plt.rcParams["text.latex.preamble"] = (
@@ -33,85 +33,7 @@ method_parameters = {
 }
 
 data_file = "size_scan_data.npz"
-force_redo = True
-
-i = 0
-
-
-def estimate_velocities(ds, method_parameters):
-    """
-    Does a full analysis on imaging data, estimating a BlobParameters object containing all estimates. Plots figures
-    when relevant in the provided figures_dir.
-    """
-    dt = im.get_dt(ds)
-    dr = im.get_dr(ds)
-
-    tdca_params = method_parameters["2dca"]
-    events, average_ds = im.find_events_and_2dca(
-        ds,
-        tdca_params["refx"],
-        tdca_params["refy"],
-        threshold=tdca_params["threshold"],
-        check_max=tdca_params["check_max"],
-        window_size=tdca_params["window"],
-        single_counting=tdca_params["single_counting"],
-    )
-
-    def get_contouring_velocities(variable):
-        contour_ds = im.get_contour_evolution(
-            average_ds[variable],
-            method_parameters["contouring"]["threshold_factor"],
-            max_displacement_threshold=None,
-        )
-        signal_high = average_ds[variable].max(dim=["x", "y"]).values > 0.75
-        mask = im.get_combined_mask(
-            average_ds, contour_ds.center_of_mass, signal_high, 2 * dr
-        )
-
-        v, w = im.get_averaged_velocity_from_position(
-            position_da=contour_ds.center_of_mass, mask=mask, window_size=1
-        )
-        return v, w
-
-    def get_max_pos_velocities(variable):
-        max_trajectory = im.compute_maximum_trajectory_da(
-            average_ds, variable, method="fit"
-        )
-        signal_high = average_ds[variable].max(dim=["x", "y"]).values > 0.75
-        mask = im.get_combined_mask(average_ds, max_trajectory, signal_high, dr)
-
-        v, w = im.get_averaged_velocity_from_position(
-            position_da=max_trajectory, mask=mask, window_size=1
-        )
-        return v, w
-
-    v_2dca, w_2dca = get_contouring_velocities("cond_av")
-    v_2dcc, w_2dcc = get_contouring_velocities("cross_corr")
-
-    v_2dca_max, w_2dca_max = get_max_pos_velocities("cond_av")
-    v_2dcc_max, w_2dcc_max = get_max_pos_velocities("cross_corr")
-
-    eo = ve.EstimationOptions()
-    eo.cc_options.cc_window = method_parameters["2dca"]["window"] * dt
-    eo.cc_options.minimum_cc_value = 0
-    pd = ve.estimate_velocities_for_pixel(
-        tdca_params["refx"], tdca_params["refy"], ve.CModImagingDataInterface(ds)
-    )
-    vx, vy = pd.vx, pd.vy
-
-    return (
-        v_2dca,
-        w_2dca,
-        v_2dcc,
-        w_2dcc,
-        v_2dca_max,
-        w_2dca_max,
-        v_2dcc_max,
-        w_2dcc_max,
-        vx,
-        vy,
-    )
-
+force_redo = False
 
 T = 5000
 Lx = 8
@@ -137,7 +59,7 @@ def get_simulation_data(l, i):
 
     theta = np.random.uniform(-np.pi / 4, np.pi / 4)
     vx_input, vy_input = np.cos(theta), np.sin(theta)
-    ds = make_2d_realization(
+    ds = im.make_2d_realization(
         Lx,
         Ly,
         T,
@@ -164,71 +86,7 @@ def get_simulation_data(l, i):
     return ds
 
 
-def get_all_velocities(l, N=N):
-    """
-    Run N realisations and return the *raw* velocity components.
-
-    Returns
-    -------
-    vx_all, vy_all, vxtde_all, vytde_all : list (length N)
-        One entry per Monte-Carlo realisation.
-    """
-    v_2dca_all = []
-    w_2dca_all = []
-    v_2dcc_all = []
-    w_2dcc_all = []
-    v_2dca_max_all = []
-    w_2dca_max_all = []
-    v_2dcc_max_all = []
-    w_2dcc_max_all = []
-    vxtde_all = []
-    vytde_all = []
-
-    for i in range(N):
-        ds = get_simulation_data(l, i)
-        v_input = ds["v_input"]
-        w_input = ds["w_input"]
-
-        (
-            v_2dca,
-            w_2dca,
-            v_2dcc,
-            w_2dcc,
-            v_2dca_max,
-            w_2dca_max,
-            v_2dcc_max,
-            w_2dcc_max,
-            vxtde,
-            vytde,
-        ) = estimate_velocities(ds, method_parameters)
-
-        v_2dca_all.append(v_2dca - v_input)
-        w_2dca_all.append(w_2dca - w_input)
-        v_2dcc_all.append(v_2dcc - v_input)
-        w_2dcc_all.append(w_2dcc - w_input)
-        v_2dca_max_all.append(v_2dca_max - v_input)
-        w_2dca_max_all.append(w_2dca_max - w_input)
-        v_2dcc_max_all.append(v_2dcc_max - v_input)
-        w_2dcc_max_all.append(w_2dcc_max - w_input)
-        vxtde_all.append(vxtde - v_input)
-        vytde_all.append(vytde - w_input)
-
-    return (
-        v_2dca_all,
-        w_2dca_all,
-        v_2dcc_all,
-        w_2dcc_all,
-        v_2dca_max_all,
-        w_2dca_max_all,
-        v_2dcc_max_all,
-        w_2dcc_max_all,
-        vxtde_all,
-        vytde_all,
-    )
-
-
 sizes = np.logspace(-1, np.log10(4), num=10)
-
 v_2dca_all = []  # len = len(thetas); each entry = list of N values
 w_2dca_all = []
 v_2dcc_all = []  # len = len(thetas); each entry = list of N values
@@ -243,7 +101,7 @@ w_tde_all = []
 
 if os.path.exists(data_file) and not force_redo:
     loaded = np.load(data_file)
-    thetas = loaded["thetas"]  # in case you want to load thetas too
+    sizes = loaded["sizes"]
     v_2dca_all = loaded["v_2dca_all"]
     w_2dca_all = loaded["w_2dca_all"]
     v_2dcc_all = loaded["v_2dcc_all"]
@@ -268,7 +126,9 @@ else:
             w_2dcc_max,
             vxtde,
             vytde,
-        ) = get_all_velocities(l, N=N)
+        ) = get_all_velocities(
+            N, lambda i: get_simulation_data(l, i), method_parameters
+        )
 
         v_2dca_all.append(v_2dca)
         w_2dca_all.append(w_2dca)
@@ -337,12 +197,15 @@ def scatter_component(theta_vals, data_per_theta, label, marker, color):
 # Choose distinct colours (you can also use a colormap)
 # labelc = r"$\sqrt{(v_c-v)^2+(w_c-w)^2}$"
 # labeltde = r"$\sqrt{(v_{\mathrm{TDE}}-v)^2+(w_{\mathrm{TDE}}-w)^2}$"
-labelc = r"$E_c$"
-labeltde = r"$E_{\mathrm{TDE}}$"
-scatter_component(1 / sizes, np.sqrt(vx_all**2 + vy_all**2), labelc, "o", "#1f77b4")
+labelc = r"Contouring"
+labelmax = r"Max. Track."
+labeltde = r"Time delay est."
+
+scatter_component(1 / sizes, v_2dca_all**2 + w_2dca_all**2, labelc, "o", "#1f77b4")
 scatter_component(
-    1 / sizes, np.sqrt(vxtde_all**2 + vytde_all**2), labeltde, "^", "#2ca02c"
+    1 / sizes, v_2dca_max_all**2 + w_2dca_max_all**2, labelmax, "s", "red"
 )
+scatter_component(1 / sizes, v_tde_all**2 + w_tde_all**2, labeltde, "D", "#2ca02c")
 
 ax.set_xlabel(r"$\Delta/\ell$")
 ax.set_ylabel("Error")
@@ -350,6 +213,8 @@ ax.legend()  # loc=6
 ax.set_xscale("log")
 ax.set_xticks([1 / 4, 1, 10])
 ax.set_xticklabels([r"$1/4$", r"$1$", r"$10$"])
+
+ax.set_ylim(-0.2, 1.2)
 
 plt.savefig("size_scan.eps", bbox_inches="tight")
 plt.show()

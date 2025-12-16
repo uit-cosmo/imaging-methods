@@ -149,17 +149,3 @@ def get_combined_mask(
 
     # Restrict to the single longest contiguous block of True values
     return restrict_to_largest_true_subarray(mask)
-
-
-def get_average_velocity_for_near_com(
-    average_ds, contour_ds, velocity_ds, distance, extra_mask=None
-):
-    mask = is_position_near_reference(average_ds, contour_ds.center_of_mass, distance)
-    if extra_mask is not None:
-        mask = np.logical_and(mask, extra_mask)
-    valid_times = contour_ds.time[mask]  # DataArray with wanted times
-    common_times = valid_times[valid_times.isin(velocity_ds.time)]
-
-    v_c, w_c = velocity_ds.sel(time=common_times).mean(dim="time", skipna=True).values
-
-    return v_c, w_c

@@ -44,10 +44,13 @@ K = 5000
 N = 5
 NSR = 0.1
 
-l = 0.1
+lx, ly = 0.5, 2.0
+theta = 0
 i = 0
 
-file_name = os.path.join("synthetic_data", "data_size_{:.2f}_{}".format(l, i))
+file_name = os.path.join(
+    "../synthetic_data", "data_{:.2f}_{:.2f}_{:.2f}_{}".format(lx, ly, theta, i)
+)
 ds = xr.open_dataset(file_name)
 
 dt = im.get_dt(ds)
@@ -63,22 +66,6 @@ events, average_ds = im.find_events_and_2dca(
     window_size=tdca_params["window"],
     single_counting=tdca_params["single_counting"],
 )
-
-
-def get_contouring_velocities_old(variable):
-    contour_ds = im.get_contour_evolution(
-        average_ds[variable],
-        method_parameters["contouring"]["threshold_factor"],
-        max_displacement_threshold=None,
-    )
-    velocity_ds = im.get_velocity_from_position(
-        contour_ds.center_of_mass,
-        method_parameters["contouring"]["com_smoothing"],
-    )
-    v_c, w_c = im.get_average_velocity_for_near_com(
-        average_ds, contour_ds, velocity_ds, distance=1
-    )
-    return v_c, w_c
 
 
 def get_contouring_velocities(variable):
@@ -151,3 +138,6 @@ ax.plot(
 )
 
 plt.show()
+
+
+print("LOL")
