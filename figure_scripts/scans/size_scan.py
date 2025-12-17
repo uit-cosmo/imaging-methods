@@ -20,15 +20,14 @@ plt.rcParams.update(params)
 method_parameters = {
     "preprocessing": {"radius": 1000},
     "2dca": {
-        "refx": 4,
-        "refy": 4,
+        "refx": 8,
+        "refy": 8,
         "threshold": 2,
         "window": 60,
         "check_max": 1,
         "single_counting": True,
     },
-    "gauss_fit": {"size_penalty": 5, "aspect_penalty": 0.2, "tilt_penalty": 0.2},
-    "contouring": {"threshold_factor": 0.3, "com_smoothing": 10},
+    "contouring": {"threshold_factor": 0.3, "com_smoothing": 5},
     "taud_estimation": {"cutoff": 1e6, "nperseg": 1e3},
 }
 
@@ -38,18 +37,16 @@ force_redo = False
 T = 5000
 Lx = 8
 Ly = 8
-nx = 8
-ny = 8
+nx = 16
+ny = 16
 dt = 0.1
 bs = BlobShapeImpl(BlobShapeEnum.gaussian, BlobShapeEnum.gaussian)
 K = 5000
 NSR = 0.1
 
-vx_input = 1
-vy_intput = 0
 lx_input = 1
 ly_input = 1
-N = 1
+N = 5
 
 
 def get_simulation_data(l, i):
@@ -228,7 +225,7 @@ ax.set_xticklabels([r"$1/4$", r"$1$", r"$10$"])
 
 ax.set_ylim(-0.2, 1.2)
 
-plt.savefig("size_scan.eps", bbox_inches="tight")
+plt.savefig("size_scan.pdf", bbox_inches="tight")
 plt.show()
 
 print("LOL")

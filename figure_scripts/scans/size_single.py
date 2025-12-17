@@ -72,7 +72,10 @@ def get_contouring_velocities(variable):
         method_parameters["contouring"]["threshold_factor"],
         max_displacement_threshold=None,
     )
-    signal_high = average_ds[variable].max(dim=["x", "y"]).values > 0.75
+    signal_high = (
+        average_ds[variable].max(dim=["x", "y"]).values
+        > 0.75 * average_ds[variable].max().item()
+    )
     mask = im.get_combined_mask(average_ds, contour_ds.center_of_mass, signal_high, dr)
 
     v, w = im.get_averaged_velocity_from_position(
@@ -85,7 +88,10 @@ def get_max_pos_velocities(variable):
     max_trajectory = im.compute_maximum_trajectory_da(
         average_ds, variable, method="fit"
     )
-    signal_high = average_ds[variable].max(dim=["x", "y"]).values > 0.75
+    signal_high = (
+        average_ds[variable].max(dim=["x", "y"]).values
+        > 0.75 * average_ds[variable].max().item()
+    )
     mask = im.get_combined_mask(average_ds, max_trajectory, signal_high, dr)
 
     v, w = im.get_averaged_velocity_from_position(
@@ -109,6 +115,13 @@ contour_cc = im.get_contour_evolution(
     max_displacement_threshold=None,
 )
 
+max_trajectory_ca = im.compute_maximum_trajectory_da(
+    average_ds, "cond_av", method="fit"
+)
+max_trajectory_cc = im.compute_maximum_trajectory_da(
+    average_ds, "cross_corr", method="fit"
+)
+
 ca_max_mask = (
     average_ds.cond_av.max(dim=["x", "y"]).values
     > 0.75 * average_ds.cond_av.max().item()
@@ -119,26 +132,50 @@ cc_max_mask = (
 )
 
 
-fig, ax = plt.subplots()
+fig, axes = plt.subplots(1, 2)
 
-ax.scatter(contour_ca.time, contour_ca.center_of_mass.values[:, 0], color="blue")
+v_input, w_input = ds["v_input"].item(), ds["w_input"].item()
 
-ca_combined_mask = im.get_combined_mask(
-    average_ds, contour_ca.center_of_mass, ca_max_mask, 2 * dr
-)
-ax.plot(
-    contour_ca.time[ca_combined_mask],
-    contour_ca.center_of_mass.values[:, 0][ca_combined_mask],
-    lw=2,
-    color="blue",
-)
-old_filter = im.is_position_near_reference(average_ds, contour_ca.center_of_mass, 1)
-ax.plot(
-    contour_ca.time[old_filter],
-    contour_ca.center_of_mass.values[:, 0][old_filter],
-    lw=0.5,
-    color="red",
-    ls="--",
-)
+print("CA velocities: {:.2f},   {:.2f}".format(v_2dca, w_2dca))
+print("CC velocities: {:.2f},   {:.2f}".format(v_2dcc, w_2dcc))
+print("Input velocities: {:.2f},   {:.2f}".format(v_input, w_input))
+
+
+def plot_component(i, ax, position_ca, position_cc):
+    input_velocity = v_input if i == 0 else w_input
+    ax.plot(position_ca.time, position_ca.values[:, i], color="blue")
+    ax.plot(position_cc.time, position_cc.values[:, i], color="green")
+    ax.plot(
+        position_ca.time,
+        position_ca.sel(time=0).values[0] + position_ca.time.values * input_velocity,
+        color="black",
+        ls="--",
+    )
+
+    ca_combined_mask = im.get_combined_mask(
+        average_ds, position_ca, ca_max_mask, 2 * dr
+    )
+    cc_combined_mask = im.get_combined_mask(
+        average_ds, position_cc, cc_max_mask, 2 * dr
+    )
+    ax.plot(
+        position_ca.time[ca_combined_mask],
+        position_ca.values[:, i][ca_combined_mask],
+        lw=2,
+        color="blue",
+    )
+    ax.plot(
+        position_cc.time[cc_combined_mask],
+        position_cc.values[:, i][cc_combined_mask],
+        lw=2,
+        color="green",
+    )
+
+
+# plot_component(0, axes[0], contour_ca.center_of_mass, contour_cc.center_of_mass)
+# plot_component(1, axes[1], contour_ca.center_of_mass, contour_cc.center_of_mass)
+plot_component(0, axes[0], max_trajectory_ca, max_trajectory_cc)
+plot_component(1, axes[1], max_trajectory_ca, max_trajectory_cc)
+
 
 plt.show()

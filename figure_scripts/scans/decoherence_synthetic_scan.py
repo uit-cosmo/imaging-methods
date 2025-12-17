@@ -34,7 +34,7 @@ method_parameters = {
 }
 
 data_file = "decoherence_data.npz"
-force_redo = True
+force_redo = False
 
 T = 5000
 Lx = 8
@@ -214,25 +214,29 @@ def scatter_component(vals, data_per_theta, label, marker, color):
 
 
 # Choose distinct colours (you can also use a colormap)
-labelc = r"Contouring"
-labelmax = r"Max. Track."
+labelc = r"Cond. Av."
+labelmax = r"Cross. Corr."
 labeltde = r"Time delay est."
 
-plot_ca = True
-if plot_ca:
+plot_centroid = True
+if plot_centroid:
     scatter_component(
         rand_coeffs, np.sqrt(v_2dca_all**2 + w_2dca_all**2), labelc, "o", "#1f77b4"
     )
     scatter_component(
         rand_coeffs,
-        np.sqrt(v_2dca_max_all**2 + w_2dca_max_all**2),
+        np.sqrt(v_2dcc_all**2 + w_2dcc_all**2),
         labelmax,
         "s",
         "red",
     )
 else:
     scatter_component(
-        rand_coeffs, np.sqrt(v_2dcc_all**2 + w_2dcc_all**2), labelc, "o", "#1f77b4"
+        rand_coeffs,
+        np.sqrt(v_2dca_max_all**2 + w_2dca_max_all**2),
+        labelc,
+        "o",
+        "#1f77b4",
     )
     scatter_component(
         rand_coeffs,
@@ -251,5 +255,5 @@ ax.legend()  # loc=6
 
 ax.set_ylim(-0.2, 1.2)
 
-plt.savefig("decoherence_scan.eps", bbox_inches="tight")
+plt.savefig("decoherence_scan.pdf", bbox_inches="tight")
 plt.show()

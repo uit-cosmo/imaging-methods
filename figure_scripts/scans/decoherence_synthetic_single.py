@@ -1,6 +1,3 @@
-import numpy as np
-
-from decoherence_utils import *
 import imaging_methods as im
 import matplotlib.pyplot as plt
 from blobmodel import BlobShapeEnum, BlobShapeImpl
@@ -18,30 +15,47 @@ params = plt.rcParams
 cp.set_rcparams_dynamo(params, 1)
 plt.rcParams.update(params)
 
-T = 10000
+
+# Method parameters
+method_parameters = {
+    "preprocessing": {"radius": 1000},
+    "2dca": {
+        "refx": 8,
+        "refy": 8,
+        "threshold": 2,
+        "window": 60,
+        "check_max": 1,
+        "single_counting": True,
+    },
+    "gauss_fit": {"size_penalty": 5, "aspect_penalty": 0.2, "tilt_penalty": 0.2},
+    "contouring": {"threshold_factor": 0.5, "com_smoothing": 10},
+    "taud_estimation": {"cutoff": 1e6, "nperseg": 1e3},
+}
+
+T = 5000
 Lx = 8
 Ly = 8
-nx = 8
-ny = 8
+nx = 16
+ny = 16
 dt = 0.1
 bs = BlobShapeImpl(BlobShapeEnum.gaussian, BlobShapeEnum.gaussian)
-K = 10000
+K = 5000
 
-vx_input = 1
-vy_intput = 0
-lx_input = 1
-ly_input = 1
+N = 5
+NSR = 0.1
 
-rand_coeff = 0
-force_redo = False
+lx, ly = 1, 1
+theta = 0
+i = 2
+rand_coeff = 0.67
 
-file_name = "decoherence_{}.nc".format(rand_coeff)
-if os.path.exists(file_name) and not force_redo:
-    ds = xr.open_dataset(file_name)
-else:
-    ds = make_decoherence_realization(rand_coeff=rand_coeff)
-    ds = im.run_norm_ds(ds, method_parameters["preprocessing"]["radius"])
-    ds.to_netcdf(file_name)
+file_name = os.path.join(
+    "synthetic_data", "decoherence_data_{:.2f}_{}".format(rand_coeff, i)
+)
+ds = xr.open_dataset(file_name)
+
+dt = im.get_dt(ds)
+dr = im.get_dr(ds)
 
 tdca_params = method_parameters["2dca"]
 events, average_ds = im.find_events_and_2dca(
@@ -54,163 +68,114 @@ events, average_ds = im.find_events_and_2dca(
     single_counting=tdca_params["single_counting"],
 )
 
-contour_ds = im.get_contour_evolution(
+
+def get_contouring_velocities(variable):
+    contour_ds = im.get_contour_evolution(
+        average_ds[variable],
+        method_parameters["contouring"]["threshold_factor"],
+        max_displacement_threshold=None,
+    )
+    signal_high = (
+        average_ds[variable].max(dim=["x", "y"]).values
+        > 0.75 * average_ds[variable].max().item()
+    )
+    mask = im.get_combined_mask(
+        average_ds, contour_ds.center_of_mass, signal_high, 2 * dr
+    )
+
+    v, w = im.get_averaged_velocity_from_position(
+        position_da=contour_ds.center_of_mass, mask=mask, window_size=1
+    )
+    return v, w
+
+
+def get_max_pos_velocities(variable):
+    max_trajectory = im.compute_maximum_trajectory_da(
+        average_ds, variable, method="fit"
+    )
+    signal_high = (
+        average_ds[variable].max(dim=["x", "y"]).values
+        > 0.75 * average_ds[variable].max().item()
+    )
+    mask = im.get_combined_mask(average_ds, max_trajectory, signal_high, 2 * dr)
+
+    v, w = im.get_averaged_velocity_from_position(
+        position_da=max_trajectory, mask=mask, window_size=1
+    )
+    return v, w
+
+
+v_2dca, w_2dca = get_contouring_velocities("cond_av")
+v_2dcc, w_2dcc = get_contouring_velocities("cross_corr")
+
+contour_ca = im.get_contour_evolution(
     average_ds.cond_av,
     method_parameters["contouring"]["threshold_factor"],
     max_displacement_threshold=None,
 )
 
-velocity_ds = im.get_velocity_from_position(
-    contour_ds.center_of_mass,
-    method_parameters["contouring"]["com_smoothing"],
+contour_cc = im.get_contour_evolution(
+    average_ds.cross_corr,
+    method_parameters["contouring"]["threshold_factor"],
+    max_displacement_threshold=None,
 )
 
-vx_c, vy_c, vx_cc_tde, vy_cc_tde, confidence, vx_2dca_tde, vy_2dca_tde, cond_repr = (
-    estimate_velocities(ds, method_parameters)
+ca_max_mask = (
+    average_ds.cond_av.max(dim=["x", "y"]).values
+    > 0.75 * average_ds.cond_av.max().item()
+)
+cc_max_mask = (
+    average_ds.cross_corr.max(dim=["x", "y"]).values
+    > 0.75 * average_ds.cross_corr.max().item()
 )
 
-gif_file_name = "contours_decoherence_synthetic_{}.gif".format(rand_coeff)
+fig, axes = plt.subplots(1, 2)
 
-plot_contours = False
+v_input, w_input = ds["v_input"].item(), ds["w_input"].item()
 
-if plot_contours:
-    im.show_movie_with_contours(
-        average_ds,
-        contour_ds,
-        apd_dataset=None,
-        variable="cond_av",
-        lims=(0, 3),
-        gif_name=gif_file_name,
-        interpolation="spline16",
-        show=False,
-    )
-
-    im.show_movie_with_contours(
-        average_ds,
-        contour_ds,
-        apd_dataset=None,
-        variable="cond_repr",
-        lims=(0, 1),
-        gif_name="cond_repr_{}.gif".format(rand_coeff),
-        interpolation="spline16",
-        show=False,
-    )
-
-print("CC 3TDE velocities: {:.2f} {:.2f}".format(vx_cc_tde, vy_cc_tde))
-print("2DCA 3TDE velocities: {:.2f} {:.2f}".format(vx_2dca_tde, vy_2dca_tde))
-print("C velocities: {:.2f} {:.2f}".format(vx_c, vy_c))
-print("Confidence: {:.2f}".format(confidence))
-print("Cond. Repr. Index: {:.2f}".format(cond_repr))
-
-tau_x_index = int(1 / vx_c / dt)
-print(
-    "Cond repr at neighbour: {:.2f}".format(
-        np.max(average_ds.cond_repr.isel(x=5, y=4).values)
-    )
-)
-
-# === Enhanced Plotting Section ===
-fig, axes = plt.subplots(3, 1, figsize=(8, 6), sharex=True, constrained_layout=True)
-
-time = average_ds.time.values
-
-# --- Plot 1: Conditional Average (cond_av) at neighboring pixels ---
+print("CA velocities: {:.2f},   {:.2f}".format(v_2dca, w_2dca))
+print("CC velocities: {:.2f},   {:.2f}".format(v_2dcc, w_2dcc))
+print("Input velocities: {:.2f},   {:.2f}".format(v_input, w_input))
 ax = axes[0]
-label_data_cond_repr = [
-    ("left", average_ds.cond_av.isel(x=3, y=4)),
-    ("center", average_ds.cond_av.isel(x=4, y=4)),
-    ("right", average_ds.cond_av.isel(x=5, y=4)),
-    ("down", average_ds.cond_av.isel(x=4, y=3)),
-    ("up", average_ds.cond_av.isel(x=4, y=5)),
-]
-colors = plt.cm.viridis(np.linspace(0, 0.8, len(label_data_cond_repr)))
-
-for (label, data), color in zip(label_data_cond_repr, colors):
-    ax.plot(time, data, label=label, color=color, lw=1.5)
-
-ax.set_ylabel(r"$\langle n \rangle$ (cond. avg.)")
-ax.set_title("Conditional Average at Neighboring Pixels")
-ax.legend(fontsize=9, loc="upper right", frameon=True, fancybox=False, edgecolor="k")
-ax.grid(True, which="both", ls="--", alpha=0.5)
-
-# --- Plot 2: Conditional Representation (cond_repr) ---
-
-import fppanalysis as fppa
-
-tau, cc_left = fppa.corr_fun(
-    ds.frames.isel(x=4, y=4).values, ds.frames.isel(x=3, y=4), dt
-)
-_, cc_center = fppa.corr_fun(
-    ds.frames.isel(x=4, y=4).values, ds.frames.isel(x=4, y=4), dt
-)
-_, cc_right = fppa.corr_fun(
-    ds.frames.isel(x=4, y=4).values, ds.frames.isel(x=5, y=4), dt
-)
-_, cc_down = fppa.corr_fun(
-    ds.frames.isel(x=4, y=4).values, ds.frames.isel(x=4, y=3), dt
-)
-_, cc_up = fppa.corr_fun(ds.frames.isel(x=4, y=4).values, ds.frames.isel(x=4, y=5), dt)
 
 
-def get_analytical_ccf(taus, shape, tau_p, w):
-    tau = 1 / np.sqrt(1 + w**2)
-    return np.exp(-1 / 2 * (taus / tau) ** 2)
+def plot_component(i, ax):
+    input_velocity = v_input if i == 0 else w_input
+    ax.plot(contour_ca.time, contour_ca.center_of_mass.values[:, i], color="blue")
+    ax.plot(contour_ca.time, contour_cc.center_of_mass.values[:, i], color="green")
+    ax.plot(
+        contour_ca.time,
+        contour_ca.center_of_mass.sel(time=0).values[0]
+        + contour_ca.time.values * input_velocity,
+        color="black",
+        ls="--",
+    )
+
+    ca_combined_mask = im.get_combined_mask(
+        average_ds, contour_ca.center_of_mass, ca_max_mask, 2 * dr
+    )
+    cc_combined_mask = im.get_combined_mask(
+        average_ds, contour_cc.center_of_mass, cc_max_mask, 2 * dr
+    )
+    ax.plot(
+        contour_ca.time[ca_combined_mask],
+        contour_ca.center_of_mass.values[:, i][ca_combined_mask],
+        lw=2,
+        color="blue",
+    )
+    ax.plot(
+        contour_cc.time[cc_combined_mask],
+        contour_cc.center_of_mass.values[:, i][cc_combined_mask],
+        lw=2,
+        color="green",
+    )
 
 
-label_data_cc = [
-    ("left", cc_left),
-    ("center", cc_center),
-    ("right", cc_right),
-    ("down", cc_down),
-    ("up", cc_up),
-]
+plot_component(0, axes[0])
+plot_component(1, axes[1])
 
-label_data_cond_repr = [
-    ("left", average_ds.cond_repr.isel(x=3, y=4)),
-    ("center", average_ds.cond_repr.isel(x=4, y=4)),
-    ("right", average_ds.cond_repr.isel(x=5, y=4)),
-    ("down", average_ds.cond_repr.isel(x=4, y=3)),
-    ("up", average_ds.cond_repr.isel(x=4, y=5)),
-]
-ax = axes[1]
-for (label, data), color in zip(label_data_cc, colors):
-    ax.plot(tau, data, color=color, lw=1.5)
 
-ax.set_xlim(-3, 3)
-
-ax.set_ylabel("CCF")
-ax.set_title("Cross correlation function")
-ax.legend(fontsize=9, loc="upper right")
-ax.grid(True, which="both", ls="--", alpha=0.5)
-
-# --- Plot 3: Global Maxima over Space ---
-ax = axes[2]
-ax.plot(
-    time,
-    average_ds.cond_av.max(dim=["x", "y"]) / average_ds.cond_av.max(),
-    label="Max of cond. avg.",
-    color="tab:blue",
-    lw=2,
-)
-ax.plot(
-    time,
-    average_ds.cond_repr.max(dim=["x", "y"]),
-    label="Max of cond. repr.",
-    color="tab:orange",
-    lw=2,
-)
-
-ax.set_xlabel("Time")
-ax.set_ylabel("Spatial Maximum")
-ax.set_title("Global Spatial Maxima Over Time")
-ax.legend(fontsize=9)
-ax.grid(True, which="both", ls="--", alpha=0.5)
-
-# Final adjustments
-fig.suptitle(
-    "Decoherence Analysis: Conditional Statistics", fontsize=14, fontweight="bold"
-)
-plt.savefig(
-    "decoherence_analysis_random_{}.pdf".format(rand_coeff), bbox_inches="tight"
-)
 plt.show()
+
+
+print("LOL")

@@ -147,13 +147,18 @@ def estimate_velocities_synthetic_ds(ds, method_parameters):
             method_parameters["contouring"]["threshold_factor"],
             max_displacement_threshold=None,
         )
-        signal_high = average_ds[variable].max(dim=["x", "y"]).values > 0.75
+        signal_high = (
+            average_ds[variable].max(dim=["x", "y"]).values
+            > 0.75 * average_ds[variable].max().item()
+        )
         mask = get_combined_mask(
             average_ds, contour_ds.center_of_mass, signal_high, 2 * dr
         )
 
         v, w = get_averaged_velocity_from_position(
-            position_da=contour_ds.center_of_mass, mask=mask, window_size=1
+            position_da=contour_ds.center_of_mass,
+            mask=mask,
+            window_size=method_parameters["contouring"]["com_smoothing"],
         )
         return v, w
 
@@ -161,8 +166,11 @@ def estimate_velocities_synthetic_ds(ds, method_parameters):
         max_trajectory = compute_maximum_trajectory_da(
             average_ds, variable, method="fit"
         )
-        signal_high = average_ds[variable].max(dim=["x", "y"]).values > 0.75
-        mask = get_combined_mask(average_ds, max_trajectory, signal_high, dr)
+        signal_high = (
+            average_ds[variable].max(dim=["x", "y"]).values
+            > 0.75 * average_ds[variable].max().item()
+        )
+        mask = get_combined_mask(average_ds, max_trajectory, signal_high, 2 * dr)
 
         v, w = get_averaged_velocity_from_position(
             position_da=max_trajectory, mask=mask, window_size=1
