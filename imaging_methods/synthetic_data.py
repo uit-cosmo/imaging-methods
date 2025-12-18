@@ -141,47 +141,37 @@ def estimate_velocities_synthetic_ds(ds, method_parameters):
         single_counting=tdca_params["single_counting"],
     )
 
-    def get_contouring_velocities(variable):
-        contour_ds = get_contour_evolution(
-            average_ds[variable],
-            method_parameters["contouring"]["threshold_factor"],
-            max_displacement_threshold=None,
-        )
+    def get_averaged_velocity(variable, position_method="contouring"):
+        if position_method == "contouring":
+            position_da = get_contour_evolution(
+                average_ds[variable],
+                method_parameters["contouring"]["threshold_factor"],
+                max_displacement_threshold=None,
+            ).center_of_mass
+        elif position_method == "max":
+            position_da = compute_maximum_trajectory_da(
+                average_ds, variable, method="fit"
+            )
+        else:
+            raise NotImplementedError
         signal_high = (
             average_ds[variable].max(dim=["x", "y"]).values
             > 0.75 * average_ds[variable].max().item()
         )
-        mask = get_combined_mask(
-            average_ds, contour_ds.center_of_mass, signal_high, 2 * dr
-        )
+        mask = get_combined_mask(average_ds, position_da, signal_high, 2 * dr)
 
         v, w = get_averaged_velocity_from_position(
-            position_da=contour_ds.center_of_mass,
+            position_da=position_da,
             mask=mask,
             window_size=method_parameters["contouring"]["com_smoothing"],
         )
         return v, w
 
-    def get_max_pos_velocities(variable):
-        max_trajectory = compute_maximum_trajectory_da(
-            average_ds, variable, method="fit"
-        )
-        signal_high = (
-            average_ds[variable].max(dim=["x", "y"]).values
-            > 0.75 * average_ds[variable].max().item()
-        )
-        mask = get_combined_mask(average_ds, max_trajectory, signal_high, 2 * dr)
+    v_2dca, w_2dca = get_averaged_velocity("cond_av", position_method="contouring")
+    v_2dcc, w_2dcc = get_averaged_velocity("cross_corr", position_method="contouring")
 
-        v, w = get_averaged_velocity_from_position(
-            position_da=max_trajectory, mask=mask, window_size=1
-        )
-        return v, w
-
-    v_2dca, w_2dca = get_contouring_velocities("cond_av")
-    v_2dcc, w_2dcc = get_contouring_velocities("cross_corr")
-
-    v_2dca_max, w_2dca_max = get_max_pos_velocities("cond_av")
-    v_2dcc_max, w_2dcc_max = get_max_pos_velocities("cross_corr")
+    v_2dca_max, w_2dca_max = get_averaged_velocity("cond_av", position_method="max")
+    v_2dcc_max, w_2dcc_max = get_averaged_velocity("cross_corr", position_method="max")
 
     eo = ve.EstimationOptions()
     eo.cc_options.cc_window = method_parameters["2dca"]["window"] * dt
