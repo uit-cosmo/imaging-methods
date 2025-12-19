@@ -119,9 +119,7 @@ if __name__ == "__main__":
         "/home/sosno/Git/experimental_database/plasma_discharges.json"
     )
 
-    shots = [
-        1160616026,
-    ]
+    shots = [1160616027, 1160616009]
 
     results = im.ResultManager.from_json("density_scan/results.json")
     run_parallel(shots, force_redo=True)

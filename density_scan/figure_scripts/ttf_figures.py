@@ -17,7 +17,7 @@ results = im.ResultManager.from_json("results.json")
 manager = im.GPIDataAccessor(
     "/home/sosno/Git/experimental_database/plasma_discharges.json"
 )
-print(results.get_blob_params_for_shot(1160616026, 4, 5))
+print(results.get_blob_params_for_shot(1160616026, 6, 6))
 quit()
 shots = [
     shot

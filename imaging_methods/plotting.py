@@ -6,8 +6,6 @@ def plot_2dca_zero_lag(ds, average, ax):
     if average is None or len(average.data_vars) == 0:
         return
 
-    zfine = np.linspace(-8, 1, 100)
-
     data = average["cond_av"].sel(time=0).values
     im = ax.imshow(data, origin="lower", interpolation=None)  # "spline16",
 
@@ -30,8 +28,6 @@ def plot_2dca_zero_lag(ds, average, ax):
     ax.set_title(r"$R_*={:.2f} $cm".format(average.R[refy, refx]))
 
     if ds is not None:
-        limit_spline = interpolate.interp1d(ds["zlimit"], ds["rlimit"], kind="cubic")
-        ax.plot(limit_spline(zfine), zfine, color="black", ls="--")
         plot_lcfs_area(ds, ax)
 
 
@@ -63,7 +59,7 @@ def plot_contour_at_zero(e, contour_ds, ax, fig_name=None):
 def plot_lcfs_area(ds, ax):
     limit_spline = interpolate.interp1d(ds["zlimit"], ds["rlimit"], kind="cubic")
     zfine = np.linspace(-8, 1, 100)
-    ax.plot(limit_spline(zfine), zfine, color="black", ls="--")
+    ax.plot(limit_spline(zfine), zfine, color="silver", ls="--")
 
     r_min, r_max, z_lcfs = get_lcfs_min_and_max(ds)
     ax.fill_betweenx(z_lcfs, r_min, r_max, color="grey", alpha=0.5)

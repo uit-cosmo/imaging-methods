@@ -22,7 +22,7 @@ manager = im.GPIDataAccessor(
     "/home/sosno/Git/experimental_database/plasma_discharges.json"
 )
 
-shot = 1160616026
+shot = 1160616027
 # shot = 1140613026
 # shot = 1120814031
 ds = manager.read_shot_data(shot, data_folder="../data")
