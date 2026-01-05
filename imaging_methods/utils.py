@@ -3,6 +3,7 @@ import velocity_estimation as ve
 import xarray as xr
 import numpy as np
 from scipy import interpolate
+from scipy.signal import windows, convolve
 
 
 class PhantomDataInterface(ve.ImagingDataInterface):
@@ -298,3 +299,46 @@ def restrict_to_largest_true_subarray(mask):
     restricted_mask[start_idx : end_idx + 1] = True
 
     return restricted_mask
+
+
+def smooth_da(da, window_size, window_type="boxcar"):
+    #  TODO: consider inteprolate nans at the start if there are nans
+    if window_size < 1 or not isinstance(window_size, int):
+        raise ValueError("window_size must be a positive integer")
+    if window_type not in ["boxcar", "gaussian", "hamming", "blackman", "triang"]:
+        raise ValueError(
+            "window_type must be 'boxcar', 'gaussian', 'hamming', 'blackman', or 'triang'"
+        )
+    if len(da.time) < 2:
+        raise ValueError("At least two time points are required")
+
+    # Define window parameters
+    half_window = window_size // 2
+    n_times = len(da.time)
+    start = half_window
+    end = n_times - half_window
+
+    # Check if there are enough points
+    if start >= end:
+        raise ValueError(
+            f"Not enough time points to compute velocity with window_size={window_size}"
+        )
+
+    # Generate window using scipy.signal.windows
+    if window_type == "gaussian":
+        window = windows.gaussian(window_size, std=window_size / 4, sym=True)
+    else:
+        window = getattr(windows, window_type)(window_size, sym=True)
+    window /= window.sum()  # Normalize
+
+    smoothed = convolve(
+        da.values,
+        window[:, np.newaxis],
+        mode='valid'
+    )
+
+    return xr.DataArray(
+        smoothed,
+        dims=("time", "coord"),
+        coords={"time": da.time[start:end], "coord": ["r", "z"]},
+    )

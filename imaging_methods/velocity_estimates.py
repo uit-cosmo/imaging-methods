@@ -4,78 +4,30 @@ from scipy.signal import windows
 from .utils import restrict_to_largest_true_subarray
 
 
-def get_velocity_from_position(position_da, window_size=3, window_type="boxcar"):
+def get_velocity_from_position(position_da):
     """
-    Compute the velocity signal from a position signal. First the position signal is filtered with a specified
-    window_type, then the velocity is computed with a centered difference method.
+    Compute the velocity signal from a position signal.
 
     Parameters:
-    - com_da (xr.DataArray): Position DataArray with dims ('time', 'coord') and coords 'R', 'Z'.
-    - window_size (int): Size of the smoothing window (default: 3).
-    - window_type (str): Type of smoothing window ('boxcar', 'gaussian', 'hamming', 'blackman', 'triang').
+    - position_da (xr.DataArray): Position DataArray with dims ('time', 'coord') and coords 'R', 'Z'.
 
     Returns:
     - velocity_da (xr.DataArray): Velocity with dims ('time', 'coord'), cropped to valid time points.
     """
-    if window_size < 1 or not isinstance(window_size, int):
-        raise ValueError("window_size must be a positive integer")
-    if window_type not in ["boxcar", "gaussian", "hamming", "blackman", "triang"]:
-        raise ValueError(
-            "window_type must be 'boxcar', 'gaussian', 'hamming', 'blackman', or 'triang'"
-        )
-    if len(position_da.time) < 2:
-        raise ValueError("At least two time points are required")
-
-    # Interpolate NaNs
-    com_interp = position_da.interpolate_na(
-        dim="time", method="nearest", fill_value="extrapolate"
-    )
-    com_np = com_interp.values  # Shape: (n_times, 2)
-
-    # Define window parameters
-    half_window = window_size // 2
-    n_times = len(position_da.time)
-    start = half_window + 1
-    end = n_times - half_window - 1
-
-    # Check if there are enough points
-    if start >= end:
-        raise ValueError(
-            f"Not enough time points to compute velocity with window_size={window_size}"
-        )
-
-    # Generate window using scipy.signal.windows
-    if window_type == "gaussian":
-        window = windows.gaussian(window_size, std=window_size / 4, sym=True)
-    else:
-        window = getattr(windows, window_type)(window_size, sym=True)
-    window /= window.sum()  # Normalize
-
-    # Compute moving average
-    com_smooth = np.array(
-        [np.convolve(com_np[:, i], window, mode="same") for i in range(2)]
-    ).T
 
     # Compute time step
     dt = float(position_da.time[1] - position_da.time[0])
 
     # Compute velocity using central differences
-    valid_times = position_da.time[start:end]
     velocity_values = (
-        com_smooth[start + 1 : end + 1, :] - com_smooth[start - 1 : end - 1, :]
+        position_da[2:, :].values - position_da[:-2, :].values
     ) / (2 * dt)
 
     # Create output DataArray
     velocity_da = xr.DataArray(
         velocity_values,
         dims=("time", "coord"),
-        coords={"time": valid_times, "coord": position_da.coord},
-        attrs={
-            "description": "Velocity of the contour center of mass in (r, z) coordinates",
-            "method": "Finite difference (central) on smoothed COM data",
-            "smoothing": f"{window_type.capitalize()} window with window_size={window_size} time steps",
-            "units": "Same as com_da units per time unit",
-        },
+        coords={"time": position_da.time[1:-1], "coord": position_da.coord},
     )
 
     return velocity_da
