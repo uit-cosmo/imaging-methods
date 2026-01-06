@@ -167,7 +167,7 @@ def plot_frames(ds, t_indexes, variable="frames"):
 
 def plot_frames_with_contour(average, contours, t_indexes, variable="cond_av"):
     fig, ax = plt.subplots(
-        2, 4, figsize=(4 * 2.08, 2 * 2.08), gridspec_kw={"hspace": 0.4}
+        2, 4, figsize=(4 * 2.08, 2 * 2.08), gridspec_kw={"hspace": 0, "wspace": 0}
     )
     for i in np.arange(8):
         axe = ax[i // 4][i % 4]
@@ -185,14 +185,16 @@ def plot_frames_with_contour(average, contours, t_indexes, variable="cond_av"):
         axe.set_ylim((average.Z[0, 0], average.Z[-1, 0]))
         axe.set_xlim((average.R[0, 0], average.R[0, -1]))
         t = average["time"].isel(time=int(t_indexes[i])).item()
-        axe.set_title(r"$t={:.1f}\,\tau_\text{{d}}$".format(t))
+        axe.text(3, 6.5, r"$t={:.1f}\,\tau_\text{{d}}$".format(t), color="white")
+        axe.set_xticks([])
+        axe.set_yticks([])
 
     return fig
 
 
 def full_analysis(
     ds,
-    method_parameters,
+    method_parameters: im.MethodParameters,
     suffix,
     figures_dir="integrated_tests_figures",
     do_plots=True,
@@ -213,27 +215,27 @@ def full_analysis(
             bbox_inches="tight",
         )
 
-    tdca_params = method_parameters["2dca"]
-    refx, refy = tdca_params["refx"], tdca_params["refy"]
+    tdca_params = method_parameters.two_dca
+    refx, refy = tdca_params.refx, tdca_params.refy
     events, average_ds = im.find_events_and_2dca(
         ds,
-        tdca_params["refx"],
-        tdca_params["refy"],
-        threshold=tdca_params["threshold"],
-        check_max=tdca_params["check_max"],
-        window_size=tdca_params["window"],
-        single_counting=tdca_params["single_counting"],
+        tdca_params.refx,
+        tdca_params.refy,
+        threshold=tdca_params.threshold,
+        check_max=tdca_params.check_max,
+        window_size=tdca_params.window,
+        single_counting=tdca_params.single_counting,
     )
 
     contour_ds = im.get_contour_evolution(
         average_ds[variable],
-        method_parameters["contouring"]["threshold_factor"],
+        method_parameters.contouring.threshold_factor,
         max_displacement_threshold=None,
         com_method="centroid",
     )
 
     if do_plots:
-        t_indexes = np.linspace(0, tdca_params["window"], num=10)
+        t_indexes = np.linspace(0, tdca_params.window, num=10)
         plot_frames_with_contour(average_ds, contour_ds, t_indexes)
         plt.savefig(
             os.path.join(figures_dir, "cond_av_{}.eps".format(suffix)),
@@ -252,46 +254,41 @@ def full_analysis(
             show=False,
         )
 
-    velocity_ds = im.get_velocity_from_position(
-        contour_ds.center_of_mass,
-        method_parameters["contouring"]["com_smoothing"],
-    )
-
     signal_high = average_ds[variable].max(dim=["x", "y"]).values > 0.75
     mask = im.get_combined_mask(
         average_ds, contour_ds.center_of_mass, signal_high, 2 * dr
     )
 
     v_c, w_c = im.get_averaged_velocity_from_position(
-        position_da=contour_ds.center_of_mass, mask=mask, window_size=1
+        position_da=contour_ds.center_of_mass, mask=mask
     )
 
-    fit_params = method_parameters["gauss_fit"]
+    fit_params = method_parameters.gauss_fit
     lx, ly, theta = im.fit_ellipse_to_event(
         average_ds.cond_av,
-        tdca_params["refx"],
-        tdca_params["refy"],
-        size_penalty_factor=fit_params["size_penalty"],
-        aspect_ratio_penalty_factor=fit_params["aspect_penalty"],
-        theta_penalty_factor=fit_params["tilt_penalty"],
+        tdca_params.refx,
+        tdca_params.refy,
+        size_penalty_factor=fit_params.size_penalty,
+        aspect_ratio_penalty_factor=fit_params.aspect_penalty,
+        theta_penalty_factor=fit_params.tilt_penalty,
     )
     area = contour_ds.area.sel(time=0).item()
 
     v_f, w_f = im.get_3tde_velocities(
-        average_ds.cond_av, tdca_params["refx"], tdca_params["refy"]
+        average_ds.cond_av, tdca_params.refx, tdca_params.refy
     )
 
     v_2tde, w_2tde = im.get_2tde_velocities(
-        average_ds.cond_av, tdca_params["refx"], tdca_params["refy"]
+        average_ds.cond_av, tdca_params.refx, tdca_params.refy
     )
 
     taud, lam = im.DurationTimeEstimator(
         im.SecondOrderStatistic.PSD, im.Analytics.TwoSided
     ).estimate_duration_time(
-        ds.frames.isel(x=tdca_params["refx"], y=tdca_params["refy"]).values,
+        ds.frames.isel(x=tdca_params.refx, y=tdca_params.refy).values,
         im.get_dt(average_ds),
-        cutoff=method_parameters["taud_estimation"]["cutoff"],
-        nperseg=method_parameters["taud_estimation"]["nperseg"],
+        cutoff=method_parameters.taud_estimation.cutoff,
+        nperseg=method_parameters.taud_estimation.nperseg,
     )
 
     if do_plots:
@@ -301,23 +298,23 @@ def full_analysis(
         im.plot_event_with_fit(
             average_ds,
             None,
-            tdca_params["refx"],
-            tdca_params["refy"],
+            tdca_params.refx,
+            tdca_params.refy,
             ax=ax,
-            size_penalty_factor=fit_params["size_penalty"],
-            aspect_ratio_penalty_factor=fit_params["aspect_penalty"],
-            theta_penalty_factor=fit_params["tilt_penalty"],
+            size_penalty_factor=fit_params.size_penalty,
+            aspect_ratio_penalty_factor=fit_params.aspect_penalty,
+            theta_penalty_factor=fit_params.tilt_penalty,
         )
         inset_ax = inset_axes(ax, width=1, height=1, loc="lower left")
 
         im.DurationTimeEstimator(
             im.SecondOrderStatistic.PSD, im.Analytics.TwoSided
         ).plot_and_fit(
-            ds.frames.isel(x=tdca_params["refx"], y=tdca_params["refy"]).values,
+            ds.frames.isel(x=tdca_params.refx, y=tdca_params.refy).values,
             im.get_dt(average_ds),
             inset_ax,
-            cutoff=method_parameters["taud_estimation"]["cutoff"],
-            nperseg=method_parameters["taud_estimation"]["nperseg"],
+            cutoff=method_parameters.taud_estimation.cutoff,
+            nperseg=method_parameters.taud_estimation.nperseg,
         )
         inset_ax.get_legend().remove()
         inset_ax.set_xlabel("")

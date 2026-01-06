@@ -15,7 +15,6 @@ def get_velocity_from_position(position_da):
     - velocity_da (xr.DataArray): Velocity with dims ('time', 'coord'), cropped to valid time points.
     """
 
-    # Compute time step
     dt = float(position_da.time[1] - position_da.time[0])
 
     # Compute velocity using central differences

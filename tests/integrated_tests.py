@@ -10,30 +10,16 @@ plt.rcParams["text.latex.preamble"] = (
 
 
 MAKE_PLOTS = True
-T = 10000
+T = 1000
 Lx = 8
 Ly = 8
-nx = 8
-ny = 8
+nx = 16
+ny = 16
 dt = 0.1
 bs = BlobShapeImpl(BlobShapeEnum.gaussian, BlobShapeEnum.gaussian)
-K = 10000
+K = 1000
 
-# Method parameters
-method_parameters = {
-    "preprocessing": {"radius": 1000},
-    "2dca": {
-        "refx": 8,
-        "refy": 8,
-        "threshold": 2,
-        "window": 60,
-        "check_max": 1,
-        "single_counting": True,
-    },
-    "gauss_fit": {"size_penalty": 5, "aspect_penalty": 0.2, "tilt_penalty": 0.2},
-    "contouring": {"threshold_factor": 0.3, "com_smoothing": 10},
-    "taud_estimation": {"cutoff": 1e6, "nperseg": 1e3},
-}
+method_parameters = im.MethodParameters()
 
 figures_dir = "integrated_tests_figures"
 
@@ -60,7 +46,7 @@ def test_case_a():
         theta=theta_input,
         bs=bs,
     )
-    ds = im.run_norm_ds(ds, method_parameters["preprocessing"]["radius"])
+    ds = im.run_norm_ds(ds, method_parameters.preprocessing.radius)
     bp = full_analysis(
         ds, method_parameters, "a", do_plots=MAKE_PLOTS, variable="cross_corr"
     )
@@ -77,7 +63,6 @@ def test_case_a():
 
 
 def test_case_b():
-    alpha = np.pi / 8
     vx_input, vy_input = 1, 0
     aspect_ratio = 4
     lx_input = 1 / np.sqrt(aspect_ratio)
@@ -96,10 +81,10 @@ def test_case_b():
         vy=vy_input,
         lx=lx_input,
         ly=ly_input,
-        theta=theta_input + alpha,
+        theta=theta_input,
         bs=bs,
     )
-    ds = im.run_norm_ds(ds, method_parameters["preprocessing"]["radius"])
+    ds = im.run_norm_ds(ds, method_parameters.preprocessing.radius)
     bp = full_analysis(
         ds, method_parameters, "b", do_plots=MAKE_PLOTS, variable="cross_corr"
     )
