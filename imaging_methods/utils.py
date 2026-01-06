@@ -4,6 +4,8 @@ import xarray as xr
 import numpy as np
 from scipy import interpolate
 from scipy.signal import windows, convolve
+from dataclasses import dataclass, field
+from .method_parameters import *
 
 
 class PhantomDataInterface(ve.ImagingDataInterface):
@@ -301,7 +303,7 @@ def restrict_to_largest_true_subarray(mask):
     return restricted_mask
 
 
-def smooth_da(da, window_size, window_type="boxcar"):
+def smooth_da(da, window_size, window_type="boxcar", return_start_end=False):
     #  TODO: consider inteprolate nans at the start if there are nans
     if window_size < 1 or not isinstance(window_size, int):
         raise ValueError("window_size must be a positive integer")
@@ -331,14 +333,27 @@ def smooth_da(da, window_size, window_type="boxcar"):
         window = getattr(windows, window_type)(window_size, sym=True)
     window /= window.sum()  # Normalize
 
-    smoothed = convolve(
-        da.values,
-        window[:, np.newaxis],
-        mode='valid'
-    )
+    smoothed = convolve(da.values, window[:, np.newaxis], mode="valid")
 
-    return xr.DataArray(
+    result = xr.DataArray(
         smoothed,
         dims=("time", "coord"),
         coords={"time": da.time[start:end], "coord": ["r", "z"]},
     )
+    if return_start_end:
+        return result, start, end
+    return result
+
+
+def get_default_synthetic_method_params() -> MethodParameters:
+    method_parameters = MethodParameters(
+        preprocessing=PreprocessingParams(radius=1000),
+        two_dca=TwoDcaParams(
+            refx=8, refy=8, threshold=2, window=60, check_max=1, single_counting=True
+        ),
+        gauss_fit=GaussFitParams(size_penalty=5, aspect_penalty=0.2, tilt_penalty=0.2),
+        contouring=ContouringParams(threshold_factor=0.5, com_smoothing=11),
+        taud_estimation=TaudEstimationParams(cutoff=1e6, nperseg=1e3),
+    )
+
+    return method_parameters

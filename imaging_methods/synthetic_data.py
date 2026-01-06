@@ -1,11 +1,12 @@
 from typing import Union, List
 from nptyping import NDArray
 
-from .utils import get_dr, get_dt
+from .utils import get_dr, get_dt, smooth_da
 from .cond_av import find_events_and_2dca
 from .contours import get_contour_evolution
 from .velocity_estimates import *
 from .maximum_trajectory import *
+from .method_parameters import *
 import velocity_estimation as ve
 
 from blobmodel import (
@@ -123,62 +124,75 @@ def make_2d_realization(
     )
 
 
-def estimate_velocities_synthetic_ds(ds, method_parameters):
+def get_averaged_velocity(
+    average_ds, variable, method_parameters, position_method="contouring"
+):
+    if position_method == "contouring":
+        position_da = get_contour_evolution(
+            average_ds[variable],
+            method_parameters.contouring.threshold_factor,
+            max_displacement_threshold=None,
+        ).center_of_mass
+    elif position_method == "max":
+        position_da = compute_maximum_trajectory_da(average_ds, variable, method="fit")
+    else:
+        raise NotImplementedError
+
+    position_da, start, end = smooth_da(
+        position_da, method_parameters.contouring.com_smoothing, return_start_end=True
+    )
+    signal_high = (
+        average_ds[variable].max(dim=["x", "y"]).values
+        > 0.75 * average_ds[variable].max().item()
+    )[start:end]
+    mask = get_combined_mask(
+        average_ds, position_da, signal_high, 2 * get_dr(average_ds)
+    )
+
+    v, w = get_averaged_velocity_from_position(
+        position_da=position_da,
+        mask=mask,
+    )
+    return v, w
+
+
+def estimate_velocities_synthetic_ds(ds, method_parameters: MethodParameters):
     """
     Estimates blob velocities from a given synthetic data dataset and parameters given in method_parameters.
     """
     dt = get_dt(ds)
-    dr = get_dr(ds)
 
-    tdca_params = method_parameters["2dca"]
+    tdca_params = method_parameters.two_dca
     events, average_ds = find_events_and_2dca(
         ds,
-        tdca_params["refx"],
-        tdca_params["refy"],
-        threshold=tdca_params["threshold"],
-        check_max=tdca_params["check_max"],
-        window_size=tdca_params["window"],
-        single_counting=tdca_params["single_counting"],
+        tdca_params.refx,
+        tdca_params.refy,
+        threshold=tdca_params.threshold,
+        check_max=tdca_params.check_max,
+        window_size=tdca_params.window,
+        single_counting=tdca_params.single_counting,
     )
 
-    def get_averaged_velocity(variable, position_method="contouring"):
-        if position_method == "contouring":
-            position_da = get_contour_evolution(
-                average_ds[variable],
-                method_parameters["contouring"]["threshold_factor"],
-                max_displacement_threshold=None,
-            ).center_of_mass
-        elif position_method == "max":
-            position_da = compute_maximum_trajectory_da(
-                average_ds, variable, method="fit"
-            )
-        else:
-            raise NotImplementedError
-        signal_high = (
-            average_ds[variable].max(dim=["x", "y"]).values
-            > 0.75 * average_ds[variable].max().item()
-        )
-        mask = get_combined_mask(average_ds, position_da, signal_high, 2 * dr)
+    v_2dca, w_2dca = get_averaged_velocity(
+        average_ds, "cond_av", method_parameters, position_method="contouring"
+    )
+    v_2dcc, w_2dcc = get_averaged_velocity(
+        average_ds, "cross_corr", method_parameters, position_method="contouring"
+    )
 
-        v, w = get_averaged_velocity_from_position(
-            position_da=position_da,
-            mask=mask,
-            window_size=method_parameters["contouring"]["com_smoothing"],
-        )
-        return v, w
-
-    v_2dca, w_2dca = get_averaged_velocity("cond_av", position_method="contouring")
-    v_2dcc, w_2dcc = get_averaged_velocity("cross_corr", position_method="contouring")
-
-    v_2dca_max, w_2dca_max = get_averaged_velocity("cond_av", position_method="max")
-    v_2dcc_max, w_2dcc_max = get_averaged_velocity("cross_corr", position_method="max")
+    v_2dca_max, w_2dca_max = get_averaged_velocity(
+        average_ds, "cond_av", method_parameters, position_method="max"
+    )
+    v_2dcc_max, w_2dcc_max = get_averaged_velocity(
+        average_ds, "cross_corr", method_parameters, position_method="max"
+    )
 
     eo = ve.EstimationOptions()
-    eo.cc_options.cc_window = method_parameters["2dca"]["window"] * dt
+    eo.cc_options.cc_window = method_parameters.two_dca.window * dt
     eo.cc_options.minimum_cc_value = 0
     eo.cc_options.running_mean = False
     pd = ve.estimate_velocities_for_pixel(
-        tdca_params["refx"], tdca_params["refy"], ve.CModImagingDataInterface(ds)
+        tdca_params.refx, tdca_params.refy, ve.CModImagingDataInterface(ds)
     )
     vx, vy = pd.vx, pd.vy
 

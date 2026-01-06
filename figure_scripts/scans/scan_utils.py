@@ -1,7 +1,9 @@
 import imaging_methods as im
 
 
-def get_all_velocities(N, simulation_data_getter, method_parameters):
+def get_all_velocities(
+    N, simulation_data_getter, method_parameters: im.MethodParameters
+):
     """
     Run N realisations and return the *raw* velocity components.
 

@@ -19,9 +19,9 @@ def get_velocity_from_position(position_da):
     dt = float(position_da.time[1] - position_da.time[0])
 
     # Compute velocity using central differences
-    velocity_values = (
-        position_da[2:, :].values - position_da[:-2, :].values
-    ) / (2 * dt)
+    velocity_values = (position_da[2:, :].values - position_da[:-2, :].values) / (
+        2 * dt
+    )
 
     # Create output DataArray
     velocity_da = xr.DataArray(
@@ -33,9 +33,7 @@ def get_velocity_from_position(position_da):
     return velocity_da
 
 
-def get_averaged_velocity_from_position(
-    position_da: xr.DataArray, mask, window_size=3, window_type="boxcar"
-):
+def get_averaged_velocity_from_position(position_da: xr.DataArray, mask):
     """
     Estimates an averaged velocity from a position signal. The position signal is first filtered with the provided
     window and a velocity signal is computed with a centered difference method. The result is the velocity averaged on
@@ -43,13 +41,11 @@ def get_averaged_velocity_from_position(
 
     Note: The mask should be computed on the condition that the position is close enough to the reference pixel and/or
     that the underlying signal from which the velocity is computed is coherent enough.
-    :param position_da:
+    :param position_da: Data array with the position components
     :param mask:
-    :param window_size:
-    :param window_type:
     :return: v, w: Velocity components
     """
-    velocity_ds = get_velocity_from_position(position_da, window_size, window_type)
+    velocity_ds = get_velocity_from_position(position_da)
     valid_times = position_da.time[mask]  # DataArray with wanted times
     common_times = valid_times[valid_times.isin(velocity_ds.time)]
     v, w = velocity_ds.sel(time=common_times).mean(dim="time", skipna=True).values

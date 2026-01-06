@@ -6,7 +6,7 @@ import os
 import cosmoplots as cp
 import numpy as np
 import xarray as xr
-from .scan_utils import *
+from scan_utils import *
 
 plt.style.use(["cosmoplots.default"])
 plt.rcParams["text.latex.preamble"] = (
@@ -17,24 +17,10 @@ params = plt.rcParams
 cp.set_rcparams_dynamo(params, 1)
 plt.rcParams.update(params)
 
-# Method parameters
-method_parameters = {
-    "preprocessing": {"radius": 1000},
-    "2dca": {
-        "refx": 8,
-        "refy": 8,
-        "threshold": 2,
-        "window": 60,
-        "check_max": 1,
-        "single_counting": True,
-    },
-    "gauss_fit": {"size_penalty": 5, "aspect_penalty": 0.2, "tilt_penalty": 0.2},
-    "contouring": {"threshold_factor": 0.5, "com_smoothing": 10},
-    "taud_estimation": {"cutoff": 1e6, "nperseg": 1e3},
-}
+method_parameters = im.get_default_synthetic_method_params()
 
 data_file = "barberpole_data.npz"
-force_redo = False
+force_redo = True
 
 T = 5000
 Lx = 8
@@ -76,7 +62,7 @@ def get_simulation_data(lx, ly, theta, i):
     ds = ds.assign(
         frames=ds["frames"] + ds_mean * NSR * np.random.random(ds.frames.shape)
     )
-    ds = im.run_norm_ds(ds, method_parameters["preprocessing"]["radius"])
+    ds = im.run_norm_ds(ds, method_parameters.preprocessing.radius)
     ds["v_input"] = vx_input
     ds["w_input"] = vy_input
     ds.to_netcdf(file_name)
