@@ -303,14 +303,10 @@ def restrict_to_largest_true_subarray(mask):
     return restricted_mask
 
 
-def smooth_da(da, window_size, window_type="boxcar", return_start_end=False):
+def smooth_da(da, window_size, window_type="hann", return_start_end=False):
     #  TODO: consider inteprolate nans at the start if there are nans
     if window_size < 1 or not isinstance(window_size, int):
         raise ValueError("window_size must be a positive integer")
-    if window_type not in ["boxcar", "gaussian", "hamming", "blackman", "triang"]:
-        raise ValueError(
-            "window_type must be 'boxcar', 'gaussian', 'hamming', 'blackman', or 'triang'"
-        )
     if len(da.time) < 2:
         raise ValueError("At least two time points are required")
 

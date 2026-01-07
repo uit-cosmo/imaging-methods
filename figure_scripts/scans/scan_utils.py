@@ -61,3 +61,33 @@ def get_all_velocities(
         vxtde_all,
         vytde_all,
     )
+
+
+def get_positions_and_mask(
+    average_ds, variable, method_parameters, position_method="contouring"
+):
+    if position_method == "contouring":
+        position_da = im.get_contour_evolution(
+            average_ds[variable],
+            method_parameters.contouring.threshold_factor,
+            max_displacement_threshold=None,
+        ).center_of_mass
+    elif position_method == "max":
+        position_da = im.compute_maximum_trajectory_da(
+            average_ds, variable, method="fit"
+        )
+    else:
+        raise NotImplementedError
+
+    position_da, start, end = im.smooth_da(
+        position_da, method_parameters.contouring.com_smoothing, return_start_end=True
+    )
+    signal_high = (
+        average_ds[variable].max(dim=["x", "y"]).values
+        > 0.75 * average_ds[variable].max().item()
+    )[start:end]
+    mask = im.get_combined_mask(
+        average_ds, position_da, signal_high, 2 * im.get_dr(average_ds)
+    )
+
+    return position_da, mask
