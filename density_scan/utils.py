@@ -4,7 +4,6 @@ import os
 import numpy as np
 import imaging_methods as im
 from build.lib.imaging_methods import BlobParameters
-from method_parameters import method_parameters
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from dead_pixel_mask import get_dead_pixel_mask
 
@@ -119,13 +118,14 @@ def get_tde_velocities(refx, refy, gpi_ds):
 
 
 def get_taud_from_psd(shot, refx, refy, gpi_ds, do_plot):
+    params = im.get_default_apd_method_params().taud_estimation
     taud, lam = im.DurationTimeEstimator(
         im.SecondOrderStatistic.PSD, im.Analytics.TwoSided
     ).estimate_duration_time(
         gpi_ds.frames.isel(x=refx, y=refy).values,
         im.get_dt(gpi_ds),
-        cutoff=method_parameters["taud_estimation"]["cutoff"],
-        nperseg=method_parameters["taud_estimation"]["nperseg"],
+        cutoff=params.cutoff,
+        nperseg=params.nperseg,
     )
     if do_plot:
         fig, ax = plt.subplots()
@@ -138,8 +138,8 @@ def get_taud_from_psd(shot, refx, refy, gpi_ds, do_plot):
             gpi_ds.frames.isel(x=refx, y=refy).values,
             im.get_dt(gpi_ds),
             ax,
-            cutoff=method_parameters["taud_estimation"]["cutoff"],
-            nperseg=method_parameters["taud_estimation"]["nperseg"],
+            cutoff=params.cutoff,
+            nperseg=params.nperseg,
         )
 
         plt.savefig(psd_file_name, bbox_inches="tight")
@@ -177,11 +177,11 @@ def plot_and_estimate_fwhm_sizes(shot, average_ds):
 
 
 def get_gaussian_fit_sizes(shot, refx, refy, average_ds, gpi_ds, do_plots):
-    fit_params = method_parameters["gauss_fit"]
+    fit_params = im.get_default_apd_method_params().gauss_fit
     ps, pe, pt = (
-        fit_params["size_penalty"],
-        fit_params["aspect_penalty"],
-        fit_params["tilt_penalty"],
+        fit_params.size_penalty,
+        fit_params.aspect_penalty,
+        fit_params.tilt_penalty,
     )
     lx, ly, theta = im.fit_ellipse_to_event(
         average_ds.cond_av,
@@ -222,15 +222,13 @@ def get_velocity_method_max(shot, refx, refy, average_ds, do_plots):
 
 
 def get_contour_parameters(shot, refx, refy, average_ds, do_plots, gpi_ds):
+    method_parameters = im.get_default_apd_method_params()
     contour_ds = im.get_contour_evolution(
         average_ds.cond_av,
-        method_parameters["contouring"]["threshold_factor"],
+        method_parameters.contouring.threshold_factor,
         max_displacement_threshold=None,
     )
-    velocity_ds = im.get_velocity_from_position(
-        contour_ds.center_of_mass,
-        window_size=method_parameters["contouring"]["com_smoothing"],
-    )
+    velocity_ds = im.get_velocity_from_position(contour_ds.center_of_mass)
     v_c, w_c = (
         velocity_ds.isel(time=slice(10, -10)).mean(dim="time", skipna=True).values
     )

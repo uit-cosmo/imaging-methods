@@ -1,22 +1,20 @@
 import experimental_database as ed
 from utils import *
-from method_parameters import method_parameters
+import imaging_methods as im
 
 import multiprocessing as mp
 from functools import partial
 import traceback
 
 
-def preprocess_data(shots):
+def preprocess_data(shots, preprocessing_params: im.PreprocessingParams):
     for shot in shots:
         file_name = os.path.join("data", f"apd_{shot}_preprocessed.nc")
         if os.path.exists(file_name):
             continue
         print("Preprocessing data for shot {}".format(shot))
         ds = manager.read_shot_data(shot, data_folder="data", preprocessed=False)
-        ds = manager.preprocess_dataset(
-            ds, radius=method_parameters["preprocessing"]["radius"]
-        )
+        ds = manager.preprocess_dataset(ds, radius=preprocessing_params.radius)
         ds.to_netcdf(file_name)
 
 
@@ -28,7 +26,10 @@ def compute_and_store_conditional_averages(shot, refx, refy):
         # print(file_name, " already exists, reusing...")
         return
     ds = manager.read_shot_data(shot, data_folder="data", preprocessed=True)
-    events, average_ds = im.find_events_and_2dca(ds, method_parameters.two_dca)
+    method_parameters = im.get_default_synthetic_method_params().two_dca
+    method_parameters.refx = refx
+    method_parameters.refy = refy
+    events, average_ds = im.find_events_and_2dca(ds, method_parameters)
     average_ds.to_netcdf(file_name)
 
 
@@ -110,7 +111,7 @@ if __name__ == "__main__":
         "/home/sosno/Git/experimental_database/plasma_discharges.json"
     )
 
-    shots = [1160616027, 1160616009]
+    shots = [1160616027]
 
     results = im.ResultManager.from_json("density_scan/results.json")
     run_parallel(shots, force_redo=True)
