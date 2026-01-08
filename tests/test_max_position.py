@@ -20,25 +20,6 @@ dt = 0.1
 bs = BlobShapeImpl(BlobShapeEnum.gaussian, BlobShapeEnum.gaussian)
 K = 5000
 
-# Method parameters
-method_parameters = {
-    "preprocessing": {"radius": 1000},
-    "2dca": {
-        "refx": 8,
-        "refy": 8,
-        "threshold": 2,
-        "window": 60,
-        "check_max": 1,
-        "single_counting": True,
-    },
-    "gauss_fit": {"size_penalty": 5, "aspect_penalty": 0.2, "tilt_penalty": 0.2},
-    "contouring": {
-        "threshold_factor": 0.3,
-        "threshold_factor_cc": 0.5,
-        "com_smoothing": 10,
-    },
-    "taud_estimation": {"cutoff": 1e6, "nperseg": 1e3},
-}
 
 figures_dir = "integrated_tests_figures"
 
@@ -89,11 +70,11 @@ def movie(
 
     contour_cc = get_contour_evolution(
         dataset.cross_corr,
-        method_parameters["contouring"]["threshold_factor_cc"],
+        method_parameters.contouring.threshold_factor,
     )
     contour_ca = get_contour_evolution(
         dataset.cond_av,
-        method_parameters["contouring"]["threshold_factor"],
+        method_parameters.contouring.threshold_factor,
     )
     max_ca = im.compute_maximum_trajectory_da(dataset, "cond_av")
     max_cc = im.compute_maximum_trajectory_da(dataset, "cross_corr")
@@ -198,7 +179,7 @@ def movie(
     plt.show()
 
 
-def get_synthetic_data():
+def get_synthetic_data(run_norm_radius):
     alpha = np.pi / 8
     vx_input = np.cos(alpha)
     vy_intput = np.sin(alpha)
@@ -221,146 +202,121 @@ def get_synthetic_data():
         theta=theta_input,
         bs=bs,
     )
-    ds = im.run_norm_ds(ds, method_parameters["preprocessing"]["radius"])
+    ds = im.run_norm_ds(ds, run_norm_radius)
     return ds
 
 
-def test_real_data():
-    shot = 1160616027
-    manager = im.GPIDataAccessor(
-        "/home/sosno/Git/experimental_database/plasma_discharges.json"
+def get_positions_and_mask(
+    average_ds, variable, mp: im.MethodParameters, position_method="contouring"
+):
+    if position_method == "contouring":
+        position_da = im.get_contour_evolution(
+            average_ds[variable],
+            mp.contouring.threshold_factor,
+            max_displacement_threshold=None,
+        ).center_of_mass
+    elif position_method == "max":
+        position_da = im.compute_maximum_trajectory_da(
+            average_ds, variable, method="parabolic"
+        )
+    else:
+        raise NotImplementedError
+
+    position_da, start, end = im.smooth_da(
+        position_da, mp.position_filter, return_start_end=True
     )
-    # ds = manager.read_shot_data(shot, preprocessed=True, data_folder="../data")
-    ds = get_synthetic_data()
+    signal_high = (
+        average_ds[variable].max(dim=["x", "y"]).values
+        > 0.75 * average_ds[variable].max().item()
+    )[start:end]
+    mask = im.get_combined_mask(
+        average_ds, position_da, signal_high, 2 * im.get_dr(average_ds)
+    )
+
+    return position_da, mask
+
+
+def test_synthetic_data():
+    alpha = np.pi / 8
+    v_input = np.cos(alpha)
+    w_input = np.sin(alpha)
+    method_parameters = im.get_default_synthetic_method_params()
+    method_parameters.position_filter.window_size = 1
+
+    ds = get_synthetic_data(method_parameters.preprocessing.radius)
 
     tdca_params = method_parameters.two_dca
     events, average_ds = im.find_events_and_2dca(ds, tdca_params)
-    movie(average_ds)
+    # movie(average_ds)
 
+    pos_2dca, mask_2dca = get_positions_and_mask(
+        average_ds, "cond_av", method_parameters, position_method="contouring"
+    )
+    pos_2dcc, mask_2dcc = get_positions_and_mask(
+        average_ds, "cross_corr", method_parameters, position_method="contouring"
+    )
+    pos_max_2dca, mask_max_2dca = get_positions_and_mask(
+        average_ds, "cond_av", method_parameters, position_method="max"
+    )
+    pos_max_2dcc, mask_max_2dcc = get_positions_and_mask(
+        average_ds, "cross_corr", method_parameters, position_method="max"
+    )
+
+    R, Z = (
+        average_ds.R.isel(x=tdca_params.refx, y=tdca_params.refy).item(),
+        average_ds.Z.isel(x=tdca_params.refx, y=tdca_params.refy).item(),
+    )
+    times = pos_2dca.time.values
+    real_position = np.array([R + v_input * times, Z + w_input * times]).T
+
+    max_error_2dca = np.max(np.abs(real_position - pos_max_2dca))
+    max_error_2dcc = np.max(np.abs(real_position - pos_max_2dcc))
+
+    print("Error 2DCA: {:.4f}".format(max_error_2dca))
+    print("Error 2DCC: {:.4f}".format(max_error_2dcc))
+
+    assert max_error_2dca < 1
+    assert max_error_2dcc < 1
+
+
+def test_synthetic_data_single_frame():
+    alpha = np.pi / 8
+    v_input = np.cos(alpha)
+    w_input = np.sin(alpha)
+    method_parameters = im.get_default_synthetic_method_params()
+    method_parameters.position_filter.window_size = 1
+
+    ds = get_synthetic_data(method_parameters.preprocessing.radius)
+
+    tdca_params = method_parameters.two_dca
+    events, average_ds = im.find_events_and_2dca(ds, tdca_params)
+    time_index = 35
+
+    print("time value ", average_ds.time.isel(time=time_index).item())
+
+    variable = "cond_av"
     method = "fit"
-    cond_av_max = im.compute_maximum_trajectory_da(average_ds, "cond_av", method=method)
-    cross_corr_max = im.compute_maximum_trajectory_da(
-        average_ds, "cross_corr", method=method
-    )
-    refx, refy = tdca_params["refx"], tdca_params["refy"]
-    delta = (
-        average_ds.R.isel(x=refx, y=refy).item()
-        - average_ds.R.isel(x=refx - 1, y=refy).item()
-    )
-    contour_ca = im.get_contour_evolution(
-        average_ds.cond_av,
-        method_parameters["contouring"]["threshold_factor"],
-        max_displacement_threshold=None,
-        com_method="centroid",
-    )
-    ca_centroid = contour_ca.center_of_mass
-    contour_cc = im.get_contour_evolution(
-        average_ds.cross_corr,
-        method_parameters["contouring"]["threshold_factor_cc"],
-        max_displacement_threshold=None,
-        com_method="centroid",
-    )
-    ca_max = average_ds.cond_av.max(dim=["x", "y"]).values
-    cc_max = average_ds.cross_corr.max(dim=["x", "y"]).values
+    frame = average_ds[variable].isel(time=time_index)
 
-    cc_centroid = contour_cc.center_of_mass
+    pos_r, pos_z = find_maximum_for_frame(
+        frame, average_ds.R, average_ds.Z, method=method
+    )
+
+    position_da = im.compute_maximum_trajectory_da(average_ds, variable, method=method)
 
     fig, ax = plt.subplots()
 
-    R, Z = (
-        ds.R.isel(x=tdca_params["refx"], y=tdca_params["refy"]).item(),
-        ds.Z.isel(x=tdca_params["refx"], y=tdca_params["refy"]).item(),
+    ax.imshow(
+        frame.values,
+        origin="lower",
+        extent=(
+            average_ds.R[0, 0],
+            average_ds.R[0, -1],
+            average_ds.Z[0, 0],
+            average_ds.Z[-1, 0],
+        ),
     )
 
-    ax.scatter(R, Z)
+    ax.scatter(pos_r, pos_z)
 
-    is_ca_high_enough = ca_max > 0.75 * np.max(ca_max)
-    is_cc_high_enough = cc_max > 0.75 * np.max(cc_max)
-
-    mask_ca_centroid = get_combined_mask(
-        average_ds, ca_centroid, is_ca_high_enough, delta
-    )
-    mask_ca_max = get_combined_mask(average_ds, cond_av_max, is_ca_high_enough, delta)
-    mask_cc_centroid = get_combined_mask(
-        average_ds, cc_centroid, is_cc_high_enough, delta
-    )
-    mask_cc_max = get_combined_mask(
-        average_ds, cross_corr_max, is_cc_high_enough, delta
-    )
-
-    ax.plot(ca_centroid.values[:, 0], ca_centroid.values[:, 1], color="blue", lw=0.5)
-    ax.plot(
-        ca_centroid.values[:, 0][mask_ca_centroid],
-        ca_centroid.values[:, 1][mask_ca_centroid],
-        color="blue",
-        lw=1,
-    )
-
-    ax.plot(
-        cond_av_max.values[:, 0],
-        cond_av_max.values[:, 1],
-        color="blue",
-        ls="--",
-        lw=0.5,
-    )
-    ax.plot(
-        cond_av_max.values[:, 0][mask_ca_max],
-        cond_av_max.values[:, 1][mask_ca_max],
-        color="blue",
-        ls="--",
-        lw=1,
-    )
-
-    ax.plot(cc_centroid.values[:, 0], cc_centroid.values[:, 1], color="red", lw=0.5)
-
-    ax.plot(
-        cc_centroid.values[:, 0][mask_cc_centroid],
-        cc_centroid.values[:, 1][mask_cc_centroid],
-        color="red",
-        lw=1,
-    )
-
-    ax.plot(
-        cross_corr_max.values[:, 0],
-        cross_corr_max.values[:, 1],
-        color="red",
-        ls="--",
-        lw=0.5,
-    )
-    ax.plot(
-        cross_corr_max.values[:, 0][mask_cc_max],
-        cross_corr_max.values[:, 1][mask_cc_max],
-        color="red",
-        ls="--",
-        lw=1,
-    )
-
-    ax.set_aspect("equal", adjustable="datalim")
-    plt.savefig("trajectories.pdf", bbox_inches="tight")
     plt.show()
-
-    v_ca_centroid, w_ca_centroid = get_averaged_velocity_from_position(
-        ca_centroid, mask_ca_centroid, window_size=1
-    )
-    v_ca_max, w_ca_max = get_averaged_velocity_from_position(
-        cond_av_max, mask_ca_max, window_size=1
-    )
-    v_cc_centroid, w_cc_centroid = get_averaged_velocity_from_position(
-        cc_centroid, mask_cc_centroid, window_size=1
-    )
-    v_cc_max, w_cc_max = get_averaged_velocity_from_position(
-        cross_corr_max, mask_cc_max, window_size=1
-    )
-
-    print(
-        "Ca centroid: {:.4f}, {:.2f}".format(v_ca_centroid / 100, w_ca_centroid / 100)
-    )
-    print("Ca max: {:.4f}, {:.2f}".format(v_ca_max / 100, w_ca_max / 100))
-    print(
-        "Cc centroid: {:.4f}, {:.2f}".format(v_cc_centroid / 100, w_cc_centroid / 100)
-    )
-    print("Cc max: {:.4f}, {:.2f}".format(v_cc_max / 100, w_cc_max / 100))
-
-    # v_tde, w_tde = im.get_tde_velocities(refx, refy, ds)
-
-    # print("TDE: {:.4f}, {:.2f}".format(v_tde, w_tde))

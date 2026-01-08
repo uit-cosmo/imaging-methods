@@ -198,6 +198,7 @@ def parabolic_2d_fit(
 ) -> tuple[float, float]:
     """Return sub-pixel (R, Z) of maximum using 2D quadratic fit in index space."""
     # Find discrete maximum position
+    print("I think this method doesn't work as intended!!! TODO: investigate or remove")
     flat_argmax = frame_da.values.argmax()
     y_idx, x_idx = np.unravel_index(
         flat_argmax, (frame_da.sizes["y"], frame_da.sizes["x"])

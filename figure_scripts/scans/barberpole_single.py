@@ -17,6 +17,7 @@ plt.rcParams.update(params)
 
 
 mp = im.get_default_synthetic_method_params()
+mp.position_filter.window_size = 1
 
 T = 5000
 Lx = 8
@@ -43,19 +44,14 @@ dt = im.get_dt(ds)
 dr = im.get_dr(ds)
 
 tdca_params = mp.two_dca
-events, average_ds = im.find_events_and_2dca(
-    ds,
-    tdca_params.refx,
-    tdca_params.refy,
-    threshold=tdca_params.threshold,
-    check_max=tdca_params.check_max,
-    window_size=tdca_params.window,
-    single_counting=tdca_params.single_counting,
-)
+events, average_ds = im.find_events_and_2dca(ds, mp.two_dca)
 
 
 def get_positions_and_mask(
-    average_ds, variable, method_parameters, position_method="contouring"
+    average_ds,
+    variable,
+    method_parameters: im.MethodParameters,
+    position_method="contouring",
 ):
     if position_method == "contouring":
         position_da = im.get_contour_evolution(
@@ -65,13 +61,13 @@ def get_positions_and_mask(
         ).center_of_mass
     elif position_method == "max":
         position_da = im.compute_maximum_trajectory_da(
-            average_ds, variable, method="fit"
+            average_ds, variable, method="parabolic"
         )
     else:
         raise NotImplementedError
 
     position_da, start, end = im.smooth_da(
-        position_da, method_parameters.position_smoothing, return_start_end=True
+        position_da, method_parameters.position_filter, return_start_end=True
     )
     signal_high = (
         average_ds[variable].max(dim=["x", "y"]).values
@@ -150,6 +146,15 @@ def plot_component(i, ax, position_ca, position_cc, mask_ca, mask_cc):
 # plot_component(1, axes[1], contour_ca.center_of_mass, contour_cc.center_of_mass)
 plot_component(0, axes[0], pos_max_2dca, pos_max_2dcc, mask_max_2dca, mask_max_2dcc)
 plot_component(1, axes[1], pos_max_2dca, pos_max_2dcc, mask_max_2dca, mask_max_2dcc)
+
+fig, ax = plt.subplots()
+
+time_index = 35
+time_value = average_ds.time.isel(time=time_index).item()
+ax.imshow(average_ds.cond_av.isel(time=time_index).values, origin="lower")
+
+pos_x, pos_y = pos_max_2dca.sel(time=time_value)
+ax.scatter(pos_x, pos_y)
 
 plt.show()
 
