@@ -139,7 +139,7 @@ def get_averaged_velocity(
         raise NotImplementedError
 
     position_da, start, end = smooth_da(
-        position_da, method_parameters.contouring.com_smoothing, return_start_end=True
+        position_da, method_parameters.position_filter, return_start_end=True
     )
     signal_high = (
         average_ds[variable].max(dim=["x", "y"]).values
@@ -162,16 +162,7 @@ def estimate_velocities_synthetic_ds(ds, method_parameters: MethodParameters):
     """
     dt = get_dt(ds)
 
-    tdca_params = method_parameters.two_dca
-    events, average_ds = find_events_and_2dca(
-        ds,
-        tdca_params.refx,
-        tdca_params.refy,
-        threshold=tdca_params.threshold,
-        check_max=tdca_params.check_max,
-        window_size=tdca_params.window,
-        single_counting=tdca_params.single_counting,
-    )
+    events, average_ds = find_events_and_2dca(ds, method_parameters.two_dca)
 
     v_2dca, w_2dca = get_averaged_velocity(
         average_ds, "cond_av", method_parameters, position_method="contouring"
@@ -192,7 +183,9 @@ def estimate_velocities_synthetic_ds(ds, method_parameters: MethodParameters):
     eo.cc_options.minimum_cc_value = 0
     eo.cc_options.running_mean = False
     pd = ve.estimate_velocities_for_pixel(
-        tdca_params.refx, tdca_params.refy, ve.CModImagingDataInterface(ds)
+        method_parameters.two_dca.refx,
+        method_parameters.two_dca.refy,
+        ve.CModImagingDataInterface(ds),
     )
     vx, vy = pd.vx, pd.vy
 

@@ -1,4 +1,3 @@
-from imaging_methods import movie_2dca_with_contours, plot_skewness_and_flatness
 import experimental_database as ed
 from utils import *
 from method_parameters import method_parameters
@@ -29,15 +28,7 @@ def compute_and_store_conditional_averages(shot, refx, refy):
         # print(file_name, " already exists, reusing...")
         return
     ds = manager.read_shot_data(shot, data_folder="data", preprocessed=True)
-    events, average_ds = im.find_events_and_2dca(
-        ds,
-        refx,
-        refy,
-        threshold=method_parameters["2dca"]["threshold"],
-        check_max=method_parameters["2dca"]["check_max"],
-        window_size=method_parameters["2dca"]["window"],
-        single_counting=method_parameters["2dca"]["single_counting"],
-    )
+    events, average_ds = im.find_events_and_2dca(ds, method_parameters.two_dca)
     average_ds.to_netcdf(file_name)
 
 

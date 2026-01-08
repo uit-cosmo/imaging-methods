@@ -15,15 +15,7 @@ def get_average(shot, refx, refy, method_parameters):
             "/home/sosno/Git/experimental_database/plasma_discharges.json"
         )
         ds = manager.read_shot_data(shot, preprocessed=True, data_folder="../data")
-        events, average_ds = im.find_events_and_2dca(
-            ds,
-            refx,
-            refy,
-            threshold=method_parameters["2dca"]["threshold"],
-            check_max=method_parameters["2dca"]["check_max"],
-            window_size=method_parameters["2dca"]["window"],
-            single_counting=method_parameters["2dca"]["single_counting"],
-        )
+        events, average_ds = im.find_events_and_2dca(ds, method_parameters.two_dca)
         average_ds.to_netcdf(file_name)
         return average_ds
     average_ds = xr.open_dataset(file_name)

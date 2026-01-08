@@ -71,7 +71,7 @@ def get_positions_and_mask(
         raise NotImplementedError
 
     position_da, start, end = im.smooth_da(
-        position_da, method_parameters.contouring.com_smoothing, return_start_end=True
+        position_da, method_parameters.position_smoothing, return_start_end=True
     )
     signal_high = (
         average_ds[variable].max(dim=["x", "y"]).values

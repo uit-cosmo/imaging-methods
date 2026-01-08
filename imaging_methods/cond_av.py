@@ -1,16 +1,12 @@
 import numpy as np
 import xarray as xr
 import scipy.signal as ssi
+from .method_parameters import TwoDcaParams
 
 
 def find_events_and_2dca(
     ds,
-    refx,
-    refy,
-    threshold=3,
-    window_size=60,
-    check_max=0,
-    single_counting=False,
+    params: TwoDcaParams,
     verbose=True,
 ):
     """
@@ -19,13 +15,7 @@ def find_events_and_2dca(
 
     Parameters:
     ds (xarray.Dataset): Input dataset with time, x, y coordinates. cmod_functions format is expected.
-    refx (int): X index of reference pixel
-    refy (int): Y index of reference pixel
-    threshold (float): Threshold value for event detection
-    window_size (int): Size of window to extract around peaks
-    check_max (int): Radius of the area on which the reference pixel is checked to be maximum at peak time. Set to 0 if
-        no checking is desired.
-    single_counting (bool): If True, ensures a minimum distance between events given by window_size.
+    params (TwoDcaParams): Dataclass with method settings, documentation of each setting is available on TwoDcaParams
     verbose (bool): If True, print some method information.
 
     Returns:
@@ -58,6 +48,7 @@ def find_events_and_2dca(
                     - number_events (int): The total number of valid events included in the average.
             If no valid events are found, returns an empty xarray.Dataset.
     """
+    window_size = params.window
     if window_size % 2 == 0:
         window_size += 1
     half_window = (window_size - 1) // 2
@@ -65,9 +56,9 @@ def find_events_and_2dca(
     rel_times_idx = np.arange(window_size) - half_window
     rel_times = rel_times_idx * dt
 
-    ref_ts = ds.frames.isel(x=refx, y=refy)
+    ref_ts = ds.frames.isel(x=params.refx, y=params.refy)
 
-    above_threshold = ref_ts > threshold
+    above_threshold = ref_ts > params.threshold
     indices = np.where(above_threshold)[0]
 
     events = []
@@ -93,12 +84,14 @@ def find_events_and_2dca(
         max_idx_in_event = event_ts.argmax().item()
         peak_time_idx = event[max_idx_in_event]
 
-        if check_max != 0:
-            ref_peak = ds.frames.isel(time=peak_time_idx, x=refx, y=refy).item()
-            fromx = max(refx - check_max, 0)
-            tox = min(refx + check_max, ds.sizes["x"])
-            fromy = max(refy - check_max, 0)
-            toy = min(refy + check_max, ds.sizes["y"])
+        if params.check_max != 0:
+            ref_peak = ds.frames.isel(
+                time=peak_time_idx, x=params.refx, y=params.refy
+            ).item()
+            fromx = max(params.refx - params.check_max, 0)
+            tox = min(params.refx + params.check_max, ds.sizes["x"])
+            fromy = max(params.refy - params.check_max, 0)
+            toy = min(params.refy + params.check_max, ds.sizes["y"])
             global_peak = (
                 ds.frames.isel(
                     time=peak_time_idx, x=slice(fromx, tox + 1), y=slice(fromy, toy + 1)
@@ -129,7 +122,7 @@ def find_events_and_2dca(
             }
         )
 
-    if single_counting:
+    if params.single_counting:
         # Sort candidates by peak value descending
         candidate_events.sort(key=lambda x: -x["peak_value"])
         selected_events = []
@@ -202,15 +195,11 @@ def find_events_and_2dca(
     processed = []
     event_id = 0
     for win in windows:
-
         abs_time = win.time[half_window].item()
 
         # Assign new time coordinates
-        dt = float(ds["time"][1].values - ds["time"][0].values)
         win = win.assign_coords(time=rel_times)
         win["event_id"] = event_id
-        win["refx"] = refx
-        win["refy"] = refy
         win["abs_time"] = abs_time
         event_id += 1
         processed.append(win)
@@ -230,8 +219,8 @@ def find_events_and_2dca(
                 "cross_corr": cross_corr,
             }
         )
-        cond_av_ds["refx"] = refx
-        cond_av_ds["refy"] = refy
+        cond_av_ds["refx"] = params.refx
+        cond_av_ds["refy"] = params.refy
         cond_av_ds["number_events"] = len(processed)
         return processed, cond_av_ds
 

@@ -2,9 +2,9 @@ from blobmodel import BlobShapeEnum, BlobShapeImpl
 import numpy as np
 import cosmoplots as cp
 import imaging_methods as im
-from utils import *
 import matplotlib.pyplot as plt
 from matplotlib import animation
+import xarray as xr
 
 plt.style.use(["cosmoplots.default"])
 plt.rcParams["text.latex.preamble"] = (
@@ -12,24 +12,7 @@ plt.rcParams["text.latex.preamble"] = (
 )
 
 # Method parameters
-method_parameters = {
-    "preprocessing": {"radius": 1000},
-    "2dca": {
-        "refx": 8,
-        "refy": 8,
-        "threshold": 2,
-        "window": 60,
-        "check_max": 1,
-        "single_counting": True,
-    },
-    "gauss_fit": {"size_penalty": 5, "aspect_penalty": 0.2, "tilt_penalty": 0.2},
-    "contouring": {
-        "threshold_factor": 0.3,
-        "threshold_factor_cc": 0.5,
-        "com_smoothing": 10,
-    },
-    "taud_estimation": {"cutoff": 1e6, "nperseg": 1e3},
-}
+method_parameters = im.get_default_synthetic_method_params()
 
 
 def movie(
@@ -180,17 +163,9 @@ def get_simulation_data(lx, ly, theta, i):
 def plot_trajectories(lx, ly, theta, i):
     ds = get_simulation_data(lx, ly, theta, i)
 
-    tdca_params = method_parameters["2dca"]
-    refx, refy = tdca_params["refx"], tdca_params["refx"]
-    events, average_ds = im.find_events_and_2dca(
-        ds,
-        tdca_params["refx"],
-        tdca_params["refy"],
-        threshold=tdca_params["threshold"],
-        check_max=tdca_params["check_max"],
-        window_size=tdca_params["window"],
-        single_counting=tdca_params["single_counting"],
-    )
+    tdca_params = method_parameters.two_dca
+    refx, refy = tdca_params.refx, tdca_params.refy
+    events, average_ds = im.find_events_and_2dca(ds, tdca_params)
 
     # movie(average_ds, file_name = "trajectories.gif")
 

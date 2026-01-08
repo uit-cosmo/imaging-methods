@@ -217,15 +217,7 @@ def full_analysis(
 
     tdca_params = method_parameters.two_dca
     refx, refy = tdca_params.refx, tdca_params.refy
-    events, average_ds = im.find_events_and_2dca(
-        ds,
-        tdca_params.refx,
-        tdca_params.refy,
-        threshold=tdca_params.threshold,
-        check_max=tdca_params.check_max,
-        window_size=tdca_params.window,
-        single_counting=tdca_params.single_counting,
-    )
+    events, average_ds = im.find_events_and_2dca(ds, tdca_params)
 
     contour_ds = im.get_contour_evolution(
         average_ds[variable],

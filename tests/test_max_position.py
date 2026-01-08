@@ -233,16 +233,8 @@ def test_real_data():
     # ds = manager.read_shot_data(shot, preprocessed=True, data_folder="../data")
     ds = get_synthetic_data()
 
-    tdca_params = method_parameters["2dca"]
-    events, average_ds = im.find_events_and_2dca(
-        ds,
-        tdca_params["refx"],
-        tdca_params["refy"],
-        threshold=tdca_params["threshold"],
-        check_max=tdca_params["check_max"],
-        window_size=tdca_params["window"],
-        single_counting=tdca_params["single_counting"],
-    )
+    tdca_params = method_parameters.two_dca
+    events, average_ds = im.find_events_and_2dca(ds, tdca_params)
     movie(average_ds)
 
     method = "fit"

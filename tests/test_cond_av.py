@@ -73,41 +73,39 @@ def synthetic_dataset():
 
 def test_threshold():
     ds = get_single_pixel_ds(np.array([0, 0, 1, 1.2, 0, 0, 1.2, 1]))
-    events, average = im.find_events_and_2dca(ds, 0, 0, threshold=0.5, window_size=3)
+    two_dca = im.TwoDcaParams(0, 0, threshold=0.5, window=3, single_counting=True)
+    events, average = im.find_events_and_2dca(ds, two_dca)
     assert len(events) == 2
 
 
 def test_single_count():
     ds = get_single_pixel_ds(np.array([0, 0, 1, 1.2, 0, 0, 1, 1.2, 0, 0]))
-    events, _ = im.find_events_and_2dca(ds, 0, 0, threshold=0.5, window_size=4)
+    two_dca = im.TwoDcaParams(0, 0, threshold=0.5, window=3, single_counting=True)
+    events, _ = im.find_events_and_2dca(ds, two_dca)
     assert len(events) == 2
 
-    events, _ = im.find_events_and_2dca(
-        ds, 0, 0, threshold=0.5, window_size=5, single_counting=True
-    )
+    two_dca = im.TwoDcaParams(0, 0, threshold=0.5, window=5, single_counting=True)
+    events, _ = im.find_events_and_2dca(ds, two_dca)
     assert len(events) == 1
 
     ds = get_single_pixel_ds(np.array([0, 0, 1, 1.2, 0, 0, 1.2, 1, 0, 0, 1.2, 1, 0, 0]))
-    events, _ = im.find_events_and_2dca(
-        ds, 0, 0, threshold=0.5, window_size=5, single_counting=True
-    )
+    two_dca = im.TwoDcaParams(0, 0, threshold=0.5, window=5, single_counting=True)
+    events, _ = im.find_events_and_2dca(ds, two_dca)
     assert len(events) == 2
 
 
 def test_truncation():
     ds = get_single_pixel_ds(np.array([0, 0, 1, 1.2, 0, 0, 0, 0, 0, 0, 1, 1.2]))
-    events, _ = im.find_events_and_2dca(
-        ds, 0, 0, threshold=0.5, window_size=5, single_counting=True
-    )
+    two_dca = im.TwoDcaParams(0, 0, threshold=0.5, window=5, single_counting=True)
+    events, _ = im.find_events_and_2dca(ds, two_dca)
     assert len(events) == 1
 
 
 def test_conditional_reproducibility():
     signal = np.repeat(np.array([0, 0, 0, 1, 2, 3, 2, 1, 0, 0, 0]), 10)
     ds = get_single_pixel_ds(signal)
-    events, condav_ds = im.find_events_and_2dca(
-        ds, 0, 0, threshold=2.5, window_size=5, single_counting=True
-    )
+    two_dca = im.TwoDcaParams(0, 0, threshold=2.5, window=5, single_counting=True)
+    events, condav_ds = im.find_events_and_2dca(ds, two_dca)
     assert np.all(condav_ds.cond_repr.isel(x=0, y=0).values == 1)
 
 
@@ -117,9 +115,8 @@ def test_conditional_reproducibility_change():
         10,
     )
     ds = get_single_pixel_ds(signal)
-    events, condav_ds = im.find_events_and_2dca(
-        ds, 0, 0, threshold=2.5, window_size=5, single_counting=True
-    )
+    two_dca = im.TwoDcaParams(0, 0, threshold=2.5, window=5, single_counting=True)
+    events, condav_ds = im.find_events_and_2dca(ds, two_dca)
     assert np.all(condav_ds.cond_repr.isel(x=0, y=0).values < 1)
 
 
@@ -130,38 +127,44 @@ def test_check_max():
     signal4 = np.array([0, 0, 1, 2, 1, 0, 0])
 
     ds = get_multi_pixel_ds(signal1, signal2, signal3, signal4)
-    events, _ = im.find_events_and_2dca(
-        ds, 0, 0, threshold=0.5, window_size=5, check_max=1
+    two_dca = im.TwoDcaParams(
+        0, 0, threshold=0.5, window=5, check_max=1, single_counting=True
     )
+    events, _ = im.find_events_and_2dca(ds, two_dca)
     assert len(events) == 1
 
-    events, _ = im.find_events_and_2dca(
-        ds, 0, 0, threshold=0.5, window_size=5, check_max=0
+    two_dca = im.TwoDcaParams(
+        0, 0, threshold=0.5, window=5, check_max=0, single_counting=True
     )
+    events, _ = im.find_events_and_2dca(ds, two_dca)
     assert len(events) == 1
 
-    events, _ = im.find_events_and_2dca(
-        ds, 0, 1, threshold=0.5, window_size=5, check_max=1
+    two_dca = im.TwoDcaParams(
+        0, 1, threshold=0.5, window=5, check_max=1, single_counting=True
     )
+    events, _ = im.find_events_and_2dca(ds, two_dca)
     assert len(events) == 0
 
-    events, _ = im.find_events_and_2dca(
-        ds, 0, 1, threshold=0.5, window_size=5, check_max=0
+    two_dca = im.TwoDcaParams(
+        0, 0, threshold=0.5, window=5, check_max=1, single_counting=True
     )
+    events, _ = im.find_events_and_2dca(ds, two_dca)
     assert len(events) == 1
 
 
 def test_basic_event_detection(synthetic_dataset):
-    events, _ = im.find_events_and_2dca(
-        synthetic_dataset, 1, 1, threshold=3, window_size=5
+    two_dca = im.TwoDcaParams(
+        1, 1, threshold=3, window=5, single_counting=False, check_max=0
     )
+    events, _ = im.find_events_and_2dca(synthetic_dataset, two_dca)
     assert len(events) == 5
 
 
 def test_global_max_filter(synthetic_dataset):
-    events, _ = im.find_events_and_2dca(
-        synthetic_dataset, 1, 1, threshold=3, window_size=5, check_max=2
+    two_dca = im.TwoDcaParams(
+        1, 1, threshold=3, window=5, check_max=2, single_counting=False
     )
+    events, _ = im.find_events_and_2dca(synthetic_dataset, two_dca)
     # Event at 30-35 should be filtered out (global max at 2,2)
     assert len(events) == 4
     peak_times = [e.time.values[e.sizes["time"] // 2] for e in events]
@@ -169,9 +172,10 @@ def test_global_max_filter(synthetic_dataset):
 
 
 def test_single_counting(synthetic_dataset):
-    events, _ = im.find_events_and_2dca(
-        synthetic_dataset, 1, 1, threshold=3, window_size=5, single_counting=True
+    two_dca = im.TwoDcaParams(
+        1, 1, threshold=3, window=5, single_counting=True, check_max=0
     )
+    events, _ = im.find_events_and_2dca(synthetic_dataset, two_dca)
     assert len(events) == 4  # Original 3 valid events minus 1 overlap
 
     # Check spacing between events
@@ -181,9 +185,8 @@ def test_single_counting(synthetic_dataset):
 
 
 def test_window_integrity(synthetic_dataset):
-    events, _ = im.find_events_and_2dca(
-        synthetic_dataset, 1, 1, threshold=3, window_size=5
-    )
+    two_dca = im.TwoDcaParams(1, 1, threshold=3, window=5, single_counting=True)
+    events, _ = im.find_events_and_2dca(synthetic_dataset, two_dca)
     for event in events:
         assert event.sizes["time"] == 5
         # Check reference pixel is at center of window
@@ -199,20 +202,21 @@ def test_edge_cases():
 
     ds = get_single_pixel_ds(data)
 
-    events, _ = im.find_events_and_2dca(ds, 0, 0, window_size=5)
+    two_dca = im.TwoDcaParams(0, 0, threshold=2, window=5)
+    events, _ = im.find_events_and_2dca(ds, two_dca)
     assert len(events) == 0  # Should filter out both edge cases
 
 
 def test_empty_result():
     ds = get_single_pixel_ds(np.zeros(100))
-    events, _ = im.find_events_and_2dca(ds, 0, 0, threshold=1)
+    two_dca = im.TwoDcaParams(0, 0, threshold=1)
+    events, _ = im.find_events_and_2dca(ds, two_dca)
     assert len(events) == 0
 
 
 def test_single_counting_priority(synthetic_dataset):
-    events, _ = im.find_events_and_2dca(
-        synthetic_dataset, 1, 1, threshold=3, window_size=5, single_counting=True
-    )
+    two_dca = im.TwoDcaParams(1, 1, threshold=3, window=5, single_counting=True)
+    events, _ = im.find_events_and_2dca(synthetic_dataset, two_dca)
     peaks = [e["abs_time"] for e in events]
     assert 84 in peaks
     assert 81 not in peaks  # Weaker overlapping event

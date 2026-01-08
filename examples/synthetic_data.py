@@ -56,15 +56,15 @@ ds = xr.Dataset(
     },
 )
 
-events, average_ds = im.find_events_and_2dca(
-    ds,
+two_dca_params = im.TwoDcaParams(
     refx=4,  # reference pixel
     refy=4,  # reference pixel
     threshold=0.2,  # Threshold
     check_max=1,  # event should be larger than nearest neighbours
-    window_size=50,  # window size
+    window=50,  # window size
     single_counting=True,
 )
+events, average_ds = im.find_events_and_2dca(ds, two_dca_params)
 
 contour_ds = im.get_contour_evolution(
     average_ds.cond_av,

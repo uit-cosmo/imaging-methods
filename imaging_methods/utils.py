@@ -303,12 +303,14 @@ def restrict_to_largest_true_subarray(mask):
     return restricted_mask
 
 
-def smooth_da(da, window_size, window_type="hann", return_start_end=False):
+def smooth_da(da, pos_filter: PositionFilterParams, return_start_end=False):
     #  TODO: consider inteprolate nans at the start if there are nans
-    if window_size < 1 or not isinstance(window_size, int):
-        raise ValueError("window_size must be a positive integer")
+    if not isinstance(pos_filter, PositionFilterParams):
+        raise ValueError("pos_filter must be a PositionFilterParams")
     if len(da.time) < 2:
         raise ValueError("At least two time points are required")
+    window_size = pos_filter.window_size
+    window_type = pos_filter.window_type
 
     # Define window parameters
     half_window = window_size // 2
@@ -348,8 +350,9 @@ def get_default_synthetic_method_params() -> MethodParameters:
             refx=8, refy=8, threshold=2, window=60, check_max=1, single_counting=True
         ),
         gauss_fit=GaussFitParams(size_penalty=5, aspect_penalty=0.2, tilt_penalty=0.2),
-        contouring=ContouringParams(threshold_factor=0.5, com_smoothing=11),
+        contouring=ContouringParams(threshold_factor=0.5),
         taud_estimation=TaudEstimationParams(cutoff=1e6, nperseg=1e3),
+        position_filter=PositionFilterParams(11, "hann"),
     )
 
     return method_parameters
