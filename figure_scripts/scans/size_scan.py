@@ -15,24 +15,13 @@ params = plt.rcParams
 cp.set_rcparams_dynamo(params, 1)
 plt.rcParams.update(params)
 
-
-# Method parameters
-method_parameters = {
-    "preprocessing": {"radius": 1000},
-    "2dca": {
-        "refx": 8,
-        "refy": 8,
-        "threshold": 2,
-        "window": 60,
-        "check_max": 1,
-        "single_counting": True,
-    },
-    "contouring": {"threshold_factor": 0.3, "com_smoothing": 5},
-    "taud_estimation": {"cutoff": 1e6, "nperseg": 1e3},
-}
+method_parameters = im.get_default_synthetic_method_params()
+method_parameters.position_filter.window_size = 11
 
 data_file = "size_scan_data.npz"
-force_redo = False
+sim_data_name = "data_size"
+force_redo = True
+coarse = False
 
 T = 5000
 Lx = 8
@@ -44,9 +33,18 @@ bs = BlobShapeImpl(BlobShapeEnum.gaussian, BlobShapeEnum.gaussian)
 K = 5000
 NSR = 0.1
 
+if coarse:
+    method_parameters["2dca"]["refx"] = 4
+    method_parameters["2dca"]["refy"] = 4
+    nx = 8
+    ny = 8
+    data_file = "size_scan_data_coarse.npz"
+    sim_data_name = "data_size_coarse"
+
 lx_input = 1
 ly_input = 1
 N = 5
+delta = Lx / nx
 
 
 def get_simulation_data(l, i):
@@ -76,14 +74,14 @@ def get_simulation_data(l, i):
     ds = ds.assign(
         frames=ds["frames"] + ds_mean * NSR * np.random.random(ds.frames.shape)
     )
-    ds = im.run_norm_ds(ds, method_parameters["preprocessing"]["radius"])
+    ds = im.run_norm_ds(ds, method_parameters.preprocessing.radius)
     ds["v_input"] = vx_input
     ds["w_input"] = vy_input
     ds.to_netcdf(file_name)
     return ds
 
 
-sizes = np.logspace(-1, np.log10(4), num=10)
+sizes = np.array([0.1])  #  np.logspace(-1, np.log10(4), num=10)
 v_2dca_all = []  # len = len(thetas); each entry = list of N values
 w_2dca_all = []
 v_2dcc_all = []  # len = len(thetas); each entry = list of N values
@@ -112,7 +110,7 @@ if os.path.exists(data_file) and not force_redo:
 else:
     for l in sizes:
         print(f"Processing l = {l:.3f}")
-        method_parameters["contouring"]["threshold_factor"] = 0.3 + 0.6 * l / 4
+        method_parameters.contouring.threshold_factor = 0.3 + 0.6 * l / 4
         (
             v_2dca,
             w_2dca,
@@ -200,20 +198,23 @@ labelmax = r"Max. Track."
 labeltde = r"Time delay est."
 
 ax.fill_between([2.4, 15], -0.5, 1.3, color="lightgray", alpha=0.5)
+scatter_component(delta / sizes, v_tde_all**2 + w_tde_all**2, labeltde, "D", "#2ca02c")
 
-plot_ca = False
+plot_ca = True
 if plot_ca:
-    scatter_component(1 / sizes, v_2dca_all**2 + w_2dca_all**2, labelc, "o", "#1f77b4")
     scatter_component(
-        1 / sizes, v_2dca_max_all**2 + w_2dca_max_all**2, labelmax, "s", "red"
+        delta / sizes, v_2dca_max_all**2 + w_2dca_max_all**2, labelmax, "s", "red"
+    )
+    scatter_component(
+        delta / sizes, v_2dca_all**2 + w_2dca_all**2, labelc, "o", "#1f77b4"
     )
 else:
-    scatter_component(1 / sizes, v_2dcc_all**2 + w_2dcc_all**2, labelc, "o", "#1f77b4")
     scatter_component(
-        1 / sizes, v_2dcc_max_all**2 + w_2dcc_max_all**2, labelmax, "s", "red"
+        delta / sizes, v_2dcc_max_all**2 + w_2dcc_max_all**2, labelmax, "s", "red"
     )
-
-scatter_component(1 / sizes, v_tde_all**2 + w_tde_all**2, labeltde, "D", "#2ca02c")
+    scatter_component(
+        delta / sizes, v_2dcc_all**2 + w_2dcc_all**2, labelc, "o", "#1f77b4"
+    )
 
 
 ax.set_xlabel(r"$\Delta/\ell$")

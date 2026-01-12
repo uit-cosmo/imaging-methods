@@ -134,7 +134,9 @@ def get_averaged_velocity(
             max_displacement_threshold=None,
         ).center_of_mass
     elif position_method == "max":
-        position_da = compute_maximum_trajectory_da(average_ds, variable, method="parabolic")
+        position_da = compute_maximum_trajectory_da(
+            average_ds, variable, method="parabolic"
+        )
     else:
         raise NotImplementedError
 

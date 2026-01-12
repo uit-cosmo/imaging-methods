@@ -303,14 +303,29 @@ def restrict_to_largest_true_subarray(mask):
     return restricted_mask
 
 
-def smooth_da(da, pos_filter: PositionFilterParams, return_start_end=False):
-    #  TODO: consider inteprolate nans at the start if there are nans
+def smooth_da(
+    da: xr.DataArray, pos_filter: PositionFilterParams, return_start_end=False
+):
+    """
+    Smooth a dataarray with a time coordinate with a filter with settings given by pos_filter. The nan values of the
+    dataarray are first interpolated. If return_start_end is True, it returns the time coordinate indexes were the
+    resulting dataarray is valid.
+    :param da: DataArray to be smoothed
+    :param pos_filter: Filter settings
+    :param return_start_end: If return_start_end is True, it returns the time coordinate indexes were the
+    resulting dataarray is valid.
+    :return: Smoothed dataarray
+    """
     if not isinstance(pos_filter, PositionFilterParams):
         raise ValueError("pos_filter must be a PositionFilterParams")
     if len(da.time) < 2:
         raise ValueError("At least two time points are required")
     window_size = pos_filter.window_size
     window_type = pos_filter.window_type
+    # First interpolate nan values
+    values_interp = da.interpolate_na(
+        dim="time", method="linear", fill_value="extrapolate"
+    ).values
 
     # Define window parameters
     half_window = window_size // 2
@@ -331,7 +346,7 @@ def smooth_da(da, pos_filter: PositionFilterParams, return_start_end=False):
         window = getattr(windows, window_type)(window_size, sym=True)
     window /= window.sum()  # Normalize
 
-    smoothed = convolve(da.values, window[:, np.newaxis], mode="valid")
+    smoothed = convolve(values_interp, window[:, np.newaxis], mode="valid")
 
     result = xr.DataArray(
         smoothed,
