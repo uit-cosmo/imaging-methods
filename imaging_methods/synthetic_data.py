@@ -184,12 +184,16 @@ def estimate_velocities_synthetic_ds(ds, method_parameters: MethodParameters):
     eo.cc_options.cc_window = method_parameters.two_dca.window * dt
     eo.cc_options.minimum_cc_value = 0
     eo.cc_options.running_mean = False
-    pd = ve.estimate_velocities_for_pixel(
-        method_parameters.two_dca.refx,
-        method_parameters.two_dca.refy,
-        ve.CModImagingDataInterface(ds),
-    )
-    vx, vy = pd.vx, pd.vy
+    try:
+        pd = ve.estimate_velocities_for_pixel(
+            method_parameters.two_dca.refx,
+            method_parameters.two_dca.refy,
+            ve.CModImagingDataInterface(ds),
+        )
+        vx, vy = pd.vx, pd.vy
+    except ValueError:
+        print("LOL")
+        vx, vy = np.nan, np.nan
 
     return (
         v_2dca,
