@@ -1,7 +1,8 @@
 import xarray as xr
 import numpy as np
 from scipy.signal import windows
-from .utils import restrict_to_largest_true_subarray
+from .utils import restrict_to_largest_true_subarray, get_dr
+from .method_parameters import PositionFilterParams
 
 
 def get_velocity_from_position(position_da):
@@ -64,14 +65,15 @@ def is_position_near_reference(average_ds, position_da, distance):
 
 def get_combined_mask(
     average_ds: xr.Dataset,
+    variable: str,
     position_da: xr.DataArray,
-    extra_condition: xr.DataArray,
-    distance: float,
+    position_filter: PositionFilterParams,
 ):
     """
     Returns a boolean DataArray indicating time points where:
-      - the tracked position is close to the reference position (within `distance`)
-      - AND the extra_condition is True
+      - the tracked position is within a distance, mask_distance from the reference position
+      - AND the spatial maximum of average_ds_field is larger than mask_signal_factor times the overrall maximum of
+      average_ds_field
 
     Then restricts to the longest contiguous block of True values.
 
@@ -79,20 +81,27 @@ def get_combined_mask(
     ----------
     average_ds : xr.Dataset:
         Underlying data from which the position is computed
+    variable: str
+        Field name of average_ds to be used ("cross_corr" or "cond_av")
     position_da : xr.DataArray
         DataArray with dims (time, xy), values = [R, Z] displacements or coordinates
-    extra_condition : xr.DataArray
-        Boolean DataArray with same time dim as position_da
-    distance : float
-        Maximum allowed distance from reference position (same units as position_da)
+    position_filter: PositionFilterParams
+        Parameters to compute the mask, including mask_distance and mask_signal_factor.
 
     Returns
     -------
     mask : xr.DataArray (bool, along time)
         1D boolean mask with only the longest contiguous valid segment set to True
     """
+    distance = position_filter.mask_distance * get_dr(average_ds)
     near_positions = is_position_near_reference(average_ds, position_da, distance)
-    mask = near_positions & extra_condition
+
+    signal_high = (
+        average_ds[variable].max(dim=["x", "y"]).values
+        > position_filter.mask_signal_factor * average_ds[variable].max().item()
+    )
+
+    mask = near_positions & signal_high
 
     # Restrict to the single longest contiguous block of True values
     return restrict_to_largest_true_subarray(mask)

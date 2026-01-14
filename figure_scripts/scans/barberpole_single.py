@@ -69,12 +69,12 @@ def get_positions_and_mask(
     position_da, start, end = im.smooth_da(
         position_da, method_parameters.position_filter, return_start_end=True
     )
-    signal_high = (
-        average_ds[variable].max(dim=["x", "y"]).values
-        > 0.75 * average_ds[variable].max().item()
-    )[start:end]
+
     mask = im.get_combined_mask(
-        average_ds, position_da, signal_high, 2 * im.get_dr(average_ds)
+        average_ds.isel(time=slice(start, end)),
+        variable,
+        position_da,
+        method_parameters.position_filter,
     )
 
     return position_da, mask
@@ -157,5 +157,3 @@ pos_x, pos_y = pos_max_2dca.sel(time=time_value)
 ax.scatter(pos_x, pos_y)
 
 plt.show()
-
-print("LOL")

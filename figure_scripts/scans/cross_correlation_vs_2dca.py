@@ -34,13 +34,12 @@ bs = BlobShapeImpl(BlobShapeEnum.gaussian, BlobShapeEnum.gaussian)
 K = 5000
 NSR = 0.1
 
+
 def get_simulation_data(i):
-    file_name = os.path.join(
-        "synthetic_data", "{}_{}".format(data, i)
-    )
+    file_name = os.path.join("synthetic_data", "{}_{}".format(data, i))
     if os.path.exists(file_name):
         return xr.open_dataset(file_name)
-    alpha = 0 #  np.random.uniform(-np.pi / 4, np.pi / 4)
+    alpha = 0  #  np.random.uniform(-np.pi / 4, np.pi / 4)
     vx_input, vy_input = np.cos(alpha), np.sin(alpha)
     ds = im.make_2d_realization(
         Lx,
@@ -76,13 +75,14 @@ def get_simulation_data(i):
     wave = wave.expand_dims(x=ds.x)  # Broadcast to (time, x, y)
 
     # Step 4: Add the wave to the original dataset (creates a new variable)
-    ds['frames'] = ds['frames'] + wave
+    ds["frames"] = ds["frames"] + wave
 
     ds = im.run_norm_ds(ds, method_parameters.preprocessing.radius)
     ds["v_input"] = vx_input
     ds["w_input"] = vy_input
     ds.to_netcdf(file_name)
     return ds
+
 
 ds = get_simulation_data(0)
 movie_dataset(ds)
