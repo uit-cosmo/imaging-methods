@@ -48,6 +48,8 @@ class TaudEstimationParams:
 class PositionFilterParams:
     window_size: int = 11
     window_type: str = "hann"
+    mask_distance: float = 1
+    mask_signal_factor: float = 0.75
 
 
 @dataclass

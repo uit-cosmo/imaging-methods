@@ -35,13 +35,12 @@ K = 5000
 N = 1
 NSR = 0.1
 
+
 def get_simulation_data(a, i):
-    file_name = os.path.join(
-        "synthetic_data", "{}_{}_{}".format(data, a, i)
-    )
+    file_name = os.path.join("synthetic_data", "{}_{}_{}".format(data, a, i))
     if os.path.exists(file_name):
         return xr.open_dataset(file_name)
-    alpha = 0 #  np.random.uniform(-np.pi / 4, np.pi / 4)
+    alpha = 0  #  np.random.uniform(-np.pi / 4, np.pi / 4)
     vx_input, vy_input = np.cos(alpha), np.sin(alpha)
     ds = im.make_2d_realization(
         Lx,
@@ -77,7 +76,7 @@ def get_simulation_data(a, i):
     wave = wave.expand_dims(x=ds.x)  # Broadcast to (time, x, y)
 
     # Step 4: Add the wave to the original dataset (creates a new variable)
-    ds['frames'] = ds['frames'] + wave
+    ds["frames"] = ds["frames"] + wave
 
     ds = im.run_norm_ds(ds, method_parameters.preprocessing.radius)
     ds["v_input"] = vx_input
@@ -190,7 +189,7 @@ def scatter_component(theta_vals, data_per_theta, label, marker, color):
             label=label if first else None,  # <-- only label first
             alpha=0.7,
             color=color,
-            )
+        )
         first = False
 
 
@@ -199,12 +198,8 @@ labelc = r"Contouring"
 labelmax = r"Max. Track."
 labeltde = r"Time delay est."
 
-scatter_component(
-        amplitudes, v_2dca_all**2 + w_2dca_all**2, labelc, "o", "#1f77b4"
-    )
-scatter_component(
-        amplitudes, v_2dcc_all**2 + w_2dcc_all**2, labelc, "o", "#1f77b4"
-    )
+scatter_component(amplitudes, v_2dca_all**2 + w_2dca_all**2, labelc, "o", "#1f77b4")
+scatter_component(amplitudes, v_2dcc_all**2 + w_2dcc_all**2, labelc, "o", "#1f77b4")
 
 ax.set_xticks([0, 1 / 4, 1 / 2])
 ax.set_xticklabels([r"$0$", r"$1/4$", r"$1/2$"])

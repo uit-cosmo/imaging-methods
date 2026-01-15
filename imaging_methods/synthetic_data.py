@@ -143,12 +143,12 @@ def get_averaged_velocity(
     position_da, start, end = smooth_da(
         position_da, method_parameters.position_filter, return_start_end=True
     )
-    signal_high = (
-        average_ds[variable].max(dim=["x", "y"]).values
-        > 0.75 * average_ds[variable].max().item()
-    )[start:end]
+
     mask = get_combined_mask(
-        average_ds, position_da, signal_high, 2 * get_dr(average_ds)
+        average_ds.isel(time=slice(start, end)),
+        variable,
+        position_da,
+        method_parameters.position_filter,
     )
 
     v, w = get_averaged_velocity_from_position(

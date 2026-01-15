@@ -1,13 +1,8 @@
-import imaging_methods as im
 import matplotlib.pyplot as plt
 from blobmodel import BlobShapeEnum, BlobShapeImpl
-import velocity_estimation as ve
-import os
 import cosmoplots as cp
 import numpy as np
-import xarray as xr
-
-from imaging_methods import movie_dataset, movie_2dca_with_contours, show_movie_with_contours
+from imaging_methods import movie_dataset, show_movie_with_contours
 from scan_utils import *
 
 plt.style.use(["cosmoplots.default"])
@@ -21,9 +16,6 @@ plt.rcParams.update(params)
 
 method_parameters = im.get_default_synthetic_method_params()
 
-data_file = "cc_data.npz"
-data = "data_cc"
-
 T = 5000
 Lx = 8
 Ly = 8
@@ -35,58 +27,37 @@ K = 5000
 N = 1
 NSR = 0.1
 
-def get_simulation_data(a, i):
-    file_name = os.path.join(
-        "synthetic_data", "{}_{}_{}".format(data, a, i)
-    )
-    if os.path.exists(file_name):
-        return xr.open_dataset(file_name)
-    alpha = 0 #  np.random.uniform(-np.pi / 4, np.pi / 4)
-    vx_input, vy_input = np.cos(alpha), np.sin(alpha)
-    ds = im.make_2d_realization(
-        Lx,
-        Ly,
-        T,
-        nx,
-        ny,
-        dt,
-        K,
-        vx=vx_input,
-        vy=vy_input,
-        lx=1,
-        ly=1,
-        theta=0,
-        bs=bs,
-    )
-    ds_mean = ds.frames.mean().item()
-    ds = ds.assign(
-        frames=ds["frames"] + ds_mean * NSR * np.random.random(ds.frames.shape)
-    )
+wave_amplitude = 0.25
+wavelength = 8
+period = 8
+vx_input, vy_input = 1, 0
 
-    amplitude = a  # Wave amplitude
-    wavelength = 1.0  # Wavelength in x units (e.g., meters)
-    period = 2.0  # Period in time units (e.g., seconds)
-    wave_speed = wavelength / period  # Speed = lambda / T
+ds = im.make_2d_realization(
+    Lx,
+    Ly,
+    T,
+    nx,
+    ny,
+    dt,
+    K,
+    vx=vx_input,
+    vy=vy_input,
+    lx=1,
+    ly=1,
+    theta=0,
+    bs=bs,
+)
+ds_mean = ds.frames.mean().item()
+ds = ds.assign(frames=ds["frames"] + ds_mean * NSR * np.random.random(ds.frames.shape))
 
-    # Step 3: Create the propagating wave DataArray
-    # Simple 1D wave propagating in +x direction: A * sin(2π (x/λ - t/T))
-    # Use xarray broadcasting: expand to match (time, x, y)
-    k = 2 * np.pi / wavelength  # Wave number
-    omega = 2 * np.pi / period  # Angular frequency
-    wave = amplitude * np.sin(k * ds.y - omega * ds.time)  # Shape: (time, x)
-    wave = wave.expand_dims(x=ds.x)  # Broadcast to (time, x, y)
+k = 2 * np.pi / wavelength  # Wave number
+omega = 2 * np.pi / period  # Angular frequency
+wave = wave_amplitude * np.sin(k * ds.Z - omega * ds.time)  # Shape: (time, x)
 
-    # Step 4: Add the wave to the original dataset (creates a new variable)
-    ds['frames'] = ds['frames'] + wave
+ds["frames"] = ds["frames"] + wave
+ds = im.run_norm_ds(ds, method_parameters.preprocessing.radius)
 
-    ds = im.run_norm_ds(ds, method_parameters.preprocessing.radius)
-    ds["v_input"] = vx_input
-    ds["w_input"] = vy_input
-    ds.to_netcdf(file_name)
-    return ds
-
-
-ds = get_simulation_data(0.5, 0)
+movie_dataset(ds.sel(time=slice(500, 510)), gif_name="wave_dataset.gif", show=False)
 
 events, average_ds = im.find_events_and_2dca(ds, method_parameters.two_dca)
 
@@ -121,3 +92,56 @@ show_movie_with_contours(
     show=False,
 )
 
+
+v_2dca, w_2dca = im.get_averaged_velocity(
+    average_ds, "cond_av", method_parameters, position_method="contouring"
+)
+v_2dcc, w_2dcc = im.get_averaged_velocity(
+    average_ds, "cross_corr", method_parameters, position_method="contouring"
+)
+
+pos_2dca, mask_2dca = get_positions_and_mask(
+    average_ds, "cond_av", method_parameters, position_method="contouring"
+)
+pos_2dcc, mask_2dcc = get_positions_and_mask(
+    average_ds, "cross_corr", method_parameters, position_method="contouring"
+)
+
+fig, axes = plt.subplots(1, 2)
+
+v_input, w_input = vx_input, vy_input
+
+print("CA velocities: {:.2f},   {:.2f}".format(v_2dca, w_2dca))
+print("CC velocities: {:.2f},   {:.2f}".format(v_2dcc, w_2dcc))
+print("Input velocities: {:.2f},   {:.2f}".format(v_input, w_input))
+
+
+def plot_component(i, ax, position_ca, position_cc, mask_ca, mask_cc):
+    input_velocity = v_input if i == 0 else w_input
+    ax.plot(position_ca.time, position_ca.values[:, i], color="blue")
+    ax.plot(position_cc.time, position_cc.values[:, i], color="green")
+    ax.plot(
+        position_ca.time,
+        position_ca.sel(time=0).values[0] + position_ca.time.values * input_velocity,
+        color="black",
+        ls="--",
+    )
+
+    ax.plot(
+        position_ca.time[mask_ca],
+        position_ca.values[:, i][mask_ca],
+        lw=2,
+        color="blue",
+    )
+    ax.plot(
+        position_cc.time[mask_cc],
+        position_cc.values[:, i][mask_cc],
+        lw=2,
+        color="green",
+    )
+
+
+plot_component(0, axes[0], pos_2dca, pos_2dcc, mask_2dca, mask_2dcc)
+plot_component(1, axes[1], pos_2dca, pos_2dcc, mask_2dca, mask_2dcc)
+
+plt.show()

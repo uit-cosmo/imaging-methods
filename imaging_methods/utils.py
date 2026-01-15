@@ -367,7 +367,7 @@ def get_default_synthetic_method_params() -> MethodParameters:
         gauss_fit=GaussFitParams(size_penalty=5, aspect_penalty=0.2, tilt_penalty=0.2),
         contouring=ContouringParams(threshold_factor=0.5),
         taud_estimation=TaudEstimationParams(cutoff=1e6, nperseg=2e3),
-        position_filter=PositionFilterParams(11, "hann"),
+        position_filter=PositionFilterParams(11, "hann", 2, 0.75),
     )
 
     return method_parameters
@@ -382,7 +382,7 @@ def get_default_apd_method_params() -> MethodParameters:
         gauss_fit=GaussFitParams(size_penalty=5, aspect_penalty=0.2, tilt_penalty=0.2),
         contouring=ContouringParams(threshold_factor=0.3),
         taud_estimation=TaudEstimationParams(cutoff=1e6, nperseg=2e3),
-        position_filter=PositionFilterParams(11, "hann"),
+        position_filter=PositionFilterParams(11, "hann", 1, 0.75),
     )
 
     return method_parameters
