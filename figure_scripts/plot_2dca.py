@@ -30,11 +30,11 @@ if __name__ == "__main__":
         "/home/sosno/Git/experimental_database/plasma_discharges.json"
     )
 
-    movie_2dca_with_contours(shot, refx, refy)
+    movie_2dca_with_contours(shot, refx, refy, run_2dca=True)
 
-    output_name = "2dca_{}_{}{}.gif".format(shot, refx, refy)
+    output_name = "2dcc_{}_{}{}.gif".format(shot, refx, refy)
     # os.system(
-    #    "gifsicle -i {} -O3 --colors 32 --lossy=150 -o {}".format(
-    #        output_name, output_name
-    #    )
+    #   "gifsicle -i {} -O3 --colors 32 --lossy=150 -o {}".format(
+    #       output_name, output_name
+    #   )
     # )

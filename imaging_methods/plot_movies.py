@@ -6,6 +6,7 @@ import xarray as xr
 from matplotlib import animation
 from typing import Union, Any
 
+import imaging_methods
 from .cond_av import find_events_and_2dca
 from .utils import *
 from .plotting import calculate_splinted_LCFS
@@ -288,29 +289,34 @@ def movie_2dca_with_contours(shot, refx, refy, run_2dca=False):
         "/home/sosno/Git/experimental_database/plasma_discharges.json"
     )
     ds = manager.read_shot_data(shot, preprocessed=True)
+    mp = imaging_methods.get_default_apd_method_params()
 
     if run_2dca:
-        events, average = find_events_and_2dca(
-            ds, refx, refy, 2, window_size=60, check_max=1, single_counting=True
-        )
+        mp.two_dca.refx = refx
+        mp.two_dca.refy = refy
+        events, average = find_events_and_2dca(ds, mp.two_dca)
     else:
         average = xr.open_dataset(
             "density_scan/averages/average_ds_{}_{}{}.nc".format(shot, refx, refy)
         )
+    variable = "cross_corr"
+    name = "2dca" if variable == "cond_av" else "2dcc"
+    if variable == "cross_corr":
+        mp.contouring.threshold_factor = 0.5
 
     contour_ds = get_contour_evolution(
-        average.cond_av,
-        0.3,
+        average[variable],
+        mp.contouring.threshold_factor,
         max_displacement_threshold=None,
     )
-    output_name = "2dca_{}_{}{}.gif".format(shot, refx, refy)
+    output_name = "{}_{}_{}{}.gif".format(name, shot, refx, refy)
     fig, ax = plt.subplots(figsize=(3, 3))
     show_movie_with_contours(
         average,
         contour_ds,
         apd_dataset=ds,
-        variable="cond_av",
-        lims=(0, average.cond_av.max().item()),
+        variable=variable,
+        lims=(0, average[variable].max().item()),
         fig=fig,
         ax=ax,
         gif_name=output_name,

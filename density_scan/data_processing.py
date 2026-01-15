@@ -98,7 +98,7 @@ def run_single_thread(shots, force_redo=False):
                     return
                 print(f"Working on shot {shot} and pixel {refx}{refy}")
                 compute_and_store_conditional_averages(shot, refx, refy)
-                bp = analysis(shot, refx, refy, manager, do_plots=True)
+                bp = analysis(shot, refx, refy, manager, do_plots=False)
                 if bp is None:
                     continue
                 if shot not in results.shots:
@@ -114,6 +114,7 @@ if __name__ == "__main__":
     shots = [1160616027]
 
     results = im.ResultManager.from_json("density_scan/results.json")
-    run_parallel(shots, force_redo=True)
+    run_single_thread(shots, force_redo=True)
+    # run_parallel(shots, force_redo=True)
 
     results.to_json("density_scan/results.json")

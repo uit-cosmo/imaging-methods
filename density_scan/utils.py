@@ -223,15 +223,32 @@ def get_velocity_method_max(shot, refx, refy, average_ds, do_plots):
 
 def get_contour_parameters(shot, refx, refy, average_ds, do_plots, gpi_ds):
     method_parameters = im.get_default_apd_method_params()
+    variable = "cond_av"
+
     contour_ds = im.get_contour_evolution(
-        average_ds.cond_av,
+        average_ds[variable],
         method_parameters.contouring.threshold_factor,
         max_displacement_threshold=None,
     )
-    velocity_ds = im.get_velocity_from_position(contour_ds.center_of_mass)
-    v_c, w_c = (
-        velocity_ds.isel(time=slice(10, -10)).mean(dim="time", skipna=True).values
+
+    position_da, start, end = im.smooth_da(
+        contour_ds.center_of_mass,
+        method_parameters.position_filter,
+        return_start_end=True,
     )
+
+    mask = im.get_combined_mask(
+        average_ds.isel(time=slice(start, end)),
+        variable,
+        position_da,
+        method_parameters.position_filter,
+    )
+
+    v_c, w_c = im.get_averaged_velocity_from_position(
+        position_da=position_da,
+        mask=mask,
+    )
+
     area_c = contour_ds.area.sel(time=0).item()
     if do_plots:
         gif_file_name = os.path.join(
