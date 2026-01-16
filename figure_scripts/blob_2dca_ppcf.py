@@ -6,7 +6,7 @@ from imaging_methods import *
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import cosmoplots as cp
 
-shot = 1160616027
+shot = 1160616009
 results = ResultManager.from_json("density_scan/results.json")
 manager = GPIDataAccessor(
     "/home/sosno/Git/experimental_database/plasma_discharges.json"
@@ -45,25 +45,6 @@ for refx in np.arange(4, 7):
     axe = ax[(refx - 4)]
     average = get_average(shot, refx, refy)
     plot_2dca_zero_lag(ds, average, axe)
-
-    # TODO: remove following lines
-    bp = results.get_blob_params_for_shot(shot, refx, refy)
-    lx, ly, theta = bp.lx_f, bp.ly_f, bp.theta_f
-    rx, ry = (
-        average.R.isel(x=refx, y=refy).item(),
-        average.Z.isel(x=refx, y=refy).item(),
-    )
-    alphas = np.linspace(0, 2 * np.pi, 200)
-    elipsx, elipsy = zip(
-        *[ellipse_parameters((lx * 100, ly * 100, theta), rx, ry, a) for a in alphas]
-    )
-    axe.plot(elipsx, elipsy, color="blue", ls="--")
-    text = r"$lx = {:.2f}$mm".format(lx * 1000)
-    axe.text(88, -3, text, color="white")
-    text = r"$ly = {:.2f}$mm".format(ly * 1000)
-    axe.text(88, -3.5, text, color="white")
-    text = r"$theta = {:.2f}$".format(theta)
-    axe.text(88, -4, text, color="white")
 
 ax[0].set_ylabel(r"$Z\,/\,\text{cm}$")
 ax[0].set_xlabel(r"$R\,/\,\text{cm}$")

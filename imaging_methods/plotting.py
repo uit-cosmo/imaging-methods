@@ -21,9 +21,14 @@ def plot_2dca_zero_lag(ds, average, ax):
         )
     )
     im.set_clim(0, np.max(data))
-    ax.set_ylim((average.Z[0, 0], average.Z[-1, 0]))
-    ax.set_xlim((np.min(average.R.values), average.R[0, -1]))
-    ax.set_xticks([88, 89, 90])
+    ax.set_ylim(
+        np.min(average.Z.values) - half_pixel, np.max(average.Z.values) + half_pixel
+    )
+    ax.set_xlim(
+        [np.min(average.R.values) - half_pixel, np.max(average.R.values) + half_pixel]
+    )
+
+    ax.set_xticks([88, 89, 90, 91])
     refx, refy = average["refx"].item(), average["refy"].item()
     ax.set_title(r"$R_*={:.2f} $cm".format(average.R[refy, refx]))
 
