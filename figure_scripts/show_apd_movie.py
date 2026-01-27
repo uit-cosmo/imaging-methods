@@ -1,3 +1,4 @@
+# Makes a gif file with raw APD data
 from imaging_methods import *
 import cosmoplots as cp
 

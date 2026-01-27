@@ -1,28 +1,15 @@
-from blobmodel import BlobShapeEnum, BlobShapeImpl
 import numpy as np
 import imaging_methods as im
 import xarray as xr
-
-
 from blobmodel import (
     Model,
-    BlobShapeImpl,
     show_model,
     DefaultBlobFactory,
-    BlobFactory,
-    Blob,
-    AbstractBlobShape,
 )
 
-
-T = 1000
-Lx = 8
-Ly = 8
-nx = 8
-ny = 8
-dt = 0.1
-bs = BlobShapeImpl(BlobShapeEnum.gaussian, BlobShapeEnum.gaussian)
-num_blobs = 10_0
+method_parameters = im.get_default_synthetic_method_params()
+method_parameters.two_dca.refx = 4
+method_parameters.two_dca.refy = 4
 
 bf = DefaultBlobFactory(
     vx_parameter=1,  # x-component of blob velocity
@@ -36,8 +23,8 @@ model = Model(
     Ly=8,  # Domain length in the y-direction
     dt=0.1,  # Sampling time
     T=1000,  # Total signal duration
-    num_blobs=10_000,  # Number of blobs
-    periodic_y=False,  # No periodicity
+    num_blobs=1000,  # Number of blobs
+    periodic_y=True,  # Periodicity
     t_drain=1e10,  # No blob decay
     blob_factory=bf,
 )
@@ -47,6 +34,8 @@ ds = model.make_realization(speed_up=True, error=1e-10)
 show_model(ds.sel(t=slice(100, 110)), gif_name="example.gif")
 
 grid_r, grid_z = np.meshgrid(ds.x.values, ds.y.values)
+
+# Set the data in the same format as APD data
 ds = xr.Dataset(
     {"frames": (["y", "x", "time"], ds.n.values)},
     coords={
@@ -55,25 +44,18 @@ ds = xr.Dataset(
         "time": (["time"], ds.t.values),
     },
 )
+ds = im.run_norm_ds(ds, method_parameters.preprocessing.radius)
 
-two_dca_params = im.TwoDcaParams(
-    refx=4,  # reference pixel
-    refy=4,  # reference pixel
-    threshold=0.2,  # Threshold
-    check_max=1,  # event should be larger than nearest neighbours
-    window=50,  # window size
-    single_counting=True,
-)
-events, average_ds = im.find_events_and_2dca(ds, two_dca_params)
+# 2DCA algorithm
+events, average_ds = im.find_events_and_2dca(ds, method_parameters.two_dca)
 
+# Contouring
 contour_ds = im.get_contour_evolution(
     average_ds.cond_av,
-    threshold_factor=0.5,
-    max_displacement_threshold=None,
+    threshold_factor=method_parameters.contouring.threshold_factor,
 )
 
 # visualize conditional averaging with contours
-
 im.show_movie_with_contours(
     average_ds,
     contour_ds,

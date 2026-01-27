@@ -34,8 +34,9 @@ lx, ly = 0.5, 2.0
 theta = 1.57
 i = 3
 
+
 def get_simulation_data(lx, ly, theta):
-    alpha = np.pi/8
+    alpha = np.pi / 8
     vx_input, vy_input = np.cos(alpha), np.sin(alpha)
     ds = im.make_2d_realization(
         Lx,
@@ -61,9 +62,10 @@ def get_simulation_data(lx, ly, theta):
     ds["w_input"] = vy_input
     return ds
 
+
 file_name = os.path.join("synthetic_data", "data_single.nc ")
-#ds = get_simulation_data(0.5, 2, np.pi/4)
-#ds.to_netcdf(file_name)
+# ds = get_simulation_data(0.5, 2, np.pi/4)
+# ds.to_netcdf(file_name)
 ds = xr.open_dataset(file_name)
 plot_gifs = False
 
@@ -86,7 +88,9 @@ contour_cc = im.get_contour_evolution(
 )
 
 if plot_gifs:
-    im.movie_dataset(ds.sel(time=slice(500, 510)), gif_name="barberpole_dataset.gif", show=False)
+    im.movie_dataset(
+        ds.sel(time=slice(500, 510)), gif_name="barberpole_dataset.gif", show=False
+    )
     im.show_movie_with_contours(
         average_ds,
         contour_ca,
@@ -180,8 +184,8 @@ print("Input velocities: {:.2f},   {:.2f}".format(v_input, w_input))
 
 def plot_component(i, ax, position_ca, position_cc, mask_ca, mask_cc):
     input_velocity = v_input if i == 0 else w_input
-    ax.scatter(position_ca.time, position_ca.values[:, i], color="blue", s= 0.5)
-    ax.scatter(position_cc.time, position_cc.values[:, i], color="green", s= 0.5)
+    ax.scatter(position_ca.time, position_ca.values[:, i], color="blue", s=0.5)
+    ax.scatter(position_cc.time, position_cc.values[:, i], color="green", s=0.5)
     ax.plot(
         position_ca.time,
         4 + position_ca.time.values * input_velocity,

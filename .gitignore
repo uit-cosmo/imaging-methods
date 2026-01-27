@@ -163,3 +163,6 @@ good_movies/
 figure_scripts/scans/synthetic_data
 *ipynb
 *.npz
+
+# Synthetic data realizations
+# *.nc

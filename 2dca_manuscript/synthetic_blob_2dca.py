@@ -34,6 +34,7 @@ lx, ly = 0.5, 2.0
 theta = 1.57
 i = 3
 
+
 def get_simulation_data(lx, ly, theta):
     vx_input, vy_input = 1, 0
     ds = im.make_2d_realization(
@@ -89,8 +90,8 @@ def plot_frames_with_contour(average, contours, t_indexes, variable="cond_av"):
 
 
 file_name = "synthetic_blob_2dca.nc"
-#ds = get_simulation_data(0.5, 2, np.pi/4)
-#ds.to_netcdf(file_name)
+# ds = get_simulation_data(0.5, 2, np.pi/4)
+# ds.to_netcdf(file_name)
 ds = xr.open_dataset(file_name)
 
 dt = im.get_dt(ds)
@@ -105,11 +106,8 @@ contour_ca = im.get_contour_evolution(
     mp.contouring.threshold_factor,
     max_displacement_threshold=None,
 )
-t_indexes = np.linspace(10, tdca_params.window-10, num=3)
+t_indexes = np.linspace(10, tdca_params.window - 10, num=3)
 
 plot_frames_with_contour(average_ds, contour_ca, t_indexes)
 
 plt.savefig("synthetic_blob_2dca.eps", bbox_inches="tight")
-
-
-
