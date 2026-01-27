@@ -11,11 +11,9 @@ method_parameters = im.get_default_synthetic_method_params()
 method_parameters.two_dca.refx = 4
 method_parameters.two_dca.refy = 4
 
-bf = DefaultBlobFactory(
-    vx_parameter=1,  # x-component of blob velocity
-    vy_parameter=0,  # y-component of blob velocity
-)
 
+# First we do a realization of the two-dimensional process. This is done with the blobmodel package. For more info on
+# this package, consult its documentation at https://blobmodel.readthedocs.io/en/latest/?badge=latest
 model = Model(
     Nx=8,  # number of pixels in the x-direction
     Ny=8,  # number of pixels in the y-direction
@@ -28,9 +26,15 @@ model = Model(
     t_drain=1e10,  # No blob decay
     blob_factory=bf,
 )
+
+bf = DefaultBlobFactory(
+    vx_parameter=1,  # x-component of blob velocity
+    vy_parameter=0,  # y-component of blob velocity
+)
+
 ds = model.make_realization(speed_up=True, error=1e-10)
 
-# visualize synthetic data
+# Optionally, visualize synthetic data
 show_model(ds.sel(t=slice(100, 110)), gif_name="example.gif")
 
 grid_r, grid_z = np.meshgrid(ds.x.values, ds.y.values)
@@ -44,6 +48,8 @@ ds = xr.Dataset(
         "time": (["time"], ds.t.values),
     },
 )
+
+# Normalize the data with a running normalization so that it has vanishing mean and unity standard deviation
 ds = im.run_norm_ds(ds, method_parameters.preprocessing.radius)
 
 # 2DCA algorithm

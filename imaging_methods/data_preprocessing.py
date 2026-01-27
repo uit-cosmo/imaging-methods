@@ -31,13 +31,15 @@ def get_dead_pixel_mask():
     )
 
 
-def interpolate_nans_3d(ds, use_mask=True):
+def interpolate_nans_3d(ds, mask=None):
     """
     Replace NaN values in a 3D xarray dataset with linear interpolation along spatial dimensions
     using LinearNDInterpolator.
 
     Parameters:
         ds (xr.Dataset): Input dataset with 'frames' variable (dims: y, x, time).
+        mask (np.ndarray): Boolean array (dims: y, x) specifying if a given pixel should be interpolated, if not none
+        all nan pixels OR all pixels in the mask are interpolated.
 
     Returns:
         xr.Dataset: Dataset with NaNs interpolated.
@@ -52,8 +54,9 @@ def interpolate_nans_3d(ds, use_mask=True):
     ny, nx, nt = frames.shape
 
     # Get the NaN mask (constant across time)
-    # nan_mask = np.isnan(frames[:, :, 0])
-    nan_mask = get_dead_pixel_mask().values
+    nan_mask = np.isnan(frames[:, :, 0])
+    if mask is not None:
+        nan_mask = nan_mask | mask
     if nan_mask.all():
         raise ValueError("All pixels are NaN in the first time step")
     if not nan_mask.any():

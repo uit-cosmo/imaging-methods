@@ -1,20 +1,16 @@
 import imaging_methods as im
 from test_utils import (
-    make_2d_realization,
     get_blob,
     DeterministicBlobFactory,
     Model,
 )
 from blobmodel import BlobShapeEnum, BlobShapeImpl
-import numpy as np
-import pytest
-import xarray as xr
 from imaging_methods.contours import *
 
 Lx = 10
 Ly = 10
-nx = 10
-ny = 10
+nx = 16
+ny = 16
 dt = 0.1
 theta = 0
 bs = BlobShapeImpl(BlobShapeEnum.gaussian, BlobShapeEnum.gaussian)
@@ -76,12 +72,12 @@ def test_com_and_velocities():
     assert np.abs(ce.center_of_mass.sel(time=6).values[0] - 6) < 0.1
     assert np.abs(np.max(ce.center_of_mass.values[:, 1] - 5)) < 0.1
 
-    velocities = get_velocity_from_position(ce.center_of_mass)
+    velocities = im.get_velocity_from_position(ce.center_of_mass)
     vxs = velocities.sel(time=slice(3, 7)).values[:, 0]
     vys = velocities.sel(time=slice(3, 7)).values[:, 1]
     assert np.all(
         np.abs(vxs - 1) < 0.5
-    )  # Due to pulsating effect the velocity array varies a lot
+    )  # Due to pixel locking the velocity array varies a lot
     assert np.abs(np.mean(vxs) - 1) < 0.1
     assert np.all(np.abs(vys) < 0.1)
 

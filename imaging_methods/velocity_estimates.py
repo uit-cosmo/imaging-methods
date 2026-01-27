@@ -1,6 +1,5 @@
 import xarray as xr
 import numpy as np
-from scipy.signal import windows
 from .utils import restrict_to_largest_true_subarray, get_dr
 from .method_parameters import PositionFilterParams
 

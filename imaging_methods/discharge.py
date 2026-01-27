@@ -39,9 +39,9 @@ class GPIDataAccessor(PlasmaDischargeManager):
         else:
             return ds
 
-    def preprocess_dataset(self, ds, radius=1000):
+    def preprocess_dataset(self, ds, radius=1000, mask=None):
         ds = run_norm_ds(ds, radius)
-        ds = interpolate_nans_3d(ds)
+        ds = interpolate_nans_3d(ds, mask)
         return ds
 
     def get_data_from_tree(self, shot, data_folder="data"):

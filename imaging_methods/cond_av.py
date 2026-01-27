@@ -39,6 +39,7 @@ def find_events_and_2dca(
                     - cond_av: Array of shape (time, x, y) representing the mean of all event windows.
                     - cond_repr: Array of shape (time, x, y) representing the conditional representativeness,
                         calculated as cond_av^2 / mean2, where mean2 is the mean of squared event windows.
+                    - cross_corr: Array of shape (time, x, y) with the estimated two-dimensional cross-correlation.
                 - Coordinates:
                     - time: Relative time coordinates centered on the peak, matching the events' time coordinates.
                     - x, y: Spatial coordinates inherited from the input dataset.

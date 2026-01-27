@@ -14,7 +14,9 @@ def preprocess_data(shots, preprocessing_params: im.PreprocessingParams):
             continue
         print("Preprocessing data for shot {}".format(shot))
         ds = manager.read_shot_data(shot, data_folder="data", preprocessed=False)
-        ds = manager.preprocess_dataset(ds, radius=preprocessing_params.radius)
+        ds = manager.preprocess_dataset(
+            ds, radius=preprocessing_params.radius, mask=get_dead_pixel_mask().values
+        )
         ds.to_netcdf(file_name)
 
 
