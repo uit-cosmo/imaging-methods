@@ -4,6 +4,7 @@ import cosmoplots as cp
 import numpy as np
 from imaging_methods import movie_dataset, show_movie_with_contours
 from scan_utils import *
+import xarray as xr
 
 plt.style.use(["cosmoplots.default"])
 plt.rcParams["text.latex.preamble"] = (
@@ -32,32 +33,50 @@ wavelength = 8
 period = 8
 vx_input, vy_input = 1, 0
 
-ds = im.make_2d_realization(
-    Lx,
-    Ly,
-    T,
-    nx,
-    ny,
-    dt,
-    K,
-    vx=vx_input,
-    vy=vy_input,
-    lx=1,
-    ly=1,
-    theta=0,
-    bs=bs,
+
+def get_realization_with_wave():
+    ds = im.make_2d_realization(
+        Lx,
+        Ly,
+        T,
+        nx,
+        ny,
+        dt,
+        K,
+        vx=vx_input,
+        vy=vy_input,
+        lx=1,
+        ly=1,
+        theta=0,
+        bs=bs,
+    )
+    ds_mean = ds.frames.mean().item()
+    ds = ds.assign(
+        frames=ds["frames"] + ds_mean * NSR * np.random.random(ds.frames.shape)
+    )
+
+    k = 2 * np.pi / wavelength  # Wave number
+    omega = 2 * np.pi / period  # Angular frequency
+    wave = wave_amplitude * np.sin(k * ds.Z - omega * ds.time)  # Shape: (time, x)
+
+    ds["frames"] = ds["frames"] + wave
+    ds = im.run_norm_ds(ds, method_parameters.preprocessing.radius)
+    return ds
+
+
+file_name = "realization_with_wave.nc"
+# ds = get_realization_with_wave()
+# ds.to_netcdf(file_name)
+ds = xr.open_dataset(file_name)
+
+movie_dataset(
+    ds.sel(time=slice(500, 520)),
+    gif_name="realization_with_wave.gif",
+    show=False,
+    lims=(0, 1),
+    normalize=True,
+    interpolation=None,
 )
-ds_mean = ds.frames.mean().item()
-ds = ds.assign(frames=ds["frames"] + ds_mean * NSR * np.random.random(ds.frames.shape))
-
-k = 2 * np.pi / wavelength  # Wave number
-omega = 2 * np.pi / period  # Angular frequency
-wave = wave_amplitude * np.sin(k * ds.Z - omega * ds.time)  # Shape: (time, x)
-
-ds["frames"] = ds["frames"] + wave
-ds = im.run_norm_ds(ds, method_parameters.preprocessing.radius)
-
-movie_dataset(ds.sel(time=slice(500, 510)), gif_name="wave_dataset.gif", show=False)
 
 events, average_ds = im.find_events_and_2dca(ds, method_parameters.two_dca)
 
@@ -76,8 +95,8 @@ show_movie_with_contours(
     average_ds,
     contour_ca,
     variable="cond_av",
-    lims=(0, average_ds.cond_av.max().item()),
-    gif_name="ca.gif",
+    lims=(0, 1),
+    gif_name="realization_with_wave_2dca_contour.gif",
     interpolation=None,
     show=False,
 )
@@ -87,7 +106,7 @@ show_movie_with_contours(
     contour_cc,
     variable="cross_corr",
     lims=(0, average_ds.cross_corr.max().item()),
-    gif_name="cc.gif",
+    gif_name="realization_with_wave_2dcc_contour.gif",
     interpolation=None,
     show=False,
 )

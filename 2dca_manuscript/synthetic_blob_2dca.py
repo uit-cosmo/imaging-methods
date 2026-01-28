@@ -1,7 +1,6 @@
 import imaging_methods as im
 import matplotlib.pyplot as plt
 from blobmodel import BlobShapeEnum, BlobShapeImpl
-import os
 import cosmoplots as cp
 import xarray as xr
 import numpy as np
@@ -85,6 +84,8 @@ def plot_frames_with_contour(average, contours, t_indexes, variable="cond_av"):
         axe.text(3, 6.5, r"$t={:.1f}\,\tau_\text{{d}}$".format(t), color="white")
         axe.set_xticks([])
         axe.set_yticks([])
+
+    ax[1].scatter(4, 4, color="red")
 
     return fig
 

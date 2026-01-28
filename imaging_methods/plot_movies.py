@@ -36,6 +36,7 @@ def movie_dataset(
     ax=None,
     show=True,
     t_dim="time",
+    normalize=False,
 ) -> None:
     """
     Creates an animation that shows the evolution of a specific variable over time.
@@ -65,7 +66,9 @@ def movie_dataset(
     has_limiter = "rlimit" in dataset.coords.keys()
     has_lcfs = "rlcfs" in dataset
     if fig is None:
-        fig = plt.figure()
+        fig = plt.figure(figsize=(5, 5))
+
+    max = dataset[variable].max().item()
 
     def animate_2d(i: int) -> Any:
         """
@@ -87,11 +90,12 @@ def movie_dataset(
         else:
             vmin, vmax = lims
         # vmin, vmax = 0, 1
-        im.set_data(arr)
+        normalization = max if normalize else 1
+        im.set_data(arr / normalization)
         # im.set_extent((dataset.x[0], dataset.x[-1], dataset.y[0], dataset.y[-1]))
         im.set_clim(vmin, vmax)
         time = dataset[t_dim][i]
-        tx.set_text(r"t $=\,{:.2f}\,\mu$s".format(time * 1e6))
+        tx.set_text(r"$t/\tau_\text{{d}}=\,{:.1f}$".format(time))
         if has_lcfs:
             rlcfs, zlcfs = calculate_splinted_LCFS(
                 time.item(),
@@ -104,15 +108,15 @@ def movie_dataset(
     if ax is None:
         ax = fig.add_subplot(111)
     tx = ax.set_title("t = 0")
-    div = make_axes_locatable(ax)
-    cax = div.append_axes("right", "5%", "5%")
+    # div = make_axes_locatable(ax)
+    # cax = div.append_axes("right", "5%", "5%")
     t_init = dataset[t_dim][0].values
+    normalization = max if normalize else 1
     im = ax.imshow(
-        dataset[variable].isel(**{t_dim: 0}),
+        dataset[variable].isel(**{t_dim: 0}) / normalization,
         origin="lower",
         interpolation=interpolation,
     )
-    fig.colorbar(im, cax=cax)
 
     if has_limiter:
         limit_spline = interpolate.interp1d(
@@ -133,6 +137,8 @@ def movie_dataset(
     im.set_extent(
         (dataset.R[0, 0], dataset.R[0, -1], dataset.Z[0, 0], dataset.Z[-1, 0])
     )
+    ax.set_xticks([])
+    ax.set_yticks([])
 
     ani = animation.FuncAnimation(
         fig, animate_2d, frames=dataset[t_dim].values.size, interval=interval
@@ -191,13 +197,14 @@ def show_movie_with_contours(
     dt = get_dt(dataset)
     R, Z = dataset.R.values, dataset.Z.values
     refx, refy = int(dataset["refx"].item()), int(dataset["refy"].item())
+    max = dataset[variable].max().item()
 
     def get_title(i):
         time = dataset[t_dim][i]
         if dt < 1e-3:
             title = r"t$={:.2f}\,\mu$s".format(time * 1e6)
         else:
-            title = r"t$={:.2f}\,$s".format(time)
+            title = r"$t/\tau_\text{{d}}=\,{:.1f}$".format(time)
         return title
 
     def animate_2d(i: int) -> Any:
@@ -219,7 +226,7 @@ def show_movie_with_contours(
             vmin, vmax = np.min(arr), np.max(arr)
         else:
             vmin, vmax = lims
-        im.set_data(arr)
+        im.set_data(arr / max)
         im.set_clim(vmin, vmax)
         c = contours_ds.contours.isel(time=i).data
         line[0].set_data(c[:, 0], c[:, 1])
@@ -245,15 +252,12 @@ def show_movie_with_contours(
         dataset.Z.isel(x=refx, y=refy).item(),
         color="black",
     )
-    div = make_axes_locatable(ax)
-    cax = div.append_axes("right", "5%", "5%")
     im = ax.imshow(
-        dataset[variable].isel(**{t_dim: 0}),
+        dataset[variable].isel(**{t_dim: 0}) / max,
         origin="lower",
         interpolation=interpolation,
     )
     line = ax.plot([], [], ls="--", color="black")
-    fig.colorbar(im, cax=cax)
 
     if apd_dataset is not None:
         limit_spline = interpolate.interp1d(
@@ -272,6 +276,9 @@ def show_movie_with_contours(
     ani = animation.FuncAnimation(
         fig, animate_2d, frames=dataset[t_dim].values.size, interval=interval
     )
+
+    ax.set_xticks([])
+    ax.set_yticks([])
 
     if gif_name:
         ani.save(gif_name, writer="ffmpeg", fps=fps)
