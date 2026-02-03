@@ -153,14 +153,11 @@ example.gif
 # gifs
 *.gif
 
-!/presentation/*.gif
-!/presentation/*.png
-!/presentation/*.eps
-!/presentation/*.pdf
+!/figures/*.gif
+!/figures/*.png
+!/figures/*.eps
+!/figures/*.pdf
 
-old_files/
-good_movies/
-figure_scripts/scans/synthetic_data
 *ipynb
 *.npz
 
