@@ -1,9 +1,7 @@
 import numpy as np
 from scipy.optimize import differential_evolution
-import matplotlib.pyplot as plt
 import velocity_estimation as ve
 import warnings
-from imaging_methods import plot_2dca_zero_lag
 
 
 def rotated_blob(params, rx, ry, x, y):
@@ -267,77 +265,6 @@ def fit_ellipse_to_event(
         aspect_ratio_penalty_factor=aspect_ratio_penalty_factor,
         theta_penalty_factor=theta_penalty_factor,
     )
-    return lx, ly, theta
-
-
-def plot_event_with_fit(
-    e,
-    ds,
-    refx,
-    refy,
-    ax,
-    fig_name=None,
-    size_penalty_factor=5,
-    aspect_ratio_penalty_factor=0.1,
-    theta_penalty_factor=0.1,
-):
-    """
-    Plots an ellipse fitted to an event's data at a reference point (refx, refy) on a given matplotlib axis (ax).
-    The ellipse is computed using the fit_ellipse_to_event function, and the resulting ellipse is drawn as a dashed blue line.
-    Optionally, the plot can be saved to a file if a fig_name is provided.
-
-    Parameters
-    ----------
-    e : xr.DataSet
-        An xarray Dataset containing spatial data with coordinates R (radial) and Z (vertical)
-        at specific x, y, and time dimensions.
-    refx : int
-        Index of the reference point along the x dimension.
-    refy : int
-        Index of the reference point along the y dimension.
-    ax : matplotlib.axes.Axes
-        The matplotlib axis object on which to plot the ellipse.
-    fig_name : str, optional
-        If provided, the plot is saved to a file with this name. The file format is inferred from the extension (e.g., .png, .pdf).
-        Default is None.
-    size_penalty_factor : float, optional
-        Penalty factor for ellipse size in the fitting process, passed to fit_ellipse_to_event. Default is 5.
-    aspect_ratio_penalty_factor : float, optional
-        Penalty factor for ellipse aspect ratio in the fitting process, passed to fit_ellipse_to_event. Default is 0.1.
-    theta_penalty_factor : float, optional
-        Penalty factor for ellipse orientation (theta) in the fitting process, passed to fit_ellipse_to_event. Default is 0.1.
-
-    Returns
-    -------
-    lx : float
-        Semi-major axis length of the fitted ellipse.
-    ly : float
-        Semi-minor axis length of the fitted ellipse.
-    theta : float
-        Orientation angle of the ellipse (in radians).
-    By convention lx < ly and theta in (0, pi)
-    """
-    if e is None or len(e.data_vars) == 0:
-        return None, None, None
-    plot_2dca_zero_lag(ds=ds, average=e, ax=ax)
-    lx, ly, theta = fit_ellipse_to_event(
-        e.cond_av,
-        refx,
-        refy,
-        size_penalty_factor,
-        aspect_ratio_penalty_factor,
-        theta_penalty_factor,
-    )
-    rx, ry = e.R.isel(x=refx, y=refy).item(), e.Z.isel(x=refx, y=refy).item()
-    alphas = np.linspace(0, 2 * np.pi, 200)
-    elipsx, elipsy = zip(
-        *[ellipse_parameters((lx, ly, theta), rx, ry, a) for a in alphas]
-    )
-    ax.plot(elipsx, elipsy, color="blue", ls="--")
-
-    if fig_name is not None:
-        plt.savefig(fig_name, bbox_inches="tight")
-
     return lx, ly, theta
 
 
