@@ -4,6 +4,7 @@ from skimage import measure
 from shapely.geometry import Polygon, Point
 from scipy.spatial import ConvexHull
 from matplotlib.path import Path as MplPath
+from skimage.measure import EllipseModel
 
 
 def compute_contour_mass(contour, frame, R, Z):
@@ -71,6 +72,58 @@ def indexes_to_coordinates(R, Z, indexes):
     r_values = np.min(R) + indexes[:, 1] * dx
     z_values = np.min(Z) + indexes[:, 0] * dy
     return r_values, z_values
+
+
+def fit_ellipses_to_contour_ds(contours):
+    """
+    Fit ellipses to contours in a contour dataset.
+
+    Parameters
+    ----------
+    contours : xr.Dataset
+        Dataset containing contours with dimensions (time, point_idx, coord)
+
+    Returns
+    -------
+    xr.Dataset
+        Dataset with ellipse parameters for each time point
+    """
+    pos_values = []  # x-center
+    l_values = []  # x-length
+    theta_values = []  # rotation angle
+
+    # Fit ellipse for each time point
+    for t in range(len(contours)):
+        # Get contour for this time point, removing NaN rows
+        contour = contours[t]
+        valid_points = ~np.isnan(contour).all(axis=1)
+        contour = contour[valid_points]
+
+        # Skip if not enough points
+        if len(contour) < 5:
+            pos_values.append([np.nan, np.nan])
+            l_values.append([np.nan, np.nan])
+            theta_values.append(np.nan)
+            continue
+
+        # Fit ellipse
+        model = EllipseModel()
+        success = model.estimate(contour)
+
+        if success:
+            # Unpack parameters: x0, y0, a, b, theta
+            rx, ry, lx, ly, theta = model.params
+
+            pos_values.append([rx, ry])
+            l_values.append([lx, ly])
+            theta_values.append(theta)
+        else:
+            # If fitting fails, add NaNs
+            pos_values.append([np.nan, np.nan])
+            l_values.append([np.nan, np.nan])
+            theta_values.append(np.nan)
+
+    return pos_values, l_values, theta_values
 
 
 def get_contour_evolution(
@@ -240,6 +293,8 @@ def get_contour_evolution(
         if len(contour) > 0:
             contour_data[i, : len(contour), :] = contour
 
+    pos_values, l_values, theta_values = fit_ellipses_to_contour_ds(contour_data)
+
     # Create DataArrays
     contours_da = xr.DataArray(
         contour_data,
@@ -282,6 +337,33 @@ def get_contour_evolution(
         attrs={"description": com_description},
     )
 
+    pos_da = xr.DataArray(
+        pos_values,
+        dims=("time", "coord"),
+        coords={"time": time_coords, "coord": ["r", "z"]},
+        attrs={
+            "description": "Position values (r, z) computed by fitting an ellipse to the contour at each time"
+        },
+    )
+
+    size_da = xr.DataArray(
+        l_values,
+        dims=("time", "coord"),
+        coords={"time": time_coords, "coord": ["r", "z"]},
+        attrs={
+            "description": "Length sizes (lx, ly) computed by fitting an ellipse to the contour at each time"
+        },
+    )
+
+    theta_da = xr.DataArray(
+        theta_values,
+        dims=("time",),
+        coords={"time": time_coords},
+        attrs={
+            "description": "Theta angles computed by fitting an ellipse to the contour at each time"
+        },
+    )
+
     area_da = xr.DataArray(
         areas,
         dims=("time",),
@@ -296,6 +378,9 @@ def get_contour_evolution(
             "length": length_da,
             "convexity_deficiency": convexity_da,
             "center_of_mass": com_da,
+            "position": pos_da,
+            "size": size_da,
+            "theta": theta_da,
             "area": area_da,
         }
     )

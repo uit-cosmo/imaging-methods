@@ -66,6 +66,11 @@ def test_com_and_velocities():
     assert np.abs(ce.center_of_mass.sel(time=6).values[0] - 6) < 0.1
     assert np.abs(np.max(ce.center_of_mass.values[:, 1] - 5)) < 0.1
 
+    assert np.abs(ce.position.sel(time=5).values[0] - 5) < 0.1
+    assert np.abs(ce.position.sel(time=4).values[0] - 4) < 0.1
+    assert np.abs(ce.position.sel(time=6).values[0] - 6) < 0.1
+    assert np.abs(np.max(ce.position.values[:, 1] - 5)) < 0.1
+
     velocities = get_velocity_from_position(ce.center_of_mass)
     vxs = velocities.sel(time=slice(3, 7)).values[:, 0]
     vys = velocities.sel(time=slice(3, 7)).values[:, 1]
