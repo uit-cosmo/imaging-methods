@@ -5,14 +5,9 @@ fppanalysis==0.2.0
 velocity_estimation==1.0.0
 cosmoplots==0.5.0
 numpy~=1.26.4
-xblobs==1.0.2
 blobmodel~=1.1.0
 nptyping~=2.5.0
 scipy~=1.15.1
 pytest~=8.3.4
 scikit-image~=0.25.2
 shapely~=2.1.0
-closedexpressions~=0.1.2
-pandas~=2.2.3
-fonttools~=4.55.8
-experimental_database~=0.0.1
