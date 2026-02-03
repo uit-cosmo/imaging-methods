@@ -18,7 +18,7 @@ Application of the imaging methods on experimental data from Alcator C-Mod. As a
 method on 2DCA data from a high Greenwald fraction Ohmic shot is:
 <td>
 
-<img src="https://github.com/uit-cosmo/phantom/blob/main/presentation/example_contour.gif?raw=true" alt="2DCA" style="max-width: 40%;" />
+<img src="https://github.com/uit-cosmo/phantom/blob/main/figures/example_contour.gif?raw=true" alt="2DCA" style="max-width: 40%;" />
 
 </td>
 
@@ -85,7 +85,7 @@ In order to avoid unphysically big, ellongated or tilted blobs, several penalty 
 
 $E(\ell_x, \ell_y, \theta) = \sum_{x, y} (\varphi(\ell_x, \ell_y, \theta; x, y) - data(x, y))^2 + \varphi(\ell_x, \ell_y, \theta; x, y)^2(P_s + P_\theta \theta^2+P_\epsilon(1-\ell_x/\ell_y)^2)$
 
-<img src="https://github.com/uit-cosmo/imaging-methods/blob/main/presentation/example_fit.png?raw=true" alt="2DCA" style="max-width: 40%;" />
+<img src="https://github.com/uit-cosmo/imaging-methods/blob/main/figures/example_fit.png?raw=true" alt="2DCA" style="max-width: 40%;" />
 
 By convention, lx and ly are defined in such a way that ly is the larger of the two. $\theta \in [0, \pi]$
 
@@ -101,7 +101,7 @@ intersecting the reference pixel. The radial (poloidal) size is estimated as the
 resuling curve. Due to the low spatial resolution interpolation is employed for the estimation of the full width half maximum.
 
 
-<img src="https://github.com/uit-cosmo/imaging-methods/blob/main/presentation/fwhm_example.png?raw=true" alt="2DCA" style="max-width: 40%;" />
+<img src="https://github.com/uit-cosmo/imaging-methods/blob/main/figures/fwhm_example.png?raw=true" alt="2DCA" style="max-width: 40%;" />
 
 # Overview of blob parameters
 
