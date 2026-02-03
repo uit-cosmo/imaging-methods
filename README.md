@@ -13,36 +13,6 @@ I have applied this to APD, Phantom and synthetic blob data. The main method is 
 
 Top level files have been used to analyze different shots and synthetic data generated with blobmodel.
 
-# Density scan
-Application of the imaging methods on experimental data from Alcator C-Mod. As an example, the result of the contouring 
-method on 2DCA data from a high Greenwald fraction Ohmic shot is:
-<td>
-
-<img src="https://github.com/uit-cosmo/phantom/blob/main/figures/example_contour.gif?raw=true" alt="2DCA" style="max-width: 40%;" />
-
-</td>
-
-# Blob parameters
-
-The class BlobParameters contains all the data obtained from different estimation methods. An instance of the class
-contains the data for a given shot and a given pixel. The following data is provided:
-
-- vx_c: contouring
-- vy_c: contouring
-- area_c: contouring
-- vx_2dca_tde: 3TDE on 2DCA output
-- vy_2dca_tde: 3TDE on 2DCA output
-- vx_tde: 3TDE cross-correlation
-- vy_tde: 3TDE cross-correlation
-- lx_f: Ellipse fitting on 2DCA
-- ly_f: Ellipse fitting on 2DCA
-- lr: Full width half maximum on 2DCA
-- lz: Full width half maximum on 2DCA
-- theta_f: Ellipse fitting on 2DCA
-- taud_psd: Power spectral density fitting for two-sided exponential function
-- lambda_psd: Power spectral density fitting for two-sided exponential function
-- number_events: Number of events detected with 2DCA
-
 # Methods
 
 ## Two-dimensional conditional averaging (2DCA)
@@ -68,6 +38,8 @@ and avoid pixel locking, the center of mass signals are filtered with a Hann win
 the pulsating behaviour obtained when the pulse size is of the order of the spatial resolution of the imaging diagnostic
 or smaller. From this, the velocity is computed as the time derivative of the center of mass signal using a centered
 differences method. 
+
+<img src="https://github.com/uit-cosmo/phantom/blob/main/figures/example_contour.gif?raw=true" alt="2DCA" style="max-width: 40%;" />
 
 ## Ellipse fitting
 
