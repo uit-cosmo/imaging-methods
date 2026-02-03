@@ -1,7 +1,7 @@
 from typing import Union, List
 from nptyping import NDArray
 
-from .utils import get_dr, get_dt, smooth_da
+from .utils import get_dt, smooth_da
 from .cond_av import find_events_and_2dca
 from .contours import get_contour_evolution
 from .velocity_estimates import *
@@ -192,7 +192,6 @@ def estimate_velocities_synthetic_ds(ds, method_parameters: MethodParameters):
         )
         vx, vy = pd.vx, pd.vy
     except ValueError:
-        print("LOL")
         vx, vy = np.nan, np.nan
 
     return (

@@ -1,7 +1,5 @@
 import numpy as np
 from scipy.optimize import differential_evolution
-import velocity_estimation as ve
-import warnings
 
 
 def rotated_blob(params, rx, ry, x, y):
@@ -105,116 +103,6 @@ def fit_ellipse(
     if lx > ly:
         return ly, lx, theta + np.pi / 2
     return lx, ly, theta
-
-
-def gaussian_convolve(x, times, s=1.0, kernel_size=None):
-    # If kernel_size not specified, use 6*sigma to capture most of the Gaussian
-    if kernel_size is None:
-        kernel_size = int(6 * s)
-        # Ensure kernel_size is odd
-        if kernel_size % 2 == 0:
-            kernel_size += 1
-
-    center = kernel_size // 2
-    kernel = np.exp(-((np.arange(-center, center + 1) / s) ** 2))
-    kernel = kernel / kernel.sum()
-
-    return times[center:-center], np.convolve(x, kernel, mode="valid")
-
-
-def find_maximum_interpolate(x, y):
-    from scipy.interpolate import InterpolatedUnivariateSpline
-    import warnings
-
-    # Taking the derivative and finding the roots only work if the spline degree is at least 4.
-    spline = InterpolatedUnivariateSpline(x, y, k=4)
-    possible_maxima = spline.derivative().roots()
-    possible_maxima = np.append(
-        possible_maxima, (x[0], x[-1])
-    )  # also check the endpoints of the interval
-    values = spline(possible_maxima)
-
-    max_index = np.argmax(values)
-    max_time = possible_maxima[max_index]
-    if max_time == x[0] or max_time == x[-1]:
-        warnings.warn(
-            "Maximization on interpolation yielded a maximum in the boundary!"
-        )
-
-    return max_time, spline(max_time)
-
-
-def get_maximum_time(e, refx=None, refy=None, gauss_convolve=False):
-    """
-    Given an event e find the time at which the maximum amplitude is achieved. Data is convolved with a gaussian with
-    standard deviation 3.
-    :param e:
-    :return:
-    """
-    if refx is None or refy is None:
-        refx, refy = int(e["refx"].item()), int(e["refy"].item())
-
-    is_in_boundaries = 0 <= refx < e.R.sizes["x"] and 0 <= refy < e.R.sizes["y"]
-    if not is_in_boundaries:
-        return None
-    if gauss_convolve:
-        times, data = gaussian_convolve(e.isel(x=refx, y=refy), e.time, s=3)
-    else:
-        times, data = e.time, e.isel(x=refx, y=refy)
-
-    tau, _ = find_maximum_interpolate(times, data)
-    if tau <= np.min(times) or tau >= np.max(times):
-        warnings.warn(
-            "Time delay found at the window edge, consider running 2DCA with a larger window"
-        )
-    return tau
-
-
-def get_maximum_amplitude(e, x, y):
-    convolved_times, convolved_data = gaussian_convolve(e.isel(x=x, y=y), e.time, s=3)
-    _, amp = find_maximum_interpolate(convolved_times, convolved_data)
-    return amp
-
-
-def get_3tde_velocities(e, refx, refy):
-    taux, tauy = get_delays(e, refx, refy)
-
-    deltax = e.R.isel(x=1, y=0).item() - e.R.isel(x=0, y=0).item()
-    deltay = e.Z.isel(x=0, y=1).item() - e.Z.isel(x=0, y=0).item()
-    return ve.get_2d_velocities_from_time_delays(taux, tauy, deltax, 0, 0, deltay)
-
-
-def get_2tde_velocities(e, refx, refy):
-    taux, tauy = get_delays(e, refx, refy)
-
-    deltax = e.R.isel(x=1, y=0).item() - e.R.isel(x=0, y=0).item()
-    deltay = e.Z.isel(x=0, y=1).item() - e.Z.isel(x=0, y=0).item()
-    vx = np.nan if taux == 0 else deltax / taux
-    vy = np.nan if tauy == 0 else deltay / tauy
-    return vx, vy
-
-
-def get_delays(e, refx, refy):
-    ref_time = get_maximum_time(e, refx, refy)
-    maxtime_right = get_maximum_time(e, refx + 1, refy)
-    maxtime_left = get_maximum_time(e, refx - 1, refy)
-    maxtime_up = get_maximum_time(e, refx, refy + 1)
-    maxtime_down = get_maximum_time(e, refx, refy - 1)
-    taus_horizontal = [
-        (maxtime_right - ref_time) if maxtime_right is not None else None,
-        (ref_time - maxtime_left) if maxtime_left is not None else None,
-    ]
-    taus_horizontal = [t for t in taus_horizontal if t is not None]
-
-    taus_vertical = [
-        (maxtime_up - ref_time) if maxtime_up is not None else None,
-        (ref_time - maxtime_down) if maxtime_down is not None else None,
-    ]
-    taus_vertical = [t for t in taus_vertical if t is not None]
-    return (
-        np.array(taus_horizontal).mean(),
-        np.array(taus_vertical).mean(),
-    )
 
 
 def fit_ellipse_to_event(

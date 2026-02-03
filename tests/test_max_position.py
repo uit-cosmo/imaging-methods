@@ -1,7 +1,4 @@
-from test_utils import *
-from blobmodel import BlobShapeEnum, BlobShapeImpl
-import numpy as np
-import cosmoplots as cp
+from blobmodel import BlobShapeEnum
 from imaging_methods import *
 
 plt.style.use(["cosmoplots.default"])
@@ -45,7 +42,7 @@ def get_synthetic_data(run_norm_radius):
         theta=theta_input,
         bs=bs,
     )
-    ds = im.run_norm_ds(ds, run_norm_radius)
+    ds = run_norm_ds(ds, run_norm_radius)
     return ds
 
 
@@ -53,12 +50,12 @@ ds = get_synthetic_data(1000)
 
 
 def test_synthetic_data():
-    method_parameters = im.get_default_synthetic_method_params()
+    method_parameters = get_default_synthetic_method_params()
 
     tdca_params = method_parameters.two_dca
-    events, average_ds = im.find_events_and_2dca(ds, tdca_params)
+    events, average_ds = find_events_and_2dca(ds, tdca_params)
 
-    position_da = im.get_contour_evolution(
+    position_da = get_contour_evolution(
         average_ds.cond_av,
         method_parameters.contouring.threshold_factor,
         max_displacement_threshold=None,

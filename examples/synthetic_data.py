@@ -69,6 +69,7 @@ fig, ax = plt.subplots(figsize=(5, 5))
 R, Z = average_ds.R.values, average_ds.Z.values
 maxx = average_ds.cond_av.max().item()
 
+
 def animate_2d(i):
     arr = average_ds.cond_av.isel(time=i).values
     im.set_data(arr / maxx)
@@ -83,7 +84,12 @@ def animate_2d(i):
 time = average_ds.time[0]
 tx = ax.set_title(r"$t/\tau_\text{{d}}=\,{:.1f}$".format(time))
 extent = (R[0, 0], R[0, -1], Z[0, 0], Z[-1, 0])
-im = ax.imshow(average_ds.cond_av.isel(time=0).values / maxx, origin="lower", interpolation=None, extent=extent)
+im = ax.imshow(
+    average_ds.cond_av.isel(time=0).values / maxx,
+    origin="lower",
+    interpolation=None,
+    extent=extent,
+)
 line = ax.plot([], [], ls="--", color="black")
 
 ani = animation.FuncAnimation(
