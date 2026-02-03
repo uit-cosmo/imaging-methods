@@ -3,7 +3,6 @@ import numpy as np
 from skimage import measure
 from shapely.geometry import Polygon, Point
 from scipy.spatial import ConvexHull
-from scipy.signal import windows
 from matplotlib.path import Path as MplPath
 
 
