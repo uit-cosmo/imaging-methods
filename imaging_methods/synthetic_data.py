@@ -132,7 +132,7 @@ def get_averaged_velocity(
             average_ds[variable],
             method_parameters.contouring.threshold_factor,
             max_displacement_threshold=None,
-        ).center_of_mass
+        ).centroid
     elif position_method == "max":
         position_da = compute_maximum_trajectory_da(
             average_ds, variable, method="parabolic"

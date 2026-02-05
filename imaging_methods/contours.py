@@ -130,12 +130,11 @@ def get_contour_evolution(
     event,
     threshold_factor=0.5,
     max_displacement_threshold=None,
-    com_method="centroid",
 ):
     """
-    Extract and store the evolution of a single contour, its center of mass, and geometric properties in (r, z) coordinates.
+    Extract and store the evolution of a single contour, its centroid, and geometric properties in (r, z) coordinates.
     The contours are defined at a level given by threshold_factor times the maximum amplitude of the event.
-    Returns None if the maximum frame-to-frame COM displacement exceeds max_displacement_threshold.
+    Returns None if the maximum frame-to-frame displacement exceeds max_displacement_threshold.
 
     Parameters
     ----------
@@ -148,11 +147,6 @@ def get_contour_evolution(
     max_displacement_threshold : float, optional
         Maximum allowed frame-to-frame COM displacement. If exceeded, returns None.
         If None, no filtering is applied. Must be non-negative if provided.
-    com_method : str, optional
-        Method to compute the center of mass. Options:
-        - 'centroid': Geometric centroid of the contour polygon (default).
-        - 'com': Intensity-weighted center of mass inside the contour.
-        - 'global': Intensity-weighted center of mass over the full frame.
 
     Returns
     -------
@@ -161,21 +155,18 @@ def get_contour_evolution(
         - 'contours': DataArray of contours in (r, z) coordinates with dims (time, point_idx, coord).
         - 'length': DataArray of contour lengths with dim (time).
         - 'convexity_deficiency': DataArray of convexity deficiencies with dim (time).
-        - 'center_of_mass': DataArray of contour center of mass in (r, z) coordinates with dims (time, coord).
+        - 'centroid': DataArray of contour center of mass in (r, z) coordinates with dims (time, coord).
         - 'area': DataArray of contour areas with dim (time).
         - 'max_displacement': DataArray of maximum frame-to-frame COM displacement (scalar).
         Returns None if max_displacement > max_displacement_threshold or if fewer than two time points
         with a non-None threshold.
     """
-    if com_method not in ["centroid", "com", "global"]:
-        raise ValueError("com_method must be 'centroid', 'com', or 'global'")
-
     # Extract time coordinate and data
     time_coords = event.time.values
     contours = []
     lengths = []
     convexity_deficiencies = []
-    centers_of_mass = []
+    centroids = []
     areas = []
 
     # Process each time step
@@ -206,7 +197,7 @@ def get_contour_evolution(
         coords = np.array([]).reshape(0, 2)
         length = 0.0
         convexity_deficiency = 0.0
-        com = np.array([np.nan, np.nan])
+        centroid = np.array([np.nan, np.nan])
         area = 0.0
         if len(contour) > 0:
             r_values, z_values = indexes_to_coordinates(
@@ -223,55 +214,25 @@ def get_contour_evolution(
                     (convex_hull.volume - polygon.area) / convex_hull.volume
                 )
                 area = polygon.area
-
-                if com_method == "centroid":
-                    com = np.array([polygon.centroid.x, polygon.centroid.y])
-                elif com_method == "com":
-                    # Compute intensity-weighted CoM inside contour
-                    ny, nx = frame.shape
-                    yy, xx = np.meshgrid(range(ny), range(nx), indexing="ij")
-                    points = np.c_[yy.ravel(), xx.ravel()]  # (ny*nx, 2) [y, x]
-                    path = MplPath(contour, closed=True)
-                    mask_flat = path.contains_points(points)
-                    mask = mask_flat.reshape((ny, nx))
-
-                    weights = frame * mask
-                    total_mass = weights.sum()
-                    if total_mass > 0:
-                        com_r = (weights * event.R.values).sum() / total_mass
-                        com_z = (weights * event.Z.values).sum() / total_mass
-                        com = np.array([com_r, com_z])
-                    else:
-                        com = np.array([np.nan, np.nan])
-                elif com_method == "global":
-                    # Compute intensity-weighted CoM over full frame
-                    weights = frame
-                    total_mass = weights.sum()
-                    if total_mass > 0:
-                        com_r = (weights * event.R.values).sum() / total_mass
-                        com_z = (weights * event.Z.values).sum() / total_mass
-                        com = np.array([com_r, com_z])
-                    else:
-                        com = np.array([np.nan, np.nan])
-
+                centroid = np.array([polygon.centroid.x, polygon.centroid.y])
             except (ValueError, ZeroDivisionError):
                 # Handle invalid polygons or zero convex hull volume
                 length = 0.0
                 convexity_deficiency = 0.0
-                com = np.array([np.nan, np.nan])
+                centroid = np.array([np.nan, np.nan])
                 area = 0.0
 
         contours.append(coords)
         lengths.append(length)
         convexity_deficiencies.append(convexity_deficiency)
-        centers_of_mass.append(com)
+        centroids.append(centroid)
         areas.append(area)
 
     # Compute maximum frame-to-frame displacement
     max_displacement = np.nan
     if len(time_coords) >= 2:
-        com_values = np.array(centers_of_mass)  # Shape: (time, 2)
-        displacements = np.sqrt(np.sum((com_values[1:] - com_values[:-1]) ** 2, axis=1))
+        positions = np.array(centroids)  # Shape: (time, 2)
+        displacements = np.sqrt(np.sum((positions[1:] - positions[:-1]) ** 2, axis=1))
         if np.any(np.isnan(displacements)):
             max_displacement = np.inf
         else:
@@ -323,18 +284,11 @@ def get_contour_evolution(
         },
     )
 
-    if com_method == "centroid":
-        com_description = "Geometric centroid of the contour polygon"
-    elif com_method == "com":
-        com_description = "Intensity-weighted center of mass inside the contour"
-    else:  # global
-        com_description = "Intensity-weighted center of mass over the full frame"
-
-    com_da = xr.DataArray(
-        centers_of_mass,
+    centroid_da = xr.DataArray(
+        centroids,
         dims=("time", "coord"),
         coords={"time": time_coords, "coord": ["r", "z"]},
-        attrs={"description": com_description},
+        attrs={"description": "Geometric centroid of the contour polygon"},
     )
 
     pos_da = xr.DataArray(
@@ -377,7 +331,7 @@ def get_contour_evolution(
             "contours": contours_da,
             "length": length_da,
             "convexity_deficiency": convexity_da,
-            "center_of_mass": com_da,
+            "centroid": centroid_da,
             "position": pos_da,
             "size": size_da,
             "theta": theta_da,

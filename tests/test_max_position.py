@@ -59,7 +59,7 @@ def test_synthetic_data():
         average_ds.cond_av,
         method_parameters.contouring.threshold_factor,
         max_displacement_threshold=None,
-    ).center_of_mass
+    ).centroid
 
     R, Z = (
         average_ds.R.isel(x=tdca_params.refx, y=tdca_params.refy).item(),
