@@ -113,6 +113,9 @@ def fit_ellipses_to_contour_ds(contours):
         if success:
             # Unpack parameters: x0, y0, a, b, theta
             rx, ry, lx, ly, theta = model.params
+            if lx > ly:
+                lx, ly = ly, lx
+                theta = theta - np.pi/4 if theta > np.pi/4 else theta + np.pi/4
 
             pos_values.append([rx, ry])
             l_values.append([lx, ly])
