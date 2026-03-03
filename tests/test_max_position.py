@@ -2,9 +2,9 @@ from blobmodel import BlobShapeEnum
 from imaging_methods import *
 
 plt.style.use(["cosmoplots.default"])
-plt.rcParams["text.latex.preamble"] = (
-    r"\usepackage{amsmath} \usepackage{mathptmx} \usepackage{amssymb} "
-)
+plt.rcParams[
+    "text.latex.preamble"
+] = r"\usepackage{amsmath} \usepackage{mathptmx} \usepackage{amssymb} "
 
 
 MAKE_PLOTS = True

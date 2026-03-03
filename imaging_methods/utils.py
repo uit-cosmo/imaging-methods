@@ -214,3 +214,30 @@ def get_default_apd_method_params() -> MethodParameters:
     )
 
     return method_parameters
+
+
+class MaskedImagingDataInterface(ve.ImagingDataInterface):
+    """Implementation of ImagingDataInterface for xarray datasets given by the
+    code at https://github.com/sajidah-ahmed/cmod_functions."""
+
+    def __init__(self, ds: xr.Dataset, mask: xr.DataArray = None):
+        self.ds = ds
+        self.mask = mask
+
+    def get_shape(self):
+        return self.ds.sizes["x"], self.ds.sizes["y"]
+
+    def get_signal(self, x: int, y: int):
+        return self.ds.isel(x=x, y=y)["frames"].values
+
+    def get_dt(self) -> float:
+        times = self.ds["time"]
+        return float(times[1].values - times[0].values)
+
+    def get_position(self, x: int, y: int):
+        return self.ds.R.isel(x=x, y=y).values, self.ds.Z.isel(x=x, y=y).values
+
+    def is_pixel_dead(self, x: int, y: int) -> bool:
+        if self.mask is None:
+            return False
+        return self.mask.isel(x=x, y=y).item()
