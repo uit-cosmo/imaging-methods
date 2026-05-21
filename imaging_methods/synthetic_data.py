@@ -74,6 +74,7 @@ def make_2d_realization(
     bs=BlobShapeImpl(),
     blob_getter="deterministic",
     periodic_y=True,
+    t_drain=1e10,
 ):
     if blob_getter == "deterministic":
         blobs = [
@@ -106,7 +107,7 @@ def make_2d_realization(
         num_blobs=num_blobs,
         blob_shape=bs,
         periodic_y=periodic_y,  # Set to true so that high vertical velocities makes sense
-        t_drain=1e10,
+        t_drain=t_drain,
         blob_factory=bf,
         verbose=True,
         t_init=0,
