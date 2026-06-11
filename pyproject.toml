@@ -24,7 +24,6 @@ dependencies = [
     "velocity-estimation",
     "shapely",
     "superposed-pulses",
-    "experimental_database",
 ]
 
 [tool.setuptools]
