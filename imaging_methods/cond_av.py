@@ -3,6 +3,8 @@ import xarray as xr
 import scipy.signal as ssi
 from .method_parameters import TwoDcaParams
 
+__all__ = ["find_events_and_2dca"]
+
 
 def find_events_and_2dca(
     ds,
@@ -211,12 +213,9 @@ def find_events_and_2dca(
 
     # Combine all events along new dimension and compute mean
     if len(processed) != 0:
-        conditional_average = xr.concat(processed, dim="event").mean(dim="event").frames
-        mean2 = (
-            xr.apply_ufunc(lambda x: x**2, xr.concat(processed, dim="event"))
-            .mean(dim="event")
-            .frames
-        )
+        stacked = xr.concat(processed, dim="event")
+        conditional_average = stacked.mean(dim="event").frames
+        mean2 = (stacked.frames**2).mean(dim="event")
         cond_av_ds = xr.Dataset(
             {
                 "cond_av": conditional_average,

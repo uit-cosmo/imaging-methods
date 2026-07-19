@@ -1,7 +1,15 @@
 import warnings
 
 import numpy as np
-from scipy.optimize import differential_evolution
+from scipy.optimize import minimize
+
+__all__ = [
+    "rotated_blob",
+    "ellipse_parameters",
+    "fit_ellipse",
+    "fit_ellipse_to_event",
+    "estimate_fwhm_sizes",
+]
 
 
 def rotated_blob(params, rx, ry, x, y):
@@ -56,6 +64,7 @@ def fit_ellipse(
     size_penalty_factor=0,
     aspect_ratio_penalty_factor=0,
     theta_penalty_factor=0,
+    size_max=None,
 ):
     """
     Fit an ellipse to imaging data at pixel (rx, ry) using a Gaussian model. The function tries to minimize:
@@ -65,12 +74,17 @@ def fit_ellipse(
 
     where the mathematical expression of blob is given in the docstring of `rotated_blob`.
 
+    The objective is smooth in its three parameters, so it is minimized with local
+    Nelder-Mead searches from a few starting sizes and tilt angles.
+
     Parameters:
         data (xr.Dataset): Dataset with 'frames' (2D, shape: ny, nx), 'R', 'Z' (2D coordinate grids).
         rx, ry (int): Pixel indices for the ellipse center.
         size_penalty_factor (float): Penalty factor for blob size.
         aspect_ratio_penalty_factor (float): Penalty factor for aspect ratio deviation.
         theta_penalty_factor (float): Penalty factor for theta deviation.
+        size_max (float): Upper bound for lx, ly, in the units of R and Z.
+            If None, the full extent of the R/Z grids is used.
 
     Returns:
         - lx, ly, theta: Fitted semi-major/minor axes and rotation angle.
@@ -87,20 +101,30 @@ def fit_ellipse(
         )
         return np.sum((blob - data.values) ** 2) + penalty + aspect_ratio_penalty
 
+    if size_max is None:
+        size_max = max(
+            data.R.values.max() - data.R.values.min(),
+            data.Z.values.max() - data.Z.values.min(),
+        )
+
     bounds = [
-        (1e-10, 5),  # lx
-        (1e-10, 5),  # ly
-        (0, np.pi / 2),  # theta
+        (1e-10 * size_max, size_max),  # lx
+        (1e-10 * size_max, size_max),  # ly
+        (0, np.pi / 2),  # theta; the lx > ly swap below extends this to (0, pi)
     ]
 
-    result = differential_evolution(
-        objective_function,
-        bounds,
-        seed=42,
-        popsize=15,  # Optional: population size multiplier
-        maxiter=1000,  # Optional: maximum number of iterations
-    )
-    lx, ly, theta = result.x
+    best = None
+    for l0 in (0.1 * size_max, 0.3 * size_max):
+        for theta0 in (np.pi / 8, 3 * np.pi / 8):
+            result = minimize(
+                objective_function,
+                x0=[l0, l0, theta0],
+                method="Nelder-Mead",
+                bounds=bounds,
+            )
+            if best is None or result.fun < best.fun:
+                best = result
+    lx, ly, theta = best.x
 
     if lx > ly:
         return ly, lx, theta + np.pi / 2
@@ -114,6 +138,7 @@ def fit_ellipse_to_event(
     size_penalty_factor=5,
     aspect_ratio_penalty_factor=0.1,
     theta_penalty_factor=0.1,
+    size_max=None,
 ):
     """
     Fits an ellipse to the spatial data of an event at a specific reference point (refx, refy) and time slice (time=0).
@@ -135,6 +160,8 @@ def fit_ellipse_to_event(
         Penalty factor for ellipse aspect ratio, passed to the fit_ellipse function. Default is 0.1.
     theta_penalty_factor : float, optional
         Penalty factor for ellipse orientation (theta), passed to the fit_ellipse function. Default is 0.1.
+    size_max : float, optional
+        Upper bound for lx, ly in units of R and Z, passed to fit_ellipse. If None, derived from the grid extent.
 
     Returns
     -------
@@ -154,6 +181,7 @@ def fit_ellipse_to_event(
         size_penalty_factor=size_penalty_factor,
         aspect_ratio_penalty_factor=aspect_ratio_penalty_factor,
         theta_penalty_factor=theta_penalty_factor,
+        size_max=size_max,
     )
     return lx, ly, theta
 

@@ -1,6 +1,9 @@
-from blobmodel import BlobShapeEnum
+import numpy as np
+from blobmodel import BlobShapeEnum, BlobShapeImpl, Model
 import pytest
 from imaging_methods import *
+
+np.random.seed(42)
 
 Lx = 10
 Ly = 10

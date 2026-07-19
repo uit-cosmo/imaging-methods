@@ -1,5 +1,15 @@
 from dataclasses import dataclass, field
 
+__all__ = [
+    "PreprocessingParams",
+    "TwoDcaParams",
+    "GaussFitParams",
+    "ContouringParams",
+    "TaudEstimationParams",
+    "PositionFilterParams",
+    "MethodParameters",
+]
+
 
 @dataclass
 class PreprocessingParams:
@@ -28,9 +38,16 @@ class TwoDcaParams:
 
 @dataclass
 class GaussFitParams:
+    """
+    size_penalty, aspect_penalty, tilt_penalty: Penalty factors for fit_ellipse.
+    size_max: Upper bound for the fitted sizes lx, ly, in the units of the R/Z
+        grids. If None, the full grid extent is used.
+    """
+
     size_penalty: float = 5
     aspect_penalty: float = 0.2
     tilt_penalty: float = 0.2
+    size_max: float = None
 
 
 @dataclass

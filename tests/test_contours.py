@@ -1,5 +1,9 @@
-from blobmodel import BlobShapeEnum
+import numpy as np
+import xarray as xr
+from blobmodel import BlobShapeEnum, BlobShapeImpl, Model
 from imaging_methods import *
+
+np.random.seed(42)
 
 Lx = 10
 Ly = 10

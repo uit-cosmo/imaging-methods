@@ -1,7 +1,21 @@
-import xarray as xr
 import numpy as np
-from .utils import restrict_to_largest_true_subarray, get_dr
-from .method_parameters import PositionFilterParams
+import xarray as xr
+import velocity_estimation as ve
+
+from .cond_av import find_events_and_2dca
+from .contours import get_contour_evolution
+from .maximum_trajectory import compute_maximum_trajectory_da
+from .method_parameters import MethodParameters, PositionFilterParams
+from .utils import get_dr, get_dt, restrict_to_largest_true_subarray, smooth_da
+
+__all__ = [
+    "get_velocity_from_position",
+    "get_averaged_velocity_from_position",
+    "is_position_near_reference",
+    "get_combined_mask",
+    "get_averaged_velocity",
+    "estimate_velocities_synthetic_ds",
+]
 
 
 def get_velocity_from_position(position_da):
@@ -108,3 +122,87 @@ def get_combined_mask(
 
     # Restrict to the single longest contiguous block of True values
     return restrict_to_largest_true_subarray(mask)
+
+
+def get_averaged_velocity(
+    average_ds, variable, method_parameters, position_method="contouring"
+):
+    if position_method == "contouring":
+        position_da = get_contour_evolution(
+            average_ds[variable],
+            method_parameters.contouring.threshold_factor,
+            max_displacement_threshold=None,
+        ).centroid
+    elif position_method == "max":
+        position_da = compute_maximum_trajectory_da(
+            average_ds, variable, method="parabolic"
+        )
+    else:
+        raise NotImplementedError
+
+    position_da, start, end = smooth_da(
+        position_da, method_parameters.position_filter, return_start_end=True
+    )
+
+    mask = get_combined_mask(
+        average_ds.isel(time=slice(start, end)),
+        variable,
+        position_da,
+        method_parameters.position_filter,
+    )
+
+    v, w = get_averaged_velocity_from_position(
+        position_da=position_da,
+        mask=mask,
+    )
+    return v, w
+
+
+def estimate_velocities_synthetic_ds(ds, method_parameters: MethodParameters):
+    """
+    Estimates blob velocities from a given synthetic data dataset and parameters given in method_parameters.
+    """
+    dt = get_dt(ds)
+
+    events, average_ds = find_events_and_2dca(ds, method_parameters.two_dca)
+
+    v_2dca, w_2dca = get_averaged_velocity(
+        average_ds, "cond_av", method_parameters, position_method="contouring"
+    )
+    v_2dcc, w_2dcc = get_averaged_velocity(
+        average_ds, "cross_corr", method_parameters, position_method="contouring"
+    )
+
+    v_2dca_max, w_2dca_max = get_averaged_velocity(
+        average_ds, "cond_av", method_parameters, position_method="max"
+    )
+    v_2dcc_max, w_2dcc_max = get_averaged_velocity(
+        average_ds, "cross_corr", method_parameters, position_method="max"
+    )
+
+    eo = ve.EstimationOptions()
+    eo.cc_options.cc_window = method_parameters.two_dca.window * dt
+    eo.cc_options.minimum_cc_value = 0
+    eo.cc_options.running_mean = False
+    try:
+        pd = ve.estimate_velocities_for_pixel(
+            method_parameters.two_dca.refx,
+            method_parameters.two_dca.refy,
+            ve.CModImagingDataInterface(ds),
+        )
+        vx, vy = pd.vx, pd.vy
+    except ValueError:
+        vx, vy = np.nan, np.nan
+
+    return (
+        v_2dca,
+        w_2dca,
+        v_2dcc,
+        w_2dcc,
+        v_2dca_max,
+        w_2dca_max,
+        v_2dcc_max,
+        w_2dcc_max,
+        vx,
+        vy,
+    )

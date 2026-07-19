@@ -1,13 +1,18 @@
 import fppanalysis as fppa
 import xarray as xr
 import numpy as np
-from scipy.interpolate import LinearNDInterpolator, NearestNDInterpolator
+from scipy.interpolate import LinearNDInterpolator
+from scipy.spatial import Delaunay, cKDTree
+
+__all__ = ["interpolate_nans_3d", "run_norm_ds"]
 
 
 def interpolate_nans_3d(ds, mask=None):
     """
-    Replace NaN values in a 3D xarray dataset with linear interpolation along spatial dimensions
-    using LinearNDInterpolator.
+    Replace NaN values in a 3D xarray dataset with linear interpolation along spatial dimensions.
+    The NaN mask is taken from the first time step and assumed to hold for all times
+    (dead pixels are dead for the whole record). The input dataset is not modified.
+    The spatial Delaunay triangulation is built once and reused for all time steps.
 
     Parameters:
         ds (xr.Dataset): Input dataset with 'frames' variable (dims: y, x, time).
@@ -15,7 +20,7 @@ def interpolate_nans_3d(ds, mask=None):
         all nan pixels OR all pixels in the mask are interpolated.
 
     Returns:
-        xr.Dataset: Dataset with NaNs interpolated.
+        xr.Dataset: New dataset with NaNs interpolated.
     """
     # Input validation
     if "frames" not in ds or ds["frames"].dims != ("y", "x", "time"):
@@ -23,17 +28,18 @@ def interpolate_nans_3d(ds, mask=None):
     if ds["frames"].isnull().all():
         raise ValueError("All frame values are NaN")
 
-    frames = ds["frames"].values  # Shape: (ny, nx, nt)
+    ds = ds.copy()
+    frames = ds["frames"].values.copy()  # Shape: (ny, nx, nt)
     ny, nx, nt = frames.shape
 
-    # Get the NaN mask (constant across time)
+    # Get the NaN mask (assumed constant across time, taken at t=0)
     nan_mask = np.isnan(frames[:, :, 0])
     if mask is not None:
         nan_mask = nan_mask | mask
     if nan_mask.all():
         raise ValueError("All pixels are NaN in the first time step")
     if not nan_mask.any():
-        return ds.copy()
+        return ds
 
     # Coordinate setup for all points
     y_indices, x_indices = np.indices((ny, nx))
@@ -42,27 +48,23 @@ def interpolate_nans_3d(ds, mask=None):
     valid_points = points[valid_mask.ravel()]  # Coordinates of non-NaN points
     nan_points = points[nan_mask.ravel()]  # Coordinates of NaN points
 
+    # Build the triangulation once; the interpolators only swap values per frame
+    triangulation = Delaunay(valid_points)
+    # Points outside the convex hull fall back to their nearest valid neighbor
+    outside = triangulation.find_simplex(nan_points) < 0
+    if outside.any():
+        _, nearest_idx = cKDTree(valid_points).query(nan_points[outside])
+
     # Process each time step
     for t in range(nt):
-        frame = frames[:, :, t].copy()
-        valid_values = frame[valid_mask]  # Values at non-NaN points
-
-        # Set up LinearNDInterpolator with valid points and values
+        valid_values = frames[:, :, t][valid_mask]  # Values at non-NaN points
         interpolator = LinearNDInterpolator(
-            valid_points, valid_values, fill_value=np.nan
+            triangulation, valid_values, fill_value=np.nan
         )
         interpolated_values = interpolator(nan_points)
-
-        # Fallback to nearest interpolation for any remaining NaNs
-        if np.any(np.isnan(interpolated_values)):
-            nearest_interp = NearestNDInterpolator(valid_points, valid_values)
-            interpolated_values[np.isnan(interpolated_values)] = nearest_interp(
-                nan_points[np.isnan(interpolated_values)]
-            )
-
-        # Replace NaN values in the frame
-        frame[nan_mask] = interpolated_values
-        frames[:, :, t] = frame
+        if outside.any():
+            interpolated_values[outside] = valid_values[nearest_idx]
+        frames[:, :, t][nan_mask] = interpolated_values
 
     # Update the dataset with interpolated frames
     ds["frames"] = xr.DataArray(
@@ -90,6 +92,8 @@ def run_norm_ds(ds, radius):
     if not isinstance(radius, int) or radius < 0:
         raise ValueError("radius must be a non-negative integer")
 
+    # apply_ufunc(vectorize=True) loops over pixels in Python; acceptable for
+    # current grid sizes, revisit if it becomes a bottleneck.
     normalization = xr.apply_ufunc(
         fppa.run_norm,
         ds["frames"],

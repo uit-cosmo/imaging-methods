@@ -1,6 +1,13 @@
 import numpy as np
 import xarray as xr
 
+__all__ = [
+    "get_physical_pos",
+    "compute_maximum_trajectory_da",
+    "find_maximum_for_frame",
+    "parabolic_2d_interp",
+]
+
 
 def get_physical_pos(
     da: xr.DataArray,

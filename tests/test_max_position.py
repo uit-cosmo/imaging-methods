@@ -1,5 +1,9 @@
-from blobmodel import BlobShapeEnum
+import numpy as np
+import matplotlib.pyplot as plt
+from blobmodel import BlobShapeEnum, BlobShapeImpl
 from imaging_methods import *
+
+np.random.seed(42)
 
 plt.style.use(["cosmoplots.default"])
 plt.rcParams["text.latex.preamble"] = (

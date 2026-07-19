@@ -7,6 +7,8 @@ from enum import Enum
 import fppanalysis as fppa
 from .utils import autocorrelation, power_spectral_density
 
+__all__ = ["Analytics", "SecondOrderStatistic", "DurationTimeEstimator"]
+
 
 class Analytics(Enum):
     OneSided = 1

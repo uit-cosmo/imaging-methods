@@ -1,11 +1,18 @@
 import xarray as xr
 import numpy as np
 from skimage import measure
-from shapely.geometry import Polygon, Point
+from shapely import contains_xy
+from shapely.geometry import Polygon
 from scipy.spatial import ConvexHull
 from scipy.ndimage import map_coordinates
-from matplotlib.path import Path as MplPath
 from skimage.measure import EllipseModel
+
+__all__ = [
+    "compute_contour_mass",
+    "indexes_to_coordinates",
+    "fit_ellipses_to_contour_ds",
+    "get_contour_evolution",
+]
 
 
 def compute_contour_mass(contour, frame, R, Z):
@@ -47,18 +54,8 @@ def compute_contour_mass(contour, frame, R, Z):
     except ValueError:
         return 0.0
 
-    # Create grid of (r, z) points from R, Z
-    rows, cols = frame.shape
-    r_grid, z_grid = R, Z  # Assume R, Z are 2D arrays
-    points = np.vstack((r_grid.ravel(), z_grid.ravel())).T  # Shape: (rows*cols, 2)
-
-    # Check which points are inside the polygon
-    mask = np.zeros(len(points), dtype=bool)
-    for i, (r, z) in enumerate(points):
-        mask[i] = polygon.contains(Point(r, z))
-
-    # Reshape mask to 2D
-    mask_2d = mask.reshape(rows, cols)
+    # Check which grid points are inside the polygon (vectorized)
+    mask_2d = contains_xy(polygon, R, Z)
 
     # Sum intensity values within the mask
     mass = np.sum(frame[mask_2d])
