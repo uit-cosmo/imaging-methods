@@ -3,6 +3,7 @@ import numpy as np
 from skimage import measure
 from shapely.geometry import Polygon, Point
 from scipy.spatial import ConvexHull
+from scipy.ndimage import map_coordinates
 from matplotlib.path import Path as MplPath
 from skimage.measure import EllipseModel
 
@@ -66,11 +67,16 @@ def compute_contour_mass(contour, frame, R, Z):
 
 
 def indexes_to_coordinates(R, Z, indexes):
-    """Convert contour indices to (r, z) coordinates using R, Z grids."""
-    dx = R[0, 1] - R[0, 0]
-    dy = Z[1, 0] - Z[0, 0]
-    r_values = np.min(R) + indexes[:, 1] * dx
-    z_values = np.min(Z) + indexes[:, 0] * dy
+    """Convert fractional (row, col) contour indices to (r, z) coordinates by bilinear
+    interpolation of the R, Z grids. Supports non-uniform grids (e.g. detectors with
+    gaps between quadrants); on a uniform grid this reduces to the linear map
+    min + index * spacing. NaN index rows yield NaN coordinates."""
+    rows, cols = indexes[:, 0], indexes[:, 1]
+    valid = np.isfinite(rows) & np.isfinite(cols)
+    r_values = np.full(rows.shape, np.nan)
+    z_values = np.full(rows.shape, np.nan)
+    r_values[valid] = map_coordinates(R, [rows[valid], cols[valid]], order=1, mode="nearest")
+    z_values[valid] = map_coordinates(Z, [rows[valid], cols[valid]], order=1, mode="nearest")
     return r_values, z_values
 
 
