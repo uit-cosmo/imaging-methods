@@ -1,6 +1,6 @@
 import numpy as np
 from scipy import signal
-from scipy.optimize import minimize, differential_evolution
+from scipy.optimize import differential_evolution
 import matplotlib.pyplot as plt
 import warnings
 from enum import Enum
@@ -22,8 +22,6 @@ analytical_expressions = {
     SecondOrderStatistic.ACF: autocorrelation,
     SecondOrderStatistic.PSD: power_spectral_density,
 }
-
-second_order_statistic = {SecondOrderStatistic.ACF: 1}
 
 
 class DurationTimeEstimator:
@@ -90,29 +88,17 @@ class DurationTimeEstimator:
         if self.analytics == Analytics.OneSided:
             if bounds is None:
                 bounds = [(0.05 * dt, len(data_series) * dt)]
-            x0 = [np.sqrt(len(data_series)) * dt]  # Geometrical mean of bounds
         elif self.analytics == Analytics.TwoSided:
             if bounds is None:
                 bounds = [(0.05 * dt, len(data_series) * dt), (0, 1e3)]
-            x0 = [np.sqrt(len(data_series)) * dt, 1]  # Geometrical mean of bounds
 
-        use_minimize = False
-        if use_minimize:
-            result = minimize(
-                lambda params: self._obj_fun(params, base, values),
-                x0=x0,
-                method="Nelder-Mead",
-                bounds=bounds,
-                options={"maxiter": 1000},
-            )
-        else:
-            result = differential_evolution(
-                lambda params: self._obj_fun(params, base, values),
-                bounds=bounds,
-                seed=42,  # For reproducibility
-                popsize=100,  # Population size multiplier
-                maxiter=1500,  # Maximum iterations
-            )
+        result = differential_evolution(
+            lambda params: self._obj_fun(params, base, values),
+            bounds=bounds,
+            seed=42,  # For reproducibility
+            popsize=100,  # Population size multiplier
+            maxiter=1500,  # Maximum iterations
+        )
 
         # Check optimization convergence
         if not result.success:
@@ -146,7 +132,7 @@ class DurationTimeEstimator:
         )
 
         line = ax.plot(base, values)
-        label = (rf"$\tau_d = {taud:.2g}\, \lambda = {fitted_lambda:.2g}$",)
+        label = rf"$\tau_d = {taud:.2g}\, \lambda = {fitted_lambda:.2g}$"
         analytical = self._analytical_expression([taud, fitted_lambda], base)
         ax.plot(
             base,
@@ -221,12 +207,3 @@ class DurationTimeEstimator:
         else:
             analytical = self._analytical_expression(params, base)
         return np.sum((analytical - expected) ** 2)
-
-    def _validate_input(self, data_series, dt, nperseg):
-        data_series = np.asarray(data_series)
-        if data_series.ndim != 1 or len(data_series) < 2:
-            raise ValueError("data_series must be a 1D array with at least 2 points")
-        elif dt <= 0:
-            raise ValueError("dt must be positive")
-        elif nperseg > len(data_series):
-            raise ValueError("nperseg cannot exceed data length")

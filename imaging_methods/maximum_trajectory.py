@@ -48,8 +48,8 @@ def compute_maximum_trajectory_da(
     average_ds : xr.Dataset
         Output from `find_events_and_2dca` containing `cond_av` (time, x, y),
         and fields `R` and `Z` for physical coordinates (dims: ('x',), ('y',), or ('x', 'y')).
-    method : {'parabolic', "fit"}, optional
-        Sub-pixel interpolation method. Only 'parabolic' is currently supported.
+    method : {'parabolic'}, optional
+        Sub-pixel interpolation method. Only 'parabolic' is supported.
     min_intensity : float, optional
         Frames with max intensity below this are set to NaN.
 
@@ -128,8 +128,6 @@ def find_maximum_for_frame(
 ):
     if method == "parabolic":
         ind_x, ind_y = parabolic_2d_interp(frame_da, min_intensity)
-    elif method == "fit":
-        ind_x, ind_y = parabolic_2d_fit(frame_da, 3, min_intensity)
     else:
         raise ValueError("Unsupported method {}".format(method))
 
@@ -188,65 +186,4 @@ def parabolic_2d_interp(
     # The sub-pixel shift can never legitimately exceed half a pixel
     sub_x = x_idx + float(np.clip(delta_x, -0.5, 0.5))
     sub_y = y_idx + float(np.clip(delta_y, -0.5, 0.5))
-    return sub_x, sub_y
-
-
-def parabolic_2d_fit(
-    frame_da: xr.DataArray, neighborhood_size: int = 5, min_intensity=0
-) -> tuple[float, float]:
-    """Return sub-pixel (R, Z) of maximum using 2D quadratic fit in index space."""
-    # Find discrete maximum position
-    print("I think this method doesn't work as intended!!! TODO: investigate or remove")
-    flat_argmax = frame_da.values.argmax()
-    y_idx, x_idx = np.unravel_index(
-        flat_argmax, (frame_da.sizes["y"], frame_da.sizes["x"])
-    )
-    if neighborhood_size == 0:
-        return x_idx, y_idx
-    val_center = float(frame_da.isel(x=x_idx, y=y_idx).values)
-    if val_center < min_intensity:
-        return np.nan, np.nan
-    nx = frame_da.sizes["x"]
-    ny = frame_da.sizes["y"]
-    # Edge case: max on boundary → return discrete position
-    if not (
-        neighborhood_size // 2 <= x_idx < nx - neighborhood_size // 2
-        and neighborhood_size // 2 <= y_idx < ny - neighborhood_size // 2
-    ):
-        return parabolic_2d_fit(frame_da, neighborhood_size - 2, min_intensity)
-    # Extract neighborhood
-    half_size = neighborhood_size // 2
-    nb_da = frame_da.isel(
-        x=slice(x_idx - half_size, x_idx + half_size + 1),
-        y=slice(y_idx - half_size, y_idx + half_size + 1),
-    )
-    # Create coordinate grid
-    x = np.arange(-half_size, half_size + 1)
-    y = np.arange(-half_size, half_size + 1)
-    x_grid, y_grid = np.meshgrid(x, y)
-    x_flat = x_grid.ravel()
-    y_flat = y_grid.ravel()
-    z_flat = nb_da.values.ravel()
-    # Fit 2D quadratic surface: f(x, y) = a0 + a1*x + a2*y + a3*x^2 + a4*x*y + a5*y^2
-    A = np.vstack(
-        [
-            np.ones_like(x_flat),  # a0
-            x_flat,  # a1
-            y_flat,  # a2
-            x_flat**2,  # a3
-            x_flat * y_flat,  # a4
-            y_flat**2,  # a5
-        ]
-    ).T
-    coeffs, _, _, _ = np.linalg.lstsq(A, z_flat, rcond=None)
-    # Extract coefficients
-    a0, a1, a2, a3, a4, a5 = coeffs
-    # Solve for critical point (subpixel maximum)
-    denom = 4 * a3 * a5 - a4**2
-    if denom == 0:
-        return x_idx, y_idx  # Degenerate case
-    delta_x = (a4 * a2 - 2 * a5 * a1) / denom
-    delta_y = (a4 * a1 - 2 * a3 * a2) / denom
-    sub_x = x_idx + delta_x
-    sub_y = y_idx + delta_y
     return sub_x, sub_y

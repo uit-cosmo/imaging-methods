@@ -28,7 +28,6 @@ def find_events_and_2dca(
             Each dataset contains:
                 - Data variables:
                     - frames: Array of shape (time, x, y) containing the data for the event window.
-                - Attributes:
                     - refx (int): X index of the reference pixel.
                     - refy (int): Y index of the reference pixel.
                     - event_id (int): Unique identifier for the event.
@@ -44,13 +43,12 @@ def find_events_and_2dca(
                     - cond_repr: Array of shape (time, x, y) representing the conditional representativeness,
                         calculated as cond_av^2 / mean2, where mean2 is the mean of squared event windows.
                     - cross_corr: Array of shape (time, x, y) with the estimated two-dimensional cross-correlation.
-                - Coordinates:
-                    - time: Relative time coordinates centered on the peak, matching the events' time coordinates.
-                    - x, y: Spatial coordinates inherited from the input dataset.
-                - Attributes:
                     - refx (int): X index of the reference pixel.
                     - refy (int): Y index of the reference pixel.
                     - number_events (int): The total number of valid events included in the average.
+                - Coordinates:
+                    - time: Relative time coordinates centered on the peak, matching the events' time coordinates.
+                    - x, y: Spatial coordinates inherited from the input dataset.
             If no valid events are found, returns an empty xarray.Dataset.
     """
     window_size = params.window
@@ -206,6 +204,8 @@ def find_events_and_2dca(
         win = win.assign_coords(time=rel_times)
         win["event_id"] = event_id
         win["abs_time"] = abs_time
+        win["refx"] = params.refx
+        win["refy"] = params.refy
         event_id += 1
         processed.append(win)
 

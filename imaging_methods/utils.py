@@ -13,7 +13,7 @@ class PhantomDataInterface(ve.ImagingDataInterface):
         self.ds = ds
 
     def get_shape(self):
-        return self.ds.dims["x"], self.ds.dims["y"]
+        return self.ds.sizes["x"], self.ds.sizes["y"]
 
     def get_signal(self, x: int, y: int):
         return self.ds.isel(x=x, y=y)["frames"].values
@@ -36,7 +36,14 @@ def get_dt(ds):
 
 
 def get_dr(ds):
-    return ds.R.isel(x=1, y=0).item() - ds.R.isel(x=0, y=0).item()
+    """Mean radial (x) pixel spacing. On non-uniform grids (e.g. detectors with
+    gaps between quadrants) this is the mean spacing, not a local pixel size."""
+    return float(ds.R.diff("x").mean())
+
+
+def get_dz(ds):
+    """Mean vertical (y) pixel spacing, see get_dr."""
+    return float(ds.Z.diff("y").mean())
 
 
 def autocorrelation(times, taud, lam):
@@ -138,8 +145,10 @@ def smooth_da(
 ):
     """
     Smooth a dataarray with a time coordinate with a filter with settings given by pos_filter. The nan values of the
-    dataarray are first interpolated. If return_start_end is True, it returns the time coordinate indexes were the
-    resulting dataarray is valid.
+    dataarray are first interpolated (linear, extrapolating at the ends). If return_start_end is True, it returns the
+    time coordinate indexes were the resulting dataarray is valid.
+    The result carries a boolean "valid" coordinate along time, False at times where the input was NaN: there the
+    output is interpolated/extrapolated data, which can place track points far outside the field of view.
     :param da: DataArray to be smoothed
     :param pos_filter: Filter settings
     :param return_start_end: If return_start_end is True, it returns the time coordinate indexes were the
@@ -178,10 +187,15 @@ def smooth_da(
 
     smoothed = convolve(values_interp, window[:, np.newaxis], mode="valid")
 
+    valid = np.isfinite(da.values).all(axis=1)[start:end]
     result = xr.DataArray(
         smoothed,
         dims=("time", "coord"),
-        coords={"time": da.time[start:end], "coord": ["r", "z"]},
+        coords={
+            "time": da.time[start:end],
+            "coord": ["r", "z"],
+            "valid": ("time", valid),
+        },
     )
     if return_start_end:
         return result, start, end

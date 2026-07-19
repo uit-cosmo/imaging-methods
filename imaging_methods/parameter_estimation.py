@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 from scipy.optimize import differential_evolution
 
@@ -187,6 +189,10 @@ def estimate_fwhm_sizes(average_ds):
         Position of the half-maximum on the positive poloidal side (≥ 0).
     zn_fwhm : float
         Position of the half-maximum on the negative poloidal side (≤ 0).
+
+    Any of the four values is NaN (with a warning) if the profile increases
+    immediately away from the reference pixel or the interpolated position has
+    the wrong sign.
     """
     refx, refy = average_ds["refx"].item(), average_ds["refy"].item()
     poloidal_var = average_ds.cond_av.isel(x=refx).sel(time=0).values
@@ -197,7 +203,7 @@ def estimate_fwhm_sizes(average_ds):
     radial_pos = average_ds.R.isel(y=refy).values - r_ref
     ref_val = poloidal_var[refy]
 
-    def get_last_monotounus_idx(x):
+    def get_last_monotonic_idx(x):
         index = 0
         while index + 1 < len(x):
             if x[index + 1] > x[index]:
@@ -205,21 +211,38 @@ def estimate_fwhm_sizes(average_ds):
             index = index + 1
         return index
 
-    def get_fwhm(values, positions):
-        idx = get_last_monotounus_idx(values)
+    def get_fwhm(values, positions, name):
+        idx = get_last_monotonic_idx(values)
         if idx == 0:
-            return 0
-        return np.interp(ref_val / 2, values[:idx][::-1], positions[:idx][::-1])
+            warnings.warn(
+                "estimate_fwhm_sizes: cond_av increases immediately away from the "
+                "reference pixel ({}), returning NaN".format(name)
+            )
+            return np.nan
+        fwhm = np.interp(ref_val / 2, values[:idx][::-1], positions[:idx][::-1])
+        return fwhm
 
-    zp_fwhm = get_fwhm(poloidal_var[refy:], poloidal_pos[refy:])
+    def check_sign(value, sign, name):
+        if np.isnan(value) or sign * value >= 0:
+            return value
+        warnings.warn(
+            "estimate_fwhm_sizes: {} = {:.3g} has unexpected sign, returning NaN".format(
+                name, value
+            )
+        )
+        return np.nan
+
+    zp_fwhm = get_fwhm(poloidal_var[refy:], poloidal_pos[refy:], "zp_fwhm")
     zn_fwhm = get_fwhm(
-        poloidal_var[: (refy + 1)][::-1], poloidal_pos[: (refy + 1)][::-1]
+        poloidal_var[: (refy + 1)][::-1], poloidal_pos[: (refy + 1)][::-1], "zn_fwhm"
     )
-    rp_fwhm = get_fwhm(radial_var[refx:], radial_pos[refx:])
-    rn_fwhm = get_fwhm(radial_var[: (refx + 1)][::-1], radial_pos[: (refx + 1)][::-1])
-    assert zp_fwhm >= 0
-    assert zn_fwhm <= 0
-    assert rp_fwhm >= 0
-    assert rn_fwhm <= 0
+    rp_fwhm = get_fwhm(radial_var[refx:], radial_pos[refx:], "rp_fwhm")
+    rn_fwhm = get_fwhm(
+        radial_var[: (refx + 1)][::-1], radial_pos[: (refx + 1)][::-1], "rn_fwhm"
+    )
+    zp_fwhm = check_sign(zp_fwhm, 1, "zp_fwhm")
+    zn_fwhm = check_sign(zn_fwhm, -1, "zn_fwhm")
+    rp_fwhm = check_sign(rp_fwhm, 1, "rp_fwhm")
+    rn_fwhm = check_sign(rn_fwhm, -1, "rn_fwhm")
 
     return rp_fwhm, rn_fwhm, zp_fwhm, zn_fwhm

@@ -42,11 +42,13 @@ def get_averaged_velocity_from_position(position_da: xr.DataArray, mask):
     that the underlying signal from which the velocity is computed is coherent enough.
     :param position_da: Data array with the position components
     :param mask:
-    :return: v, w: Velocity components
+    :return: v, w: Velocity components. (nan, nan) if the mask selects no valid times.
     """
     velocity_ds = get_velocity_from_position(position_da)
     valid_times = position_da.time[mask]  # DataArray with wanted times
     common_times = valid_times[valid_times.isin(velocity_ds.time)]
+    if common_times.size == 0:
+        return np.nan, np.nan
     v, w = velocity_ds.sel(time=common_times).mean(dim="time", skipna=True).values
     return v, w
 
@@ -92,6 +94,8 @@ def get_combined_mask(
     mask : xr.DataArray (bool, along time)
         1D boolean mask with only the longest contiguous valid segment set to True
     """
+    # mask_distance (in pixels) is converted to a physical distance with the
+    # mean radial spacing, assuming approximately square pixels (dz ~ dr).
     distance = position_filter.mask_distance * get_dr(average_ds)
     near_positions = is_position_near_reference(average_ds, position_da, distance)
 
