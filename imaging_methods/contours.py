@@ -75,8 +75,12 @@ def indexes_to_coordinates(R, Z, indexes):
     valid = np.isfinite(rows) & np.isfinite(cols)
     r_values = np.full(rows.shape, np.nan)
     z_values = np.full(rows.shape, np.nan)
-    r_values[valid] = map_coordinates(R, [rows[valid], cols[valid]], order=1, mode="nearest")
-    z_values[valid] = map_coordinates(Z, [rows[valid], cols[valid]], order=1, mode="nearest")
+    r_values[valid] = map_coordinates(
+        R, [rows[valid], cols[valid]], order=1, mode="nearest"
+    )
+    z_values[valid] = map_coordinates(
+        Z, [rows[valid], cols[valid]], order=1, mode="nearest"
+    )
     return r_values, z_values
 
 
@@ -119,9 +123,12 @@ def fit_ellipses_to_contour_ds(contours):
         if success:
             # Unpack parameters: x0, y0, a, b, theta
             rx, ry, lx, ly, theta = model.params
+            # Swapping the semi-axes requires rotating theta by pi/2.
+            # Same convention as fit_ellipse in parameter_estimation.py.
             if lx > ly:
                 lx, ly = ly, lx
-                theta = theta - np.pi / 4 if theta > np.pi / 4 else theta + np.pi / 4
+                theta = theta + np.pi / 2
+            theta = theta % np.pi
 
             pos_values.append([rx, ry])
             l_values.append([lx, ly])
@@ -172,6 +179,7 @@ def get_contour_evolution(
     """
     # Extract time coordinate and data
     time_coords = event.time.values
+    frames_da = event.frames if "frames" in event else event
     contours = []
     lengths = []
     convexity_deficiencies = []
@@ -179,14 +187,10 @@ def get_contour_evolution(
     areas = []
 
     # Process each time step
-    max_amplitude = np.max(event.values)
+    max_amplitude = np.max(frames_da.values)
     for t in time_coords:
         # Extract 2D frame
-        frame = (
-            event.frames.sel(time=t).values
-            if "frames" in event
-            else event.sel(time=t).values
-        )
+        frame = frames_da.sel(time=t).values
 
         # Find contours using threshold = max_amplitude * threshold_factor
         threshold = max_amplitude * threshold_factor

@@ -166,14 +166,14 @@ def parabolic_2d_interp(
     if nb_da.sizes["x"] != 3 or nb_da.sizes["y"] != 3:
         return x_idx, y_idx
 
-    # Parabolic fit in x (along x, fixed middle y)
+    # Parabolic fit in x (along x, fixed middle y). Only shift if the center is
+    # a strict local max (guarantees a finite, well-posed parabola).
     fx_m1 = float(nb_da.isel(y=1, x=0).values)
     fx_0 = float(nb_da.isel(y=1, x=1).values)
     fx_p1 = float(nb_da.isel(y=1, x=2).values)
-    denominator = fx_m1 - 2 * fx_0 + fx_p1
-    if denominator != 0:
-        delta_x = 0.5 * (fx_m1 - fx_p1) / denominator
-    else:  # All three have the same value
+    if fx_0 > fx_m1 and fx_0 > fx_p1:
+        delta_x = 0.5 * (fx_m1 - fx_p1) / (fx_m1 - 2 * fx_0 + fx_p1)
+    else:
         delta_x = 0.0
 
     # Parabolic fit in y (along y, fixed middle x)
@@ -185,8 +185,9 @@ def parabolic_2d_interp(
     else:
         delta_y = 0.0
 
-    sub_x = x_idx + delta_x
-    sub_y = y_idx + delta_y
+    # The sub-pixel shift can never legitimately exceed half a pixel
+    sub_x = x_idx + float(np.clip(delta_x, -0.5, 0.5))
+    sub_y = y_idx + float(np.clip(delta_y, -0.5, 0.5))
     return sub_x, sub_y
 
 

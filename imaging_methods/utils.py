@@ -79,14 +79,16 @@ def power_spectral_density(omega, taud, lam):
     Output:
         psd.....: ndarray, float: Power spectral density
     """
-    if taud < 0:
-        raise ValueError("Taud must be positive")
-    if lam <= 0 or lam >= 1:
-        raise ValueError("lam must be in (0, 1)")
+    if taud <= 0:
+        raise ValueError("taud must be positive")
+    if lam < 0 or lam > 1:
+        raise ValueError("lam must be in [0, 1]")
 
-    if lam in [0, 1]:
+    eps = 1e-8
+
+    if np.abs(lam) < eps or np.abs(lam - 1) < eps:
         return 4 * taud / (1 + (taud * omega) * (taud * omega))
-    elif lam == 0.5:
+    if np.abs(lam - 0.5) < eps:
         return 64 * taud / (4 + (taud * omega) * (taud * omega)) ** 2
 
     f1 = 1 + ((1 - lam) * taud * omega) * (1.0 - lam) * taud * omega

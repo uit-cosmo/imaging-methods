@@ -13,6 +13,10 @@ def find_events_and_2dca(
     2DCA method as described in the article.
     Find events where reference pixel exceeds threshold and extract windows around peaks.
 
+    Every pixel time series is assumed to have non-vanishing standard deviation:
+    dead pixels (e.g. zero-filled by run_norm_ds) lead to 0/0 divisions and NaN
+    columns in cross_corr and cond_repr, so interpolate or mask them beforehand.
+
     Parameters:
     ds (xarray.Dataset): Input dataset with time, x, y coordinates. cmod_functions format is expected.
     params (TwoDcaParams): Dataclass with method settings, documentation of each setting is available on TwoDcaParams
