@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "imaging_methods"
-version = "0.0.1"
+version = "0.1.0"
 authors = [
   { name = "Juan Manuel Losada", email = "juan.m.losada@uit.no" }
 ]
@@ -12,19 +12,25 @@ license = "MIT"
 readme = "README.md"
 requires-python = ">=3"
 dependencies = [
-    "numpy",
-    "scipy",
-    "xarray",
-    "nptyping",
-    "matplotlib",
-    "netcdf4",
+    "numpy~=1.26.4",
+    "scipy~=1.15.1",
+    "xarray>=2025.01.2",
+    "nptyping~=2.5.0",
+    "matplotlib>=3.10.0",
+    "netcdf4>=1.7.2",
+    "blobmodel~=1.2.2",
+    "fppanalysis>=0.2.0",
+    "velocity-estimation>=1.0.0",
+    "scikit-image~=0.25.2",
+    "shapely~=2.1.0",
+]
+
+[project.optional-dependencies]
+dev = [
     "black",
     "mypy",
-    "fppanalysis",
-    "velocity-estimation",
-    "shapely",
-    "superposed-pulses",
-    "experimental_database",
+    "pytest~=8.3.4",
+    "cosmoplots>=0.5.0",
 ]
 
 [tool.setuptools]

@@ -37,23 +37,33 @@ class DeterministicBlobFactory(BlobFactory):
 
 
 def get_blob(
-    amplitude, vx, vy, posx, posy, lx, ly, t_init, theta=0, bs=BlobShapeImpl(), taup=1e100
+    amplitude,
+    vx,
+    vy,
+    posx,
+    posy,
+    lx,
+    ly,
+    t_init,
+    theta=0,
+    bs=BlobShapeImpl(),
+    taup=1e100,
 ):
     return Blob(
         1,
         bs,
         amplitude=amplitude,
-        width_prop=lx,
-        width_perp=ly,
+        width_p=lx,
+        width_s=ly,
         v_x=vx,
         v_y=vy,
-        pos_x=posx,
-        pos_y=posy,
+        pos_x0=posx,
+        pos_y0=posy,
         t_init=t_init,
         t_drain=taup,
         theta=theta,
-        prop_shape_parameters={"lam": 0.5},
-        perp_shape_parameters={"lam": 0.5},
+        shape_parameters_p={"lam": 0.5},
+        shape_parameters_s={"lam": 0.5},
         blob_alignment=True if theta == 0 else False,
     )
 
