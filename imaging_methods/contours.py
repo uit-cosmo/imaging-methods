@@ -72,6 +72,10 @@ def indexes_to_coordinates(R, Z, indexes):
     valid = np.isfinite(rows) & np.isfinite(cols)
     r_values = np.full(rows.shape, np.nan)
     z_values = np.full(rows.shape, np.nan)
+    # map_coordinates returns the input dtype: integer grids would truncate
+    # the interpolated coordinates, so cast to float first.
+    R = np.asarray(R, dtype=float)
+    Z = np.asarray(Z, dtype=float)
     r_values[valid] = map_coordinates(
         R, [rows[valid], cols[valid]], order=1, mode="nearest"
     )
