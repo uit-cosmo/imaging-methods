@@ -46,7 +46,7 @@ from .maximum_trajectory import (
     find_maximum_for_frame,
     parabolic_2d_interp,
 )
-from .synthetic_data import DeterministicBlobFactory, get_blob, make_2d_realization
+from .synthetic_data import get_blob, make_2d_realization
 from .velocity_estimates import (
     get_velocity_from_position,
     get_averaged_velocity_from_position,

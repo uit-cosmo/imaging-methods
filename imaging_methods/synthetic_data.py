@@ -1,40 +1,11 @@
-from typing import Union, List
-
 import numpy as np
-import xarray as xr
-from nptyping import NDArray
 
-from blobmodel import (
-    Model,
-    BlobShapeImpl,
-    BlobFactory,
-    Blob,
-    AbstractBlobShape,
-)
+from blobmodel import Blob, Geometry, Model
 
 __all__ = [
-    "DeterministicBlobFactory",
     "get_blob",
     "make_2d_realization",
 ]
-
-
-class DeterministicBlobFactory(BlobFactory):
-    def __init__(self, blobs):
-        self.blobs = blobs
-
-    def sample_blobs(
-        self,
-        Ly: float,
-        T: float,
-        num_blobs: int,
-        blob_shape: AbstractBlobShape,
-        t_drain: Union[float, NDArray],
-    ) -> List[Blob]:
-        return self.blobs
-
-    def is_one_dimensional(self) -> bool:
-        return False
 
 
 def get_blob(
@@ -46,13 +17,19 @@ def get_blob(
     lx,
     ly,
     t_init,
-    theta=0,
-    bs=BlobShapeImpl(),
-    taup=1e100,
+    theta=None,
+    bs=None,
+    taup=np.inf,
 ):
+    """
+    Convenience wrapper around blobmodel.Blob using imaging-methods naming
+    (vx/vy, lx/ly, posx/posy, taup). Pulse shapes are symmetric (lam=0.5).
+
+    With theta=None (default) the blob is aligned with its velocity; an
+    explicit theta always wins.
+    """
     return Blob(
-        1,
-        bs,
+        blob_shape=bs,
         amplitude=amplitude,
         width_p=lx,
         width_s=ly,
@@ -62,10 +39,10 @@ def get_blob(
         pos_y0=posy,
         t_init=t_init,
         t_drain=taup,
-        theta=theta,
         shape_parameters_p={"lam": 0.5},
         shape_parameters_s={"lam": 0.5},
-        blob_alignment=True if theta == 0 else False,
+        blob_alignment=True,
+        theta=theta,
     )
 
 
@@ -81,13 +58,22 @@ def make_2d_realization(
     vy=0,
     lx=1,
     ly=1,
-    theta=0,
-    bs=BlobShapeImpl(),
-    blob_getter="deterministic",
+    theta=None,
+    bs=None,
+    blob_getter=None,
     periodic_y=True,
-    t_drain=1e10,
 ):
-    if blob_getter == "deterministic":
+    """
+    Make a 2D blobmodel realization in the cmod_functions imaging format
+    (frames(y, x, time) with R/Z coordinate grids).
+
+    If blob_getter is None, num_blobs blobs are drawn with exponentially
+    distributed amplitudes, uniform posy and t_init, and the given vx, vy,
+    lx, ly, theta (amplitudes and positions come from the global np.random
+    state). Otherwise blob_getter is a zero-argument callable returning a
+    Blob, called num_blobs times.
+    """
+    if blob_getter is None:
         blobs = [
             get_blob(
                 amplitude=np.random.exponential(),
@@ -106,31 +92,14 @@ def make_2d_realization(
     else:
         blobs = [blob_getter() for _ in range(num_blobs)]
 
-    bf = DeterministicBlobFactory(blobs)
-
-    model = Model(
+    geometry = Geometry(
         Nx=nx,
         Ny=ny,
         Lx=Lx,
         Ly=Ly,
         dt=dt,
         T=T,
-        num_blobs=num_blobs,
-        blob_shape=bs,
         periodic_y=periodic_y,  # Set to true so that high vertical velocities makes sense
-        t_drain=t_drain,
-        blob_factory=bf,
-        verbose=True,
-        t_init=0,
     )
-    ds = model.make_realization(speed_up=True, error=1e-10)
-    grid_r, grid_z = np.meshgrid(ds.x.values, ds.y.values)
-
-    return xr.Dataset(
-        {"frames": (["y", "x", "time"], ds.n.values)},
-        coords={
-            "R": (["y", "x"], grid_r),
-            "Z": (["y", "x"], grid_z),
-            "time": (["time"], ds.t.values),
-        },
-    )
+    model = Model.from_blobs(blobs, geometry=geometry)
+    return model.make_realization(layout="imaging")

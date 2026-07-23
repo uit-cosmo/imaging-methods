@@ -1,6 +1,5 @@
 import numpy as np
-import xarray as xr
-from blobmodel import BlobShapeEnum, BlobShapeImpl, Model
+from blobmodel import BlobShapeEnum, BlobShapeImpl, Geometry, Model
 from imaging_methods import *
 
 np.random.seed(42)
@@ -17,34 +16,9 @@ refx, refy = 5, 5
 
 
 def make_deterministic_realization(blobs):
-    bf = DeterministicBlobFactory(blobs)
-
-    model = Model(
-        Nx=nx,
-        Ny=ny,
-        Lx=Lx,
-        Ly=Ly,
-        dt=dt,
-        T=10,
-        num_blobs=1,
-        blob_shape=BlobShapeImpl(),
-        periodic_y=False,
-        t_drain=1e10,
-        blob_factory=bf,
-        verbose=True,
-        t_init=0,
-    )
-    ds = model.make_realization(speed_up=True, error=1e-10)
-    grid_r, grid_z = np.meshgrid(ds.x.values, ds.y.values)
-
-    return xr.Dataset(
-        {"frames": (["y", "x", "time"], ds.n.values)},
-        coords={
-            "R": (["y", "x"], grid_r),
-            "Z": (["y", "x"], grid_z),
-            "time": (["time"], ds.t.values),
-        },
-    )
+    geometry = Geometry(Nx=nx, Ny=ny, Lx=Lx, Ly=Ly, dt=dt, T=10)
+    model = Model.from_blobs(blobs, geometry=geometry)
+    return model.make_realization(layout="imaging")
 
 
 def test_com_and_velocities():

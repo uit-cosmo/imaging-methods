@@ -1,5 +1,5 @@
 import numpy as np
-from blobmodel import BlobShapeEnum, BlobShapeImpl, Model
+from blobmodel import BlobShapeEnum, BlobShapeImpl, Geometry, Model
 import pytest
 from imaging_methods import *
 
@@ -91,25 +91,10 @@ def test_uniform_velocity_distribution():
         for _ in range(100)
     ]
 
-    bf = DeterministicBlobFactory(blobs)
-
-    model = Model(
-        Nx=nx,
-        Ny=ny,
-        Lx=Lx,
-        Ly=Ly,
-        dt=dt,
-        T=T,
-        num_blobs=100,
-        blob_shape=BlobShapeImpl(),
-        periodic_y=False,
-        t_drain=1e10,
-        blob_factory=bf,
-        verbose=False,
-        t_init=0,
-    )
-    ds = model.make_realization(speed_up=True, error=1e-10)
-    data_series = ds.n.isel(x=refx, y=refy).values
+    geometry = Geometry(Nx=nx, Ny=ny, Lx=Lx, Ly=Ly, dt=dt, T=T)
+    model = Model.from_blobs(blobs, geometry=geometry, verbose=False)
+    ds = model.make_realization(layout="imaging")
+    data_series = ds.frames.isel(x=refx, y=refy).values
 
     taud, _ = DurationTimeEstimator(
         SecondOrderStatistic.PSD, Analytics.TwoSided

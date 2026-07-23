@@ -70,9 +70,9 @@ Pipeline order roughly matches module order:
   FPP ACF or PSD (expressions in `utils.py`) with `differential_evolution`
   (seeded). For PSD fits `nperseg` is required and critical — a good starting
   point is the run-normalization window length.
-- `synthetic_data.py` — bridge to blobmodel: `DeterministicBlobFactory`,
-  `get_blob`, `make_2d_realization` (converts blobmodel output to the
-  frames/R/Z format above).
+- `synthetic_data.py` — bridge to blobmodel 2.0: `get_blob` (imaging-methods
+  naming for `Blob`) and `make_2d_realization` (`Model.from_blobs` +
+  `layout="imaging"`, yielding the frames/R/Z format above).
 - `utils.py` — `PhantomDataInterface`/`MaskedImagingDataInterface`
   (`velocity_estimation` interfaces), analytic `autocorrelation`/
   `power_spectral_density`, `smooth_da`, default method parameters.
@@ -105,20 +105,19 @@ black/mypy gates in CI and no tool config in pyproject.toml — defaults apply.
 - **Dead pixels**: `find_events_and_2dca` assumes every pixel has non-zero
   std; zero-filled/dead pixels produce 0/0 → NaN columns in `cross_corr` and
   `cond_repr`. Interpolate (`interpolate_nans_3d`) or mask first.
-- **blobmodel version**: pinned `blobmodel~=1.2.2` and
-  `synthetic_data.py`/tests/examples use the 1.x API (`Model(Nx=..., t_drain=...)`,
-  `sample_blobs(..., t_drain)`, `make_realization(speed_up=True, error=...)`).
-  blobmodel 2.0 (developed locally in `../blobmodel`, see its CLAUDE.md)
-  breaks all of these and flips the `lam` convention for `double_exp`; this
-  repo has **not** been migrated yet. When migrating, `DeterministicBlobFactory`
-  and `make_2d_realization` are largely superseded by blobmodel 2.0's
-  `Model.from_blobs` / `layout="imaging"`.
-- **Randomness**: `make_2d_realization`'s "deterministic" blob getter draws
-  from global `np.random` (unseeded) despite the name — the blobs are
-  deterministic only in the sense that the factory returns a fixed list.
-- **nptyping** appears in `synthetic_data.py` for the 1.x blobmodel
-  signature; it's unmaintained — don't add new usage, plain `np.ndarray`
-  annotations are fine.
+- **blobmodel version**: pinned `blobmodel~=2.0.0` (developed locally in
+  `../blobmodel`, see its CLAUDE.md). `synthetic_data.py` is now a thin
+  wrapper over the 2.0 API: `get_blob` maps imaging-methods naming
+  (vx/lx/posx/taup) onto `Blob`, and `make_2d_realization` builds
+  `Model.from_blobs(blobs, geometry=Geometry(...))` and returns
+  `make_realization(layout="imaging")` directly (no manual frames/R/Z
+  conversion). `DeterministicBlobFactory` was removed — blobmodel's
+  `BlobListFactory` is the replacement. Note blobmodel 2.0 uses the same
+  FPP `lam` convention as this repo (rise fraction).
+- **Randomness**: `make_2d_realization`'s default blob getter still draws
+  amplitudes/positions from global `np.random` (tests rely on
+  `np.random.seed` for determinism); blobmodel 2.0's rng seeding is not
+  threaded through it.
 - `smooth_da` output carries a boolean `valid` time coordinate — False where
   the input was NaN (values there are extrapolated and can lie far outside
   the field of view).

@@ -1,9 +1,9 @@
-import numpy as np
 import imaging_methods as im
-import xarray as xr
 from blobmodel import (
+    Geometry,
     Model,
     show_model,
+    to_imaging_dataset,
     DefaultBlobFactory,
 )
 import matplotlib.pyplot as plt
@@ -16,41 +16,32 @@ method_parameters.two_dca.refy = 8
 
 # First we do a realization of the two-dimensional process. This is done with the blobmodel package. For more info on
 # this package, consult its documentation at https://blobmodel.readthedocs.io/en/latest/?badge=latest
-bf = DefaultBlobFactory(
-    vx_parameter=1,  # x-component of blob velocity
-    vy_parameter=0,  # y-component of blob velocity
-)
+# Defaults: exponentially distributed amplitudes, vx = 1, vy = 0, no blob decay
+bf = DefaultBlobFactory(seed=42)
 dt = 0.1  # Sampling time
 
-model = Model(
+geometry = Geometry(
     Nx=16,  # number of pixels in the x-direction
     Ny=16,  # number of pixels in the y-direction
     Lx=8,  # Domain length in the x-direction
     Ly=8,  # Domain length in the y-direction
     dt=dt,  # Sampling time
     T=1000,  # Total signal duration
-    num_blobs=1000,  # Number of blobs
     periodic_y=True,  # Periodicity
-    t_drain=1e10,  # No blob decay
+)
+model = Model(
+    geometry=geometry,
+    num_blobs=1000,  # Number of blobs
     blob_factory=bf,
 )
 
-ds = model.make_realization(speed_up=True, error=1e-10)
+ds = model.make_realization()
 
 # Optionally, visualize synthetic data
 show_model(ds.sel(t=slice(100, 110)), gif_name="example.gif")
 
-grid_r, grid_z = np.meshgrid(ds.x.values, ds.y.values)
-
 # Set the data in the same format as APD data
-ds = xr.Dataset(
-    {"frames": (["y", "x", "time"], ds.n.values)},
-    coords={
-        "R": (["y", "x"], grid_r),
-        "Z": (["y", "x"], grid_z),
-        "time": (["time"], ds.t.values),
-    },
-)
+ds = to_imaging_dataset(ds)
 
 # Normalize the data with a running normalization so that it has vanishing mean and unity standard deviation
 ds = im.run_norm_ds(ds, method_parameters.preprocessing.radius)
