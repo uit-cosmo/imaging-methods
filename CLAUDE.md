@@ -1,0 +1,130 @@
+# CLAUDE.md
+
+## What this repo is
+
+`imaging_methods` is a small scientific Python package (uit-cosmo, ~2000 lines)
+for analyzing imaging data at the tokamak boundary (Alcator C-Mod APD/GPI,
+Phantom camera, and synthetic blobmodel data). The central method is
+two-dimensional conditional averaging (2DCA); the other methods (contouring,
+ellipse fitting, FWHM sizes, duration-time estimation, velocity estimates)
+operate on 2DCA output. Backs a manuscript in preparation for PoP:
+"Conditionally averaged blob structures in Alcator C-Mod". Method descriptions
+with math live in `README.md`.
+
+Naming gotcha: the directory is `imaging-methods` (hyphen), the package is
+`imaging_methods` (underscore), and the git remote is still
+`uit-cosmo/phantom` (the repo's old name — GitHub redirects to
+`uit-cosmo/imaging-methods`).
+
+## Data format
+
+Everything operates on the cmod_functions-style xarray Dataset
+(github.com/sajidah-ahmed/cmod_functions):
+
+- `frames(y, x, time)` — signal; **time is the last dim** in raw data.
+- `R(y, x)`, `Z(y, x)` — 2D physical coordinate grids (radial R ↔ x index,
+  vertical/poloidal Z ↔ y index). Grids may be **non-uniform** (APD quadrant
+  gaps): `get_dr`/`get_dz` return the *mean* spacing, and
+  `indexes_to_coordinates` bilinearly interpolates R/Z rather than assuming a
+  linear map.
+- Reference pixels (`refx`, `refy`) are integer *indices* into x/y, not
+  physical coordinates.
+
+## Architecture
+
+All source in `imaging_methods/` (flat); public API is what `__init__.py`
+re-exports. The downstream consumer is `../fusion_scripts` — grep it before
+changing signatures.
+
+Pipeline order roughly matches module order:
+
+- `method_parameters.py` — nested dataclasses (`MethodParameters` holding
+  `PreprocessingParams`, `TwoDcaParams`, `GaussFitParams`, `ContouringParams`,
+  `TaudEstimationParams`, `PositionFilterParams`). Every analysis function
+  takes one of these instead of loose kwargs. Defaults for synthetic/APD data
+  come from `get_default_*_method_params()` in `utils.py`.
+- `data_preprocessing.py` — `interpolate_nans_3d` (dead-pixel interpolation;
+  NaN mask taken from t=0 and assumed constant in time), `run_norm_ds`
+  (running normalization via fppanalysis; zero-fills non-finite output).
+- `cond_av.py` — `find_events_and_2dca(ds, TwoDcaParams)`: the core method.
+  Returns `(events, average_ds)` where `average_ds` has `cond_av`,
+  `cond_repr` (conditional reproducibility = cond_av²/mean²), `cross_corr`,
+  `refx/refy/number_events`, on a relative `time` coordinate centered at the
+  peak.
+- `contours.py` — `get_contour_evolution(event, threshold_factor)`: contour at
+  a fraction of max amplitude per frame → Dataset with contours, centroid,
+  area, perimeter, convexity deficiency, plus per-frame ellipse fits
+  (`skimage.EllipseModel`). Multiple contours → the one enclosing most mass.
+- `parameter_estimation.py` — `fit_ellipse`/`fit_ellipse_to_event` (tilted 2D
+  Gaussian fit at time lag 0, Nelder-Mead multistart, with size/aspect/tilt
+  penalty terms — see README for the error function) and `estimate_fwhm_sizes`
+  (interpolated FWHM along the row/column through the reference pixel).
+- `maximum_trajectory.py` — sub-pixel peak tracking per frame (2D parabolic
+  interpolation, shift clipped to ±0.5 pixel).
+- `velocity_estimates.py` — glue: position from contour centroid or max
+  trajectory → `smooth_da` (Hann filter) → central-difference velocity,
+  averaged over a validity mask (`get_combined_mask`: near reference AND
+  signal high, longest contiguous block). `estimate_velocities_synthetic_ds`
+  runs the whole battery incl. 3TDE via `velocity_estimation`.
+- `duration_time_estimation.py` — `DurationTimeEstimator`: fits the analytic
+  FPP ACF or PSD (expressions in `utils.py`) with `differential_evolution`
+  (seeded). For PSD fits `nperseg` is required and critical — a good starting
+  point is the run-normalization window length.
+- `synthetic_data.py` — bridge to blobmodel: `DeterministicBlobFactory`,
+  `get_blob`, `make_2d_realization` (converts blobmodel output to the
+  frames/R/Z format above).
+- `utils.py` — `PhantomDataInterface`/`MaskedImagingDataInterface`
+  (`velocity_estimation` interfaces), analytic `autocorrelation`/
+  `power_spectral_density`, `smooth_da`, default method parameters.
+
+`examples/synthetic_data.py` is a runnable end-to-end walkthrough on
+blobmodel data.
+
+## Commands
+
+```bash
+pip install -e .[dev]        # dev extras: pytest, black, mypy, cosmoplots
+pytest                       # tests/ at repo root; fast, deterministic
+black .                      # code is black-formatted (CI does not check it)
+```
+
+There is a project venv at `.venv/`. CI is `.github/workflows/tests.yml`:
+`pip install -e .[dev]`, `pip check`, `pytest -v` on Python 3.10/3.11. No
+black/mypy gates in CI and no tool config in pyproject.toml — defaults apply.
+`commands.txt` holds a gifsicle one-liner for compressing animation gifs
+(figures land in `figures/`, some are embedded in README from GitHub URLs).
+
+## Conventions and gotchas
+
+- **Ellipse convention**: `lx < ly` (ly is the larger axis) and
+  `theta ∈ [0, π)`, measured from the R axis; swapping the axes rotates theta
+  by π/2. Enforced identically in `fit_ellipse` and
+  `fit_ellipses_to_contour_ds` — keep them in sync.
+- **`lam` (asymmetry)**: rise fraction, `tr = lam * taud`, `lam ∈ [0, 1]` —
+  the FPP-literature convention.
+- **Dead pixels**: `find_events_and_2dca` assumes every pixel has non-zero
+  std; zero-filled/dead pixels produce 0/0 → NaN columns in `cross_corr` and
+  `cond_repr`. Interpolate (`interpolate_nans_3d`) or mask first.
+- **blobmodel version**: pinned `blobmodel~=1.2.2` and
+  `synthetic_data.py`/tests/examples use the 1.x API (`Model(Nx=..., t_drain=...)`,
+  `sample_blobs(..., t_drain)`, `make_realization(speed_up=True, error=...)`).
+  blobmodel 2.0 (developed locally in `../blobmodel`, see its CLAUDE.md)
+  breaks all of these and flips the `lam` convention for `double_exp`; this
+  repo has **not** been migrated yet. When migrating, `DeterministicBlobFactory`
+  and `make_2d_realization` are largely superseded by blobmodel 2.0's
+  `Model.from_blobs` / `layout="imaging"`.
+- **Randomness**: `make_2d_realization`'s "deterministic" blob getter draws
+  from global `np.random` (unseeded) despite the name — the blobs are
+  deterministic only in the sense that the factory returns a fixed list.
+- **nptyping** appears in `synthetic_data.py` for the 1.x blobmodel
+  signature; it's unmaintained — don't add new usage, plain `np.ndarray`
+  annotations are fine.
+- `smooth_da` output carries a boolean `valid` time coordinate — False where
+  the input was NaN (values there are extrapolated and can lie far outside
+  the field of view).
+- `find_events_and_2dca` and `get_contour_evolution` print progress with bare
+  `print` (`verbose=True` default); keep output quiet in library additions or
+  route through the existing `verbose` flags.
+- Docstrings are numpydoc-ish but drift; when a docstring and the code
+  disagree about dim order (`(time, x, y)` vs `(y, x, time)`), trust the code
+  — downstream code mostly uses order-agnostic xarray selection.
