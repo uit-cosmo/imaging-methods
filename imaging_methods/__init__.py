@@ -5,6 +5,7 @@ from .method_parameters import (
     ContouringParams,
     TaudEstimationParams,
     PositionFilterParams,
+    VelocityParams,
     MethodParameters,
 )
 from .utils import (

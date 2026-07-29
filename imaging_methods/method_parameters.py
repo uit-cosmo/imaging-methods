@@ -7,6 +7,7 @@ __all__ = [
     "ContouringParams",
     "TaudEstimationParams",
     "PositionFilterParams",
+    "VelocityParams",
     "MethodParameters",
 ]
 
@@ -70,6 +71,17 @@ class PositionFilterParams:
 
 
 @dataclass
+class VelocityParams:
+    """
+    estimator (str): How a velocity is reduced from a tracked position signal.
+        "central_diff" averages the centered-difference velocity over the mask,
+        "lsq" takes the least squares slope of the position over the mask.
+    """
+
+    estimator: str = "central_diff"
+
+
+@dataclass
 class MethodParameters:
     """
     Dataclass containing setting for the applied method analyzing blob data.
@@ -79,6 +91,7 @@ class MethodParameters:
         - contouring: Contouring settings
         - taud_estimation: Settings for duration time estimation
         - position_filter: Length of the smoothing filter used for the position
+        - velocity: Choice of estimator reducing a position signal to a velocity
     """
 
     preprocessing: PreprocessingParams = field(default_factory=PreprocessingParams)
@@ -87,3 +100,4 @@ class MethodParameters:
     contouring: ContouringParams = field(default_factory=ContouringParams)
     taud_estimation: TaudEstimationParams = field(default_factory=TaudEstimationParams)
     position_filter: PositionFilterParams = field(default_factory=PositionFilterParams)
+    velocity: VelocityParams = field(default_factory=VelocityParams)

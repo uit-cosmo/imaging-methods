@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 import xarray as xr
 import velocity_estimation as ve
@@ -46,20 +48,62 @@ def get_velocity_from_position(position_da):
     return velocity_da
 
 
-def get_averaged_velocity_from_position(position_da: xr.DataArray, mask):
+def _least_squares_slope(times, values):
+    """Least squares slope of values against times, ignoring non-finite values."""
+    finite = np.isfinite(values)
+    if finite.sum() < 2:
+        return np.nan
+    return np.polyfit(times[finite], values[finite], 1)[0]
+
+
+def get_averaged_velocity_from_position(
+    position_da: xr.DataArray, mask, estimator: str = "central_diff"
+):
     """
-    Estimates an averaged velocity from a position signal. The position signal is first filtered with the provided
-    window and a velocity signal is computed with a centered difference method. The result is the velocity averaged on
-    the provided mask.
+    Estimates an averaged velocity from a position signal, on the times selected by the mask.
+
+    Two estimators are available:
+      - "central_diff": a velocity signal is computed with a centered difference method and averaged on the mask.
+        Over a contiguous mask the average telescopes, so it is dominated by the two ends of the track and inherits
+        their noise.
+      - "lsq": least squares slope of each position component against time. Every point on the track contributes.
 
     Note: The mask should be computed on the condition that the position is close enough to the reference pixel and/or
-    that the underlying signal from which the velocity is computed is coherent enough.
+    that the underlying signal from which the velocity is computed is coherent enough. It knows nothing about whether
+    the tracking succeeded, so masked positions may be non-finite; those are dropped, with a warning.
     :param position_da: Data array with the position components
     :param mask:
+    :param estimator: "central_diff" or "lsq"
     :return: v, w: Velocity components. (nan, nan) if the mask selects no valid times.
     """
-    velocity_ds = get_velocity_from_position(position_da)
+    if estimator not in ("central_diff", "lsq"):
+        raise ValueError(
+            "Unknown velocity estimator '{}', expected 'central_diff' or 'lsq'".format(
+                estimator
+            )
+        )
+
     valid_times = position_da.time[mask]  # DataArray with wanted times
+    if valid_times.size == 0:
+        return np.nan, np.nan
+
+    positions = position_da.sel(time=valid_times)
+    number_non_finite = int((~np.isfinite(positions)).any(dim="coord").sum().item())
+    if number_non_finite > 0:
+        warnings.warn(
+            "{} of {} masked time points have a non-finite position and are ignored.".format(
+                number_non_finite, valid_times.size
+            ),
+            RuntimeWarning,
+        )
+
+    if estimator == "lsq":
+        times = valid_times.values
+        v = _least_squares_slope(times, positions.isel(coord=0).values)
+        w = _least_squares_slope(times, positions.isel(coord=1).values)
+        return v, w
+
+    velocity_ds = get_velocity_from_position(position_da)
     common_times = valid_times[valid_times.isin(velocity_ds.time)]
     if common_times.size == 0:
         return np.nan, np.nan
@@ -154,6 +198,7 @@ def get_averaged_velocity(
     v, w = get_averaged_velocity_from_position(
         position_da=position_da,
         mask=mask,
+        estimator=method_parameters.velocity.estimator,
     )
     return v, w
 

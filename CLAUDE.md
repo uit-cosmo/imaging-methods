@@ -62,10 +62,13 @@ Pipeline order roughly matches module order:
 - `maximum_trajectory.py` — sub-pixel peak tracking per frame (2D parabolic
   interpolation, shift clipped to ±0.5 pixel).
 - `velocity_estimates.py` — glue: position from contour centroid or max
-  trajectory → `smooth_da` (Hann filter) → central-difference velocity,
-  averaged over a validity mask (`get_combined_mask`: near reference AND
-  signal high, longest contiguous block). `estimate_velocities_synthetic_ds`
-  runs the whole battery incl. 3TDE via `velocity_estimation`.
+  trajectory → `smooth_da` (Hann filter) → velocity over a validity mask
+  (`get_combined_mask`: near reference AND signal high, longest contiguous
+  block). `VelocityParams.estimator` picks how the masked track is reduced:
+  `"central_diff"` (average of centered differences — telescopes, so it is
+  endpoint-dominated) or `"lsq"` (least squares slope, uses every lag).
+  `estimate_velocities_synthetic_ds` runs the whole battery incl. 3TDE via
+  `velocity_estimation`.
 - `duration_time_estimation.py` — `DurationTimeEstimator`: fits the analytic
   FPP ACF or PSD (expressions in `utils.py`) with `differential_evolution`
   (seeded). For PSD fits `nperseg` is required and critical — a good starting
