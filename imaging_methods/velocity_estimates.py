@@ -127,12 +127,14 @@ def get_combined_mask(
     variable: str,
     position_da: xr.DataArray,
     position_filter: PositionFilterParams,
+    extra=None,
 ):
     """
     Returns a boolean DataArray indicating time points where:
       - the tracked position is within a distance, mask_distance from the reference position
       - AND the spatial maximum of average_ds_field is larger than mask_signal_factor times the overrall maximum of
       average_ds_field
+      - AND ``extra`` is True, if given
 
     Then restricts to the longest contiguous block of True values.
 
@@ -146,6 +148,8 @@ def get_combined_mask(
         DataArray with dims (time, xy), values = [R, Z] displacements or coordinates
     position_filter: PositionFilterParams
         Parameters to compute the mask, including mask_distance and mask_signal_factor.
+    extra : array-like of bool, optional
+        Further per-time condition to require, aligned with position_da.
 
     Returns
     -------
@@ -163,6 +167,8 @@ def get_combined_mask(
     )
 
     mask = near_positions & signal_high
+    if extra is not None:
+        mask = mask & np.asarray(extra)
 
     # Restrict to the single longest contiguous block of True values
     return restrict_to_largest_true_subarray(mask)
@@ -171,12 +177,16 @@ def get_combined_mask(
 def get_averaged_velocity(
     average_ds, variable, method_parameters, position_method="contouring"
 ):
+    within_boundaries = None
     if position_method == "contouring":
-        position_da = get_contour_evolution(
+        contour_ds = get_contour_evolution(
             average_ds[variable],
             method_parameters.contouring.threshold_factor,
             max_displacement_threshold=None,
-        ).centroid
+        )
+        position_da = contour_ds.centroid
+        if method_parameters.position_filter.require_within_boundaries:
+            within_boundaries = contour_ds.within_boundaries.values
     elif position_method == "max":
         position_da = compute_maximum_trajectory_da(
             average_ds, variable, method="parabolic"
@@ -187,12 +197,16 @@ def get_averaged_velocity(
     position_da, start, end = smooth_da(
         position_da, method_parameters.position_filter, return_start_end=True
     )
+    if within_boundaries is not None:
+        # smooth_da may clip the ends; realign with the positions it returned.
+        within_boundaries = within_boundaries[start:end]
 
     mask = get_combined_mask(
         average_ds.isel(time=slice(start, end)),
         variable,
         position_da,
         method_parameters.position_filter,
+        extra=within_boundaries,
     )
 
     v, w = get_averaged_velocity_from_position(

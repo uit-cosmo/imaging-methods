@@ -68,6 +68,11 @@ class PositionFilterParams:
     window_type: str = "hann"
     mask_distance: float = 1
     mask_signal_factor: float = 0.75
+    # Drop lags whose contour is cut off by the array border. Off by default so
+    # existing results are unchanged; only affects contour tracking. Worth
+    # switching on for a structure comparable in size to the field of view,
+    # where a clipped contour's centroid follows the edge, not the structure.
+    require_within_boundaries: bool = False
 
 
 @dataclass

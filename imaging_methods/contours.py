@@ -10,9 +10,31 @@ from skimage.measure import EllipseModel
 __all__ = [
     "compute_contour_mass",
     "indexes_to_coordinates",
+    "is_within_boundaries",
     "fit_ellipses_to_contour_ds",
     "get_contour_evolution",
 ]
+
+
+def is_within_boundaries(contour, shape):
+    """Whether a contour closes strictly inside the array border.
+
+    ``contour`` is in index space, (row, col), as returned by
+    ``skimage.measure.find_contours``; ``shape`` is the frame's ``(rows, cols)``.
+    A contour that reaches the border has been cut off by the field of view, so
+    its centroid is held by the array edge rather than by the structure: it stops
+    moving while the structure keeps going, which biases any velocity fitted
+    through it. An empty contour counts as outside.
+    """
+    if len(contour) == 0:
+        return False
+    rows, cols = contour[:, 0], contour[:, 1]
+    return bool(
+        np.all(rows > 0)
+        and np.all(rows < shape[0] - 1)
+        and np.all(cols > 0)
+        and np.all(cols < shape[1] - 1)
+    )
 
 
 def compute_contour_mass(contour, frame, R, Z):
@@ -186,6 +208,7 @@ def get_contour_evolution(
     convexity_deficiencies = []
     centroids = []
     areas = []
+    within_boundaries = []
 
     # Process each time step
     max_amplitude = np.max(frames_da.values)
@@ -241,6 +264,9 @@ def get_contour_evolution(
         convexity_deficiencies.append(convexity_deficiency)
         centroids.append(centroid)
         areas.append(area)
+        # Evaluated on the index-space contour, before the (r, z) conversion, so
+        # the bound is the array itself and needs no assumption about dim order.
+        within_boundaries.append(is_within_boundaries(contour, frame.shape))
 
     # Compute maximum frame-to-frame displacement
     max_displacement = np.nan
@@ -339,6 +365,15 @@ def get_contour_evolution(
         attrs={"description": "Area of the contour polygon in (r, z) coordinates"},
     )
 
+    within_boundaries_da = xr.DataArray(
+        np.array(within_boundaries, dtype=bool),
+        dims=("time",),
+        coords={"time": time_coords},
+        attrs={
+            "description": "Whether the contour closes strictly inside the array border"
+        },
+    )
+
     # Combine into Dataset
     contour_ds = xr.Dataset(
         {
@@ -346,6 +381,7 @@ def get_contour_evolution(
             "length": length_da,
             "convexity_deficiency": convexity_da,
             "centroid": centroid_da,
+            "within_boundaries": within_boundaries_da,
             "position": pos_da,
             "size": size_da,
             "theta": theta_da,
