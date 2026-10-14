@@ -58,3 +58,4 @@ from .velocity_estimates import (
     get_averaged_velocity,
     estimate_velocities_synthetic_ds,
 )
+from . import dead_pixels, puff
