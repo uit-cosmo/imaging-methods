@@ -58,4 +58,6 @@ from .velocity_estimates import (
     get_averaged_velocity,
     estimate_velocities_synthetic_ds,
 )
+from .fitting import fit_two_sided, fit_exp
+from .geometry import calculate_splinted_LCFS
 from . import dead_pixels, puff
