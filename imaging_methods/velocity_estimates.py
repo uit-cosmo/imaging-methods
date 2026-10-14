@@ -16,6 +16,7 @@ __all__ = [
     "is_position_near_reference",
     "get_combined_mask",
     "get_averaged_velocity",
+    "get_positions_and_mask",
     "estimate_velocities_synthetic_ds",
 ]
 
@@ -215,6 +216,48 @@ def get_averaged_velocity(
         estimator=method_parameters.velocity.estimator,
     )
     return v, w
+
+
+def get_positions_and_mask(average_ds, variable, params, position_method="contouring"):
+    """The tracking step of ``get_averaged_velocity``: ``(pos, mask, valid)``.
+
+    The same steps ``get_averaged_velocity`` runs internally, returned here so the
+    positions can also be plotted or stored. ``pos`` is the smoothed position
+    (``smooth_da``), (time, coord), on the lags the smoothing window leaves; ``mask``
+    the lags the velocity's slope rests on (``get_combined_mask``); and ``valid`` flags
+    the lags where the raw position exists (``smooth_da`` extrapolates the rest).
+    ``params`` is a ``MethodParameters``: its contouring, position_filter (and through
+    it the mask) are read. ``position_method`` is "contouring" (the contour's centroid)
+    or "max" (the subpixel maximum).
+
+    Moved from fusion_scripts `twodca_manuscript/tracking.py` at 12b8543.
+    """
+    within_boundaries = None
+    if position_method == "contouring":
+        contour_ds = get_contour_evolution(
+            average_ds[variable],
+            params.contouring.threshold_factor,
+            max_displacement_threshold=None,
+        )
+        raw = contour_ds.centroid
+        if params.position_filter.require_within_boundaries:
+            within_boundaries = contour_ds.within_boundaries.values
+    elif position_method == "max":
+        raw = compute_maximum_trajectory_da(average_ds, variable)
+    else:
+        raise NotImplementedError(f"Unknown position method {position_method}")
+    pos, start, end = smooth_da(raw, params.position_filter, return_start_end=True)
+    if within_boundaries is not None:
+        within_boundaries = within_boundaries[start:end]
+    mask = get_combined_mask(
+        average_ds.isel(time=slice(start, end)),
+        variable,
+        pos,
+        params.position_filter,
+        extra=within_boundaries,
+    )
+    valid = pos.valid.values
+    return pos, mask, valid
 
 
 def estimate_velocities_synthetic_ds(ds, method_parameters: MethodParameters):

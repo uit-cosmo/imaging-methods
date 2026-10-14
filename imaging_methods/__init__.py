@@ -29,6 +29,7 @@ from .contours import (
     indexes_to_coordinates,
     fit_ellipses_to_contour_ds,
     get_contour_evolution,
+    neighbour_level,
 )
 from .duration_time_estimation import (
     Analytics,
@@ -48,6 +49,7 @@ from .maximum_trajectory import (
     compute_maximum_trajectory_da,
     find_maximum_for_frame,
     parabolic_2d_interp,
+    get_maximum_time,
 )
 from .synthetic_data import get_blob, make_2d_realization
 from .velocity_estimates import (
@@ -56,8 +58,9 @@ from .velocity_estimates import (
     is_position_near_reference,
     get_combined_mask,
     get_averaged_velocity,
+    get_positions_and_mask,
     estimate_velocities_synthetic_ds,
 )
 from .fitting import fit_two_sided, fit_exp
 from .geometry import calculate_splinted_LCFS
-from . import dead_pixels, puff
+from . import decorrelation, dead_pixels, puff
