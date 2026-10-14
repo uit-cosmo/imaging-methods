@@ -843,17 +843,18 @@ def blobs(ds, average_at, averages, neighbour_step, blob_settings, dead):
 # ---------------------------------------------------------------------------------------
 
 
-def reliable(f, ca=None, min_events=MIN_EVENTS, track=TRACK):
+def reliable(f, ca=None, min_lags=MIN_LAGS, min_events=MIN_EVENTS, track=TRACK):
     """Pixels where every method returned a number and the 2DCA fit rests on enough
     lags: (y, x) bool, of a ``fields`` Dataset ``f``.
 
     The 2DCA ``track`` (``TRACK``, the centroid, by default) must rest on at least
-    ``MIN_LAGS`` lags and ``min_events`` events, and its velocity and both TDE off the
-    record must be finite; with ``ca``, a Dataset whose ``vr`` (y, x) is another
-    estimate, that must be finite too. Edge pixels are out: the 2DCA track leaves the
-    view within a few lags there and the TDE loses half its neighbour pairs.
+    ``min_lags`` lags and ``min_events`` events (the paper's ``MIN_LAGS`` and
+    ``MIN_EVENTS``, 8 and 200, by default), and its velocity and both TDE off the record
+    must be finite; with ``ca``, a Dataset whose ``vr`` (y, x) is another estimate, that
+    must be finite too. Edge pixels are out: the 2DCA track leaves the view within a few
+    lags there and the TDE loses half its neighbour pairs.
     """
-    ok = (f["nlags" + track] >= MIN_LAGS) & (f.nevents >= min_events)
+    ok = (f["nlags" + track] >= min_lags) & (f.nevents >= min_events)
     for v in ("vr" + track, "vz" + track, "vr3_tde", "vz3_tde", "vr2_tde", "vz2_tde"):
         ok &= np.isfinite(f[v])
     if ca is not None:
