@@ -564,3 +564,48 @@ def test_reliable_on_the_fixtures_fields(fields_out):
         expected &= np.isfinite(f[v].values)
     expected[[0, -1], :] = expected[:, [0, -1]] = False
     assert np.array_equal(ok, expected)
+
+
+def _reliable_as_moved(
+    f, ca=None, min_events=decorrelation.MIN_EVENTS, track=decorrelation.TRACK
+):
+    """reliable() as it was moved from fusion_scripts' figures.py, before min_lags: the
+    lag threshold is the module's MIN_LAGS."""
+    ok = (f["nlags" + track] >= decorrelation.MIN_LAGS) & (f.nevents >= min_events)
+    for v in ("vr" + track, "vz" + track, "vr3_tde", "vz3_tde", "vr2_tde", "vz2_tde"):
+        ok &= np.isfinite(f[v])
+    if ca is not None:
+        ok &= np.isfinite(ca.vr)
+    ny, nx = ok.shape
+    interior = np.zeros((ny, nx), bool)
+    interior[1:-1, 1:-1] = True
+    return ok & interior
+
+
+def test_reliable_min_lags_moves_the_cut_and_its_default_is_the_old_one(fields_out):
+    paper = _paper_fields()
+    paper["nlags_com"].values[1, 2] = 5
+    ca = xr.Dataset({"vr": fields_out.vr3_catde})
+    # The default is the cut as it was moved, whatever else is passed.
+    for f, kwargs in [
+        (paper, {}),
+        (paper, {"min_events": 0, "track": "_max"}),
+        (fields_out, {"min_events": 0}),
+        (fields_out, {"ca": ca, "min_events": 0}),
+        (fields_out, {"min_events": 0, "track": "_2dcc"}),
+    ]:
+        expected = _reliable_as_moved(f, **kwargs)
+        assert decorrelation.reliable(f, **kwargs).identical(expected)
+        assert decorrelation.reliable(
+            f, min_lags=decorrelation.MIN_LAGS, **kwargs
+        ).identical(expected)
+    # The caller's own threshold moves it: the pixel whose fit rests on 5 lags is in at
+    # 5 and out at the paper's 8, and 9 leaves none.
+    assert not decorrelation.reliable(paper).values[1, 2]
+    assert decorrelation.reliable(paper, min_lags=5).values[1, 2]
+    assert not decorrelation.reliable(paper, min_lags=9).values.any()
+    # On the fixture's fields the centroid fits rest on 3 to 6 of their 11 lags, so the
+    # paper's 8 keeps none, and 4 keeps the interior pixels that reach it.
+    assert not decorrelation.reliable(fields_out, min_events=0).values.any()
+    kept = decorrelation.reliable(fields_out, min_lags=4, min_events=0).values
+    assert kept.any() and (fields_out.nlags_com.values[kept] >= 4).all()
