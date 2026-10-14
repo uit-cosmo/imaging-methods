@@ -1,3 +1,5 @@
+import netCDF4  # noqa: F401  -- before h5py, which velocity_estimation imports, or every netCDF read fails
+
 from .method_parameters import (
     PreprocessingParams,
     TwoDcaParams,
