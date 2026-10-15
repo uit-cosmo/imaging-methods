@@ -1,5 +1,3 @@
-import warnings
-
 import numpy as np
 import pytest
 import xarray as xr
@@ -165,45 +163,14 @@ def test_require_within_boundaries_shortens_the_mask():
 # --- get_positions_and_mask: the tracking step, returned ---
 
 
-def deck_params(estimator="lsq"):
+def deck_params():
     from imaging_methods import get_default_apd_method_params
 
     params = get_default_apd_method_params()
     params.position_filter.window_size = 3
     params.position_filter.mask_signal_factor = 0.6
-    params.velocity.estimator = estimator
+    params.velocity.estimator = "lsq"
     return params
-
-
-@pytest.mark.parametrize("estimator", ["central_diff", "lsq"])
-@pytest.mark.parametrize("position_method", ["contouring", "max"])
-@pytest.mark.parametrize("variable", ["cond_av", "cross_corr"])
-def test_positions_and_mask_are_the_steps_of_get_averaged_velocity(
-    fresh, variable, position_method, estimator
-):
-    """On real 2DCA averages (the decorrelation fixture's): the velocity of the track
-    and mask it returns is get_averaged_velocity's, to the bit."""
-    from imaging_methods import get_averaged_velocity, get_positions_and_mask
-
-    params = deck_params(estimator)
-    for pixel in [(2, 1), (2, 3), (0, 4)]:
-        average_ds = fresh[pixel]
-        pos, mask, valid = get_positions_and_mask(
-            average_ds, variable, params, position_method=position_method
-        )
-        n = average_ds.sizes["time"] - 2  # a smoothing window of 3 loses one each end
-        assert pos.dims == ("time", "coord") and pos.shape == (n, 2)
-        np.testing.assert_array_equal(pos.time.values, average_ds.time.values[1:-1])
-        assert np.asarray(mask).dtype == bool and np.asarray(mask).shape == (n,)
-        assert valid.dtype == bool and valid.shape == (n,)
-        np.testing.assert_array_equal(valid, pos.valid.values)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            v = get_averaged_velocity_from_position(pos, mask, estimator=estimator)
-            expected = get_averaged_velocity(
-                average_ds, variable, params, position_method=position_method
-            )
-        np.testing.assert_array_equal(v, expected)
 
 
 def test_positions_flag_the_lags_without_a_raw_position():

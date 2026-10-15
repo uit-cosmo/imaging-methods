@@ -178,51 +178,22 @@ def get_combined_mask(
 def get_averaged_velocity(
     average_ds, variable, method_parameters, position_method="contouring"
 ):
-    within_boundaries = None
-    if position_method == "contouring":
-        contour_ds = get_contour_evolution(
-            average_ds[variable],
-            method_parameters.contouring.threshold_factor,
-            max_displacement_threshold=None,
-        )
-        position_da = contour_ds.centroid
-        if method_parameters.position_filter.require_within_boundaries:
-            within_boundaries = contour_ds.within_boundaries.values
-    elif position_method == "max":
-        position_da = compute_maximum_trajectory_da(
-            average_ds, variable, method="parabolic"
-        )
-    else:
-        raise NotImplementedError
-
-    position_da, start, end = smooth_da(
-        position_da, method_parameters.position_filter, return_start_end=True
+    """The velocity ``(v, w)`` along R and Z of ``variable``'s track through the
+    average: ``get_positions_and_mask``'s positions, reduced over its mask by
+    ``method_parameters.velocity.estimator``."""
+    pos, mask, _ = get_positions_and_mask(
+        average_ds, variable, method_parameters, position_method
     )
-    if within_boundaries is not None:
-        # smooth_da may clip the ends; realign with the positions it returned.
-        within_boundaries = within_boundaries[start:end]
-
-    mask = get_combined_mask(
-        average_ds.isel(time=slice(start, end)),
-        variable,
-        position_da,
-        method_parameters.position_filter,
-        extra=within_boundaries,
+    return get_averaged_velocity_from_position(
+        position_da=pos, mask=mask, estimator=method_parameters.velocity.estimator
     )
-
-    v, w = get_averaged_velocity_from_position(
-        position_da=position_da,
-        mask=mask,
-        estimator=method_parameters.velocity.estimator,
-    )
-    return v, w
 
 
 def get_positions_and_mask(average_ds, variable, params, position_method="contouring"):
     """The tracking step of ``get_averaged_velocity``: ``(pos, mask, valid)``.
 
-    The same steps ``get_averaged_velocity`` runs internally, returned here so the
-    positions can also be plotted or stored. ``pos`` is the smoothed position
+    ``get_averaged_velocity`` reduces these to a velocity; they are returned here so
+    the positions can also be plotted or stored. ``pos`` is the smoothed position
     (``smooth_da``), (time, coord), on the lags the smoothing window leaves; ``mask``
     the lags the velocity's slope rests on (``get_combined_mask``); and ``valid`` flags
     the lags where the raw position exists (``smooth_da`` extrapolates the rest).
