@@ -27,7 +27,6 @@ Welch segment. A setting the pipeline failed to pass on would then show up as a
 mismatch, where the defaults would hide it.
 """
 
-from dataclasses import dataclass, field
 from pathlib import Path
 
 import numpy as np
@@ -157,91 +156,14 @@ def settings():
 
 
 # ---------------------------------------------------------------------------------------
-# Comparing, as fusion_scripts' `decorrelation/apd_check/regress_pipeline.py` compares
+# Comparing with the expected values
 # ---------------------------------------------------------------------------------------
 
-RTOL = 1e-12
-SHOWN = 5  # differing points shown per variable
 
-
-@dataclass
-class Comparison:
-    """What ``compare`` found: the variables compared, how many are bit-equal, the
-    largest relative difference over all of them, and one line per mismatch."""
-
-    names: list
-    bit_equal: int = 0
-    max_rel: float = 0.0
-    failures: list = field(default_factory=list)
-
-    @property
-    def passed(self):
-        return not self.failures
-
-
-def _shown(flat, dims, shape, a, b, fmt):
-    """The first few of the flat indices ``flat``, each as (dim=index, ...) new vs
-    reference."""
-    lines = []
-    for i in flat[:SHOWN]:
-        index = np.unravel_index(i, shape)
-        where = ", ".join(f"{d}={int(j)}" for d, j in zip(dims, index))
-        lines.append(f"({where}) {a.flat[i]:{fmt}} vs {b.flat[i]:{fmt}}")
-    return "; ".join(lines)
-
-
-def compare(new, ref, names, rtol=RTOL):
-    """``new`` against ``ref``, variable by variable over ``names``: the same dims, dtype
-    and NaN pattern, and values within ``rtol`` of the reference's, relative (bools and
-    integers exactly)."""
-    out = Comparison(list(names))
+def assert_same(new, ref, names, rtol=1e-12, atol=0.0):
+    """``new`` against ``ref``, variable by variable over ``names``: the same dtype, and
+    the same dims, NaN pattern and values within ``atol + rtol * |ref|``
+    (``xr.testing.assert_allclose``, which prints the points that differ)."""
     for k in names:
-        if k not in new:
-            out.failures.append(f"{k}: missing")
-            continue
-        a, b = new[k], ref[k]
-        if a.dims != b.dims or a.shape != b.shape:
-            out.failures.append(f"{k}: dims {dict(a.sizes)}, reference {dict(b.sizes)}")
-            continue
-        if a.dtype != b.dtype:
-            out.failures.append(f"{k}: dtype {a.dtype}, reference {b.dtype}")
-            continue
-        av, bv = np.asarray(a.values), np.asarray(b.values)
-        if av.dtype.kind != "f":
-            bad = np.flatnonzero(av != bv)
-            if len(bad):
-                shown = _shown(bad, a.dims, av.shape, av, bv, "")
-                out.failures.append(f"{k}: differs at {len(bad)} of {av.size}: {shown}")
-            else:
-                out.bit_equal += 1
-            continue
-        nan = np.isnan(bv)
-        bad = np.flatnonzero(np.isnan(av) != nan)
-        if len(bad):
-            shown = _shown(bad, a.dims, av.shape, av, bv, ".6g")
-            out.failures.append(
-                f"{k}: NaN pattern differs at {len(bad)} of {av.size}: {shown}"
-            )
-            continue
-        diff = np.where(nan, 0.0, np.abs(av - bv))
-        with np.errstate(divide="ignore", invalid="ignore"):
-            rel = np.where(diff == 0, 0.0, diff / np.abs(bv))
-        out.max_rel = max(out.max_rel, float(rel.max(initial=0.0)))
-        if not diff.any():
-            out.bit_equal += 1
-        bad = np.flatnonzero(rel > rtol)
-        if len(bad):
-            bad = bad[np.argsort(-rel.flat[bad], kind="stable")]
-            out.failures.append(
-                f"{k}: values differ at {len(bad)} of {int((~nan).sum())} finite, max "
-                f"rel {float(rel.max()):.3g}: "
-                + _shown(bad, a.dims, av.shape, av, bv, ".17g")
-            )
-    return out
-
-
-def assert_same(new, ref, names):
-    """The regression's test: same dims, dtype and NaN pattern, values within 1e-12
-    relative."""
-    result = compare(new, ref, names)
-    assert result.passed, "\n".join(result.failures)
+        assert new[k].dtype == ref[k].dtype, f"{k}: {new[k].dtype} vs {ref[k].dtype}"
+        xr.testing.assert_allclose(new[k], ref[k], rtol=rtol, atol=atol)

@@ -4,8 +4,11 @@ code it was moved from gave there.
 Moved from fusion_scripts `decorrelation/tests/test_pipeline.py` at 12b8543. The
 expected values were made by the pre-refactor code (fusion_scripts
 `decorrelation/tests/make_pipeline_fixture.py`, at 7b761fd), at settings that move one
-knob in every group (pipeline_fixture.py). The comparison is the regression's: the same
-NaN pattern and values within 1e-12 relative; in practice they are bit-equal.
+knob in every group (pipeline_fixture.py). The comparison is xr.testing.assert_allclose
+with the same dtype: values within 1e-12 relative, and for the fields 1e-9 absolute too,
+since velocities that are zero in theory come out as least-squares rounding, which other
+BLAS/LAPACK builds round otherwise. Bit-equality with the old code is the migration
+harness's job, not CI's.
 """
 
 import dataclasses
@@ -327,9 +330,23 @@ def test_the_record_is_make_records(record):
 
 def test_fields_equal_the_pre_refactor_code(fields_out):
     expected = xr.load_dataset(fixture.EXPECTED_FIELDS)
-    fixture.assert_same(fields_out, expected, list(expected.data_vars))
+    # atol: a velocity that is zero in theory is least-squares rounding, 1e-11 against
+    # 0 on another LAPACK, which no relative tolerance passes.
+    fixture.assert_same(fields_out, expected, list(expected.data_vars), atol=1e-9)
     assert fields_out.R.identical(expected.R) and fields_out.Z.identical(expected.Z)
     assert np.array_equal(fields_out.time.values, expected.time.values)
+
+
+def test_the_fields_comparison_still_sees_a_small_change(fields_out):
+    """The absolute tolerance lets rounding near zero through, not a change: one
+    centroid velocity moved by 1e-9 of itself fails."""
+    expected = xr.load_dataset(fixture.EXPECTED_FIELDS)
+    changed = fields_out.copy(deep=True)
+    vr = changed["vr_com"].values
+    i = np.flatnonzero(np.isfinite(vr))[0]
+    vr.flat[i] *= 1 + 1e-9
+    with pytest.raises(AssertionError):
+        fixture.assert_same(changed, expected, ["vr_com"], atol=1e-9)
 
 
 def test_fields_schema(fields_out, dead):
