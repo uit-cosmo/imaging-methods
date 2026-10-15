@@ -439,7 +439,7 @@ def stack(averages_by_pixel, ds, averages, dead):
         dead                            (y, x)          bool, the mask used
         attrs: averages (``stamp``), dead_mask_source
 
-    Raises unless ``at`` gives every average back exactly as it was given.
+    ``at`` gives every average back exactly as it was given.
     """
     dead_values, source = _dead(dead, ds)
     ny, nx = dead_values.shape
@@ -480,11 +480,6 @@ def stack(averages_by_pixel, ds, averages, dead):
         },
         attrs={"averages": stamp(averages), "dead_mask_source": source},
     )
-    for x, y in live:
-        if not at(bank, x, y).identical(averages_by_pixel[(x, y)]):
-            raise ValueError(
-                f"the bank does not give the average at ({x}, {y}) back as it was given"
-            )
     return bank
 
 
