@@ -4,68 +4,14 @@ Moved from fusion_scripts `density_scan/puff.py` at 12b8543. The drivers that re
 raw files and the discharge database (``shot_window``, ``table_row`` and the command
 line) stay there.
 
-On many shots the discharge window of the discharge DB (``t_start..t_end``) is the
-whole record, and the record starts before the puff: the live pixels sit at the
-digitizer's dark level, then light up. A window that includes that dark stretch gives
-bimodal PDFs and a record that does not start stationary. This module finds the puff in
-the array mean of the raw frames and cuts the discharge window to it.
-
-The rule, which the stored files carry in words as ``puff_rule``:
-
-1. The signal is the mean over the pixels, smoothed by a ``SMOOTH`` (1 ms) running
-   mean.
-2. The baseline is the dark level at the start of the record: the median of the first
-   ``BASELINE_SPAN`` (5 ms) of the smoothed signal. The level is its median over the
-   discharge window, or, where the median fails the clear-rise test of item 5 because
-   most of the window is dark after a short puff, its ``FALLBACK_QUANTILE`` (90th)
-   percentile: the median is then the dark level, and the light is in the upper tail.
-   The threshold is halfway between baseline and level. The polarity is not assumed:
-   the plasma lies on the side of the baseline where the window's largest excursion is,
-   and the fallback takes that tail (the 10th percentile where light reads lower). On
-   C-Mod more light reads higher (dark about -1.11 V), so that is up.
-3. The puff starts where the signal crosses the threshold and stays across it for at
-   least ``MIN_ON`` (5 ms), and ends at the last such point. The analysis window is the
-   overlap of that span with the discharge window.
-4. A dip below the threshold inside the window, as between two puffs, is reported in
-   ``dips`` and the note, and not cut. Dips shorter than ``MIN_DIP`` (1 ms) are noise
-   at the threshold.
-5. The window is kept, and the note says why, when the rule has nothing to stand on
-   (``found`` is False):
-   - the record does not start dark: its first 5 ms vary by more than ``FLAT_START``
-     (4%) of the rise from the baseline to the level, so the puff is already on or
-     rising and there is no dark level to compare with;
-   - there is no clear rise: the median over the window is not on the plasma side of
-     the baseline, or is less than ``CLEAR_RISE`` (a quarter) of the way to its largest
-     excursion, as when most of the window is dark after a short puff, and the median
-     is the dark level. The fallback level of item 2 is then tried, and taken only if
-     the clear-rise and the flat-start tests pass at that level. A record that does not
-     start dark fails the second at any level, so it keeps the median's verdict and its
-     note: its window is not read from a decay;
-   - the signal never stays across the threshold for 5 ms, or the puff overlaps the
-     window by less than ``MIN_SPAN`` (20 ms).
-
-``FLAT_START`` and ``CLEAR_RISE`` are what "already on at the start" and "no clear
-rise" mean here, and each sits in the gap between the shots on either side of it. On
-the 111 raw Alcator C-Mod APD shots of the group server (2026-10-08):
-
-- the 82 it judges start flat, their first 5 ms varying by at most 2.2% of the rise.
-  79 have a median at least 0.52 of the way to the window's largest excursion;
-  1140827029, 1150618031 and 1150618037 take the fallback level, at which they vary by
-  0.2-0.8% and are 0.65-0.98 of the way;
-- the 28 that start while the light is already rising or in a decay vary by 6.3-23%
-  (the 1110201 and 1120217 days, 1160706029 and 1140228019);
-- 1091216034, a signal that only decays, is 0.17 of the way with its median and 0.92
-  with the fallback's 10th percentile (its largest excursion is downward), but its
-  start varies by 5.4% of that rise, against the 4% limit, so it keeps the median's
-  verdict. Without the flat-start test the fallback would give it 1.398-1.494 s, the
-  falling end of the record.
-
-``PuffWindow.scatter_over_rise`` and ``rise_over_excursion`` give each record's own
-values, at the level used.
+``puff_window`` finds the gas puff in the array mean of a raw record and cuts the
+discharge window to it; ``find_puff`` does the same on a 1-D array mean. The rule, with
+its math and the constants below, is in the README ("The gas-puff window"), and the
+stored files carry it in words as ``puff_rule`` (``PuffWindow.rule``).
 
 Use ``puff_window`` on a whole record, never on one already cut to the discharge
 window, whose start may be after the puff: the baseline is the start of what it is
-given. ``find_puff`` is the same on a 1-D array mean.
+given.
 
     w = puff_window(record, (t_start, t_end))  # record: frames (y, x, time), time in s
     w.found, w.analysis_window, w.note  # what was decided, and why; w.cut is the
@@ -75,6 +21,8 @@ given. ``find_puff`` is the same on a 1-D array mean.
                                       # 90th percentile
     w.start, w.end, w.dips  # the puff, NaN when not found, and the dips inside the
                             # window
+    w.scatter_over_rise, w.rise_over_excursion  # the record's own values of the two
+                                                # tests, at the level used
     w.to_dataset()  # to store it; PuffWindow.from_dataset reads it back
 """
 
@@ -296,7 +244,7 @@ def find_puff(
     fallback_quantile=FALLBACK_QUANTILE,
 ):
     """The puff in an array mean ``mean`` sampled at ``time`` (the whole record), by the
-    rule in the module docstring, as a ``PuffWindow``. ``discharge_window`` is
+    rule in the README, as a ``PuffWindow``. ``discharge_window`` is
     ``(t_start, t_end)``, and the times are in seconds: the constants and keyword
     arguments with a duration are too. ``fallback_quantile=None`` turns the fallback
     level off, which is the rule with the median alone."""

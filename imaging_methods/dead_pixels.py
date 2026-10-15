@@ -4,49 +4,15 @@ Moved from fusion_scripts `density_scan/dead_pixels.py` at 12b8543. The drivers 
 read the raw files and the discharge database (``estimate_shot``, ``estimate_shots``,
 ``discharge_window``, ``process_pool`` and the command line) stay there.
 
-A pixel is live when it sees the plasma, and the evidence for that is in its
-fluctuations: their spectrum, and whether they follow a live neighbour's. Its PDF alone
-cannot tell. A dim pixel inside the separatrix has a narrow, near-Gaussian PDF just as
-dead ones do, and a dead channel can be skewed by rare spikes or by telegraph noise.
-Everything here is computed on the raw frames over the window ``estimate`` is given.
-fusion_scripts' ``estimate_shot`` gives it the shot's analysis window: the discharge
-window cut to the gas puff (``imaging_methods.puff``), so that the dark stretch before
-the puff does not dilute the spectra.
+``estimate`` judges every pixel of a raw record over the window it is given: live by a
+red spectrum (``red_ratio``) or by following an already-live neighbour (``band_passed``,
+``neighbour_gains``), dead otherwise, with the evidence for each pixel. ``consolidate``
+gives a run day's mask from its shots' masks. The rule, with its math and the constants
+below, is in the README ("Dead pixels").
 
-1. Red spectrum. The Welch PSD of every pixel is reduced to the median over the blob
-   band, 1-20 kHz, divided by the median over 300-900 kHz, where only digitizer noise
-   is left. The medians ignore the narrow pickup lines in that upper band. Noise is
-   white (a ratio near 1) and plasma fluctuations are red, so a pixel whose ratio
-   exceeds ``RED`` is live.
-2. Neighbours. A pixel below that is still live if its 2-20 kHz signal follows an
-   already-live pixel among its eight neighbours, i.e. the regression gain of its
-   band-passed signal on the neighbour's, ``corr * std_pixel / std_neighbour``, exceeds
-   ``GAIN``. Repeated until no pixel joins. This keeps dim pixels whose own
-   fluctuations are weak, which lie mostly in the innermost columns. Crosstalk, a dead
-   channel carrying a few percent of a neighbour's signal, stays below the gain. The
-   gain on a live neighbour is used rather than the correlation, because dead channels
-   share pickup with one another and correlate strongly while carrying nothing.
-3. Every pixel not reached is dead. A pixel with no samples (NaN or constant) is dead.
-4. Run day. Hardware does not change within a run day: ``consolidate`` marks a pixel
-   dead in every shot of the day when it is dead in at least ``DAY_FRACTION`` of them.
-   This fixes the one failure of the per-shot rule seen so far. On the later 1120814
-   shots, two dead channels, (6, 3) and (9, 3), share telegraph noise with a dim live
-   neighbour and pass step 2.
-
-Checked on all 111 raw Alcator C-Mod APD shots on the group server (2026-10-07):
-
-- It reproduces the hand-made 1160616 mask (``experimental_database``'s
-  ``hand_made_dead_pixel_mask``) on all nine shots and on every other 2016 day.
-- 2012-02 to 2015-09 give the same 18 dead pixels on every day: the 2016 mask without
-  (4, 8), (8, 7), (8, 8) and (9, 7), which died between 1150916 and 1160616.
-- The result is the same for any ``RED`` from 100 to 300; dead channels reach at most
-  ~100.
-- No reference exists for 2009-2011: those days give 6, 22 (one shot, 2010) and 8 dead
-  pixels.
-- Over the puff window (2026-10-08) the verdict of every one of the 111 shots, and so
-  the mask of every run day, is the same as over the discharge window. 38 shots'
-  windows are cut; the number of pixels that live only through a neighbour changes by
-  1 to 5 in five of them.
+fusion_scripts' ``estimate_shot`` gives ``estimate`` the shot's analysis window: the
+discharge window cut to the gas puff (``imaging_methods.puff``), so that the dark
+stretch before the puff does not dilute the spectra.
 """
 
 import numpy as np

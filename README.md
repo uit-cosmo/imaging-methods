@@ -5,15 +5,72 @@ I have applied this to APD, Phantom and synthetic blob data. The main method is 
 - cond_av: Code for two-dimensional conditional averaging
 - contours: Blob tracking based on contouring
 - data_preprocessing: Method to handle and preprocess experimental data
+- dead_pixels: Dead APD pixels estimated from the raw record
 - discharge: Dataclasses definitions for shots and analysis results
 - duration_time_estimation: Method to estimate duration time by fitting power spectral density or auto-correlation function
 - parameter_estimation: Other estimation methods applied to the outcome of 2DCA.
+- puff: The gas-puff window of a raw APD record
 - show_data: Diverse plotting functions
 - utils: Other functions
 
 Top level files have been used to analyze different shots and synthetic data generated with blobmodel.
 
 # Methods
+
+## Dead pixels
+
+A pixel is live when it sees the plasma, and the evidence is in its fluctuations: their spectrum, and whether they
+follow a live neighbour's. Its PDF alone cannot tell: a dim pixel inside the separatrix has a narrow, near-Gaussian PDF
+just as dead ones do, and a dead channel can be skewed by rare spikes or by telegraph noise. `dead_pixels.estimate`
+judges every pixel of a raw record over the window it is given:
+
+1. **Red spectrum** (`red_ratio`). With $S(f)$ the Welch power spectral density of the pixel (segments of 4096 samples,
+`NPERSEG`), the ratio $\rho = \mathrm{median}_{1-20\ \mathrm{kHz}}\ S\ /\ \mathrm{median}_{300-900\ \mathrm{kHz}}\ S$
+compares the blob band (`RED_BAND`) with a band where only digitizer noise is left (`NOISE_BAND`); the medians ignore
+the narrow pickup lines in that band. Noise is white, $\rho \approx 1$, and plasma fluctuations are red: a pixel with
+$\rho > 150$ (`RED`) is live.
+2. **Following a live neighbour** (`band_passed`, `neighbour_gains`). With $b_p$ the pixel's signal band-passed to 2-20
+kHz (`BLOB_BAND`: block averages over $1/(2 f_\mathrm{high})$, less their running mean over $1/f_\mathrm{low}$), the
+regression gain of pixel $p$ on its neighbour $q$ is $g_{pq} = \overline{b_p b_q}/\sigma_q^2 = r_{pq}\sigma_p/\sigma_q$.
+A pixel that fails step 1 is live when its gain on one of its eight neighbours that is already live exceeds 0.1
+(`GAIN`), repeated until no pixel joins. This keeps dim pixels whose own fluctuations are weak (on C-Mod, mostly in the
+innermost columns). It is the gain and not the correlation, because dead channels share pickup with one another and
+correlate strongly while carrying nothing, and crosstalk carries only a few percent of a neighbour's signal.
+3. Every other pixel is dead, and so is a pixel with no samples (non-finite or constant).
+
+The result holds the mask, each pixel's evidence (`NO_DATA`, `NO_EVIDENCE`, `FOLLOWS_NEIGHBOUR` or `RED_SPECTRUM`), its
+$\rho$ and its largest gain on a live neighbour. `consolidate` gives a run day's mask from its shots' masks: dead where
+dead in at least a third of them (`DAY_FRACTION`), since the hardware does not change within a day.
+
+## The gas-puff window
+
+On many shots the record starts before the gas puff, while the live pixels still read the digitizer's dark level, and a
+window that includes that dark stretch gives bimodal PDFs and a record that does not start stationary.
+`puff.puff_window(record, (t_start, t_end))` cuts the discharge window to the puff, found on the whole record
+(`find_puff` does the same on a 1-D array mean). The dark level is read off the start of what it is given, so it is
+never given a record already cut to the discharge window, whose start may be after the puff:
+
+1. The signal $\bar{s}(t)$ is the mean over the pixels finite over the whole record, smoothed by a 1 ms running mean
+(`SMOOTH`).
+2. The baseline $b$ is its median over the first 5 ms of the record (`BASELINE_SPAN`), and the level $\ell$ its median
+over the discharge window. The polarity is read off the data: the plasma lies on the side of $b$ where the window's 5th
+or 95th percentile lies further (on C-Mod more light reads higher, from a dark level of about -1.11 V). Where the median
+is not on that side, or is less than a quarter of the way from $b$ to that excursion (`CLEAR_RISE`), as when most of the
+window is dark after a short puff and the median is the dark level, the window's 90th percentile (`FALLBACK_QUANTILE`;
+the 10th, where light reads lower) is the level, provided that at this level the rise is clear and the start of the
+record flat (step 4). A record that does not start dark fails the second test at any level, so it keeps the median's
+verdict: its window is not read from a decay. The threshold is $\theta = (b + \ell)/2$.
+3. The puff runs from the first point at which $\bar{s}$ crosses $\theta$ and stays across it for at least 5 ms
+(`MIN_ON`), to the last point of the last such run. The analysis window is its overlap with the discharge window. A cut
+shorter than the smoothing is not made. A dip below $\theta$ inside the window, as between two puffs, is reported and
+not cut; a dip shorter than 1 ms (`MIN_DIP`) is noise at the threshold, and not reported.
+4. The discharge window is kept whole, and the result says why, when the record does not start dark (its first 5 ms vary
+by more than 4% of the rise $|\ell - b|$, `FLAT_START`, or $\bar{s}$ is across $\theta$ from its first point), when
+there is no clear rise, when $\bar{s}$ never stays across $\theta$ for 5 ms, or when the puff overlaps the window by
+less than 20 ms (`MIN_SPAN`).
+
+The result, a `PuffWindow`, carries the smoothed signal, its levels and the rule in words (`rule`), which preprocessing
+stores with the file.
 
 ## Two-dimensional conditional averaging (2DCA)
 
