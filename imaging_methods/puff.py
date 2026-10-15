@@ -79,7 +79,7 @@ given. ``find_puff`` is the same on a 1-D array mean.
 """
 
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 
 import numpy as np
 import xarray as xr
@@ -207,45 +207,36 @@ class PuffWindow:
             {"signal": ("time", self.signal), "dips": (("dip", "edge"), dips)},
             coords={"time": self.time},
             attrs={
-                "found": int(self.found),
-                "analysis_window": list(map(float, self.analysis_window)),
-                "discharge_window": list(map(float, self.discharge_window)),
-                "record_window": list(map(float, self.record_window)),
-                "start": float(self.start),
-                "end": float(self.end),
-                "baseline": float(self.baseline),
-                "level": float(self.level),
-                "level_quantile": float(self.level_quantile),
-                "threshold": float(self.threshold),
-                "scatter": float(self.scatter),
-                "rise": float(self.rise),
-                "excursion": float(self.excursion),
-                "note": self.note,
+                f.name: _ATTRS[f.type][0](getattr(self, f.name))
+                for f in fields(self)
+                if f.name not in _VARIABLES
             },
         )
 
     @classmethod
     def from_dataset(cls, ds):
-        a = ds.attrs
         return cls(
-            found=bool(a["found"]),
-            analysis_window=tuple(map(float, a["analysis_window"])),
-            discharge_window=tuple(map(float, a["discharge_window"])),
-            record_window=tuple(map(float, a["record_window"])),
-            start=float(a["start"]),
-            end=float(a["end"]),
-            baseline=float(a["baseline"]),
-            level=float(a["level"]),
-            level_quantile=float(a["level_quantile"]),
-            threshold=float(a["threshold"]),
-            scatter=float(a["scatter"]),
-            rise=float(a["rise"]),
-            excursion=float(a["excursion"]),
+            **{
+                f.name: _ATTRS[f.type][1](ds.attrs[f.name])
+                for f in fields(cls)
+                if f.name not in _VARIABLES
+            },
             dips=tuple(tuple(map(float, d)) for d in ds["dips"].values.reshape(-1, 2)),
-            note=str(a["note"]),
             time=ds["time"].values,
             signal=ds["signal"].values,
         )
+
+
+# How ``to_dataset`` stores each field of a PuffWindow as an attribute, and how
+# ``from_dataset`` reads it back, by its annotation: ``(store, read)``. The arrays are
+# variables instead.
+_VARIABLES = ("dips", "time", "signal")
+_ATTRS = {
+    bool: (int, bool),
+    tuple: (lambda v: list(map(float, v)), lambda v: tuple(map(float, v))),
+    float: (float, float),
+    str: (str, str),
+}
 
 
 def array_mean(frames):
