@@ -56,7 +56,13 @@ NO_DATA, NO_EVIDENCE, FOLLOWS_NEIGHBOUR, RED_SPECTRUM = -1, 0, 1, 2
 
 def red_ratio(frames, dt):
     """``(ratio, frequency, psd)``: the median PSD over RED_BAND over the median over
-    NOISE_BAND, per pixel."""
+    NOISE_BAND, per pixel.
+
+    One pixel at a time, for memory: ``signal.welch`` over every pixel at once gives
+    the same bits (when each pixel's mean is taken out first, as here; without it the
+    last bits move), but holds every pixel's segments and spectra together. With that
+    and ``band_passed`` over the whole array, ``estimate`` peaked at 6.0 times the
+    record, against 2.5 times with the loops."""
     ny, nx, _ = frames.shape
     f = None
     psd = None
@@ -75,7 +81,8 @@ def red_ratio(frames, dt):
 
 def band_passed(frames, dt, band=BLOB_BAND):
     """Block averages over 1/(2 f_high), less their running mean over 1/f_low; one row
-    at a time, to keep a float64 copy of the record out of memory."""
+    at a time, so that the float64 copy the block means are taken of is one row's, not
+    the record's (see ``red_ratio`` for what the loops save)."""
     block = max(1, int(round(1 / (2 * band[1]) / dt)))
     n = frames.shape[-1] // block
     width = max(3, int(round(1 / band[0] / (dt * block))))
