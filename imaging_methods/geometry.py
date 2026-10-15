@@ -1,6 +1,8 @@
 """The last closed flux surface of an EFIT reconstruction, as a spline.
 
-Moved from fusion_scripts `plotting_scripts/figure_plots.py` at 12b8543.
+Moved from fusion_scripts `plotting_scripts/figure_plots.py` at 12b8543. Its numbers are
+Alcator C-Mod's, in centimetres (see ``calculate_splinted_LCFS``), and carry to no other
+machine.
 """
 
 import numpy as np
@@ -38,11 +40,13 @@ def calculate_splinted_LCFS(
     closest_rbbbs = rbbbs[:, time_index]
     closest_zbbbs = zbbbs[:, time_index]
 
+    # C-Mod's outboard leg: the boundary points at R >= 86 cm.
     f = interpolate.interp1d(
         closest_zbbbs[closest_rbbbs >= 86],
         closest_rbbbs[closest_rbbbs >= 86],
         kind="cubic",
     )
+    # C-Mod's APD view: 100 heights from Z = -8 cm to Z = 1 cm.
     z_fine = np.linspace(-8, 1, 100)
     r_fine = f(z_fine)
 
