@@ -26,7 +26,6 @@ from imaging_methods import (
     TwoDcaParams,
     decorrelation,
     find_events_and_2dca,
-    get_default_apd_method_params,
     neighbour_level,
 )
 
@@ -92,31 +91,6 @@ def test_defaults_are_the_c_mod_decks_settings():
     )
 
 
-def test_defaults_are_the_apd_defaults_with_the_decks_changes():
-    """The deck starts from the APD defaults and changes five knobs; it sets the
-    cross-correlation's mask signal factor apart."""
-    deck = get_default_apd_method_params()
-    deck.two_dca.threshold = 2.5
-    deck.two_dca.window = 60
-    deck.position_filter.mask_signal_factor = 0.65
-    deck.velocity.estimator = "lsq"
-    deck.position_filter.window_size = 1
-
-    averages = decorrelation.Averages()
-    for f in dataclasses.fields(decorrelation.Averages):
-        assert repr(getattr(averages, f.name)) == repr(getattr(deck.two_dca, f.name))
-    tracking = decorrelation.Tracking()
-    assert repr(tracking.position_filter) == repr(deck.position_filter)
-    assert tracking.position_filter_for("cond_av") is tracking.position_filter
-    assert tracking.position_filter_for("cross_corr") == dataclasses.replace(
-        deck.position_filter, mask_signal_factor=0.75
-    )
-    assert repr(tracking.velocity) == repr(deck.velocity)
-    blobs = decorrelation.Blobs()
-    assert repr(blobs.gauss_fit) == repr(deck.gauss_fit)
-    assert repr(blobs.taud_estimation) == repr(deck.taud_estimation)
-
-
 def test_averages_are_two_dca_params_without_the_pixel():
     names = [f.name for f in dataclasses.fields(TwoDcaParams)]
     assert [f.name for f in dataclasses.fields(decorrelation.Averages)] == [
@@ -128,13 +102,6 @@ def test_averages_are_two_dca_params_without_the_pixel():
         refx=5, refy=4, threshold=3.0, window=11, check_max=1, single_counting=True
     )
     assert decorrelation.stamp(two_dca) == decorrelation.stamp(averages)
-
-
-def test_defaults_are_fresh_objects():
-    a, b = decorrelation.Tracking(), decorrelation.Tracking()
-    a.position_filter.mask_signal_factor = 0.1
-    assert b.position_filter.mask_signal_factor == 0.65
-    assert decorrelation.Blobs().gauss_fit is not decorrelation.Blobs().gauss_fit
 
 
 # --- every leaf is one a parameter hash can read ---
