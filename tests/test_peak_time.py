@@ -7,10 +7,7 @@ import pytest
 import xarray as xr
 
 from imaging_methods import get_maximum_time
-from imaging_methods.maximum_trajectory import (
-    find_maximum_interpolate,
-    gaussian_convolve,
-)
+from imaging_methods.maximum_trajectory import find_maximum_interpolate
 
 LAGS = np.linspace(-15e-6, 15e-6, 61)  # 0.5 us sampling, as an APD average's lags
 NY, NX = 3, 4
@@ -36,12 +33,11 @@ def event(peaks=PEAKS, width=4e-6):
     )
 
 
-@pytest.mark.parametrize("gauss_convolve", [False, True])
-def test_the_peak_lag_of_every_pixel(gauss_convolve):
+def test_the_peak_lag_of_every_pixel():
     e = event()
     for y in range(NY):
         for x in range(NX):
-            tau = get_maximum_time(e, x, y, gauss_convolve=gauss_convolve)
+            tau = get_maximum_time(e, x, y)
             assert tau == pytest.approx(PEAKS[y, x], abs=1e-12)
 
 
@@ -63,16 +59,6 @@ def test_a_peak_at_the_window_edge_warns():
     messages = [str(w.message) for w in caught]
     assert any("window edge" in m for m in messages)
     assert any("maximum in the boundary" in m for m in messages)
-
-
-def test_gaussian_convolve_keeps_what_the_whole_kernel_covers():
-    times = np.arange(50.0)
-    smoothed_times, smoothed = gaussian_convolve(np.ones(50), times, s=3)
-    # 6 s = 18 samples, made odd: 19, so 9 lost at either end.
-    np.testing.assert_array_equal(smoothed_times, times[9:-9])
-    np.testing.assert_allclose(smoothed, 1.0, rtol=1e-15)  # the kernel sums to 1
-    t, _ = gaussian_convolve(np.ones(50), times, s=1.0, kernel_size=5)
-    np.testing.assert_array_equal(t, times[2:-2])
 
 
 def test_find_maximum_interpolate_between_samples():

@@ -6,7 +6,6 @@ __all__ = [
     "compute_maximum_trajectory_da",
     "find_maximum_for_frame",
     "parabolic_2d_interp",
-    "gaussian_convolve",
     "find_maximum_interpolate",
     "get_maximum_time",
 ]
@@ -203,27 +202,6 @@ def parabolic_2d_interp(
 # Moved from fusion_scripts `density_scan/peak_time.py` at 12b8543.
 
 
-def gaussian_convolve(x, times, s=1.0, kernel_size=None):
-    """``x`` smoothed by a Gaussian kernel, ``exp(-(k / s)^2)`` over ``kernel_size``
-    samples ``k`` (``6 s``, made odd, by default) normalised to sum 1, and the
-    ``times`` it is then defined at: ``(times, smoothed)``, both shorter than the input
-    by ``kernel_size - 1`` (an odd ``kernel_size``), since only the samples the whole
-    kernel covers are kept.
-    """
-    # If kernel_size not specified, use 6*sigma to capture most of the Gaussian
-    if kernel_size is None:
-        kernel_size = int(6 * s)
-        # Ensure kernel_size is odd
-        if kernel_size % 2 == 0:
-            kernel_size += 1
-
-    center = kernel_size // 2
-    kernel = np.exp(-((np.arange(-center, center + 1) / s) ** 2))
-    kernel = kernel / kernel.sum()
-
-    return times[center:-center], np.convolve(x, kernel, mode="valid")
-
-
 def find_maximum_interpolate(x, y):
     """The maximum of a quartic interpolating spline through ``(x, y)``: ``(x_max,
     y_max)``, among the roots of its derivative and the two ends of ``x``. Warns when
@@ -249,15 +227,14 @@ def find_maximum_interpolate(x, y):
     return max_time, spline(max_time)
 
 
-def get_maximum_time(e, refx=None, refy=None, gauss_convolve=False):
+def get_maximum_time(e, refx=None, refy=None):
     """The lag at which the event ``e`` peaks at pixel (refx, refy).
 
     ``e`` is a DataArray over time, y and x with ``R`` among its coordinates, such as a
     conditional average's ``cond_av``; the pixel defaults to ``e["refx"]`` and
     ``e["refy"]``. The lag is the maximum of a quartic spline through the pixel's series
-    (``find_maximum_interpolate``), after smoothing it with ``gaussian_convolve`` at
-    ``s=3`` when ``gauss_convolve`` is set. Returns None for a pixel outside the array,
-    and warns when the maximum is at the edge of the window.
+    (``find_maximum_interpolate``). Returns None for a pixel outside the array, and
+    warns when the maximum is at the edge of the window.
     """
     import warnings
 
@@ -267,10 +244,7 @@ def get_maximum_time(e, refx=None, refy=None, gauss_convolve=False):
     is_in_boundaries = 0 <= refx < e.R.sizes["x"] and 0 <= refy < e.R.sizes["y"]
     if not is_in_boundaries:
         return None
-    if gauss_convolve:
-        times, data = gaussian_convolve(e.isel(x=refx, y=refy), e.time, s=3)
-    else:
-        times, data = e.time, e.isel(x=refx, y=refy)
+    times, data = e.time, e.isel(x=refx, y=refy)
 
     tau, _ = find_maximum_interpolate(times, data)
     if tau <= np.min(times) or tau >= np.max(times):
