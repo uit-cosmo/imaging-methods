@@ -59,6 +59,11 @@ Pipeline order roughly matches module order:
   Gaussian fit at time lag 0, Nelder-Mead multistart, with size/aspect/tilt
   penalty terms — see README for the error function) and `estimate_fwhm_sizes`
   (interpolated FWHM along the row/column through the reference pixel).
+- `fitting.py` — `fit_two_sided` (two-sided exponential centred at 0,
+  L-BFGS-B) and `fit_exp` (straight line through log y), for cuts through an
+  average.
+- `geometry.py` — `calculate_splinted_LCFS`: the outboard leg of EFIT's
+  boundary as a cubic spline R(Z); C-Mod's numbers, in cm, hardcoded.
 - `maximum_trajectory.py` — sub-pixel peak tracking per frame (2D parabolic
   interpolation, shift clipped to ±0.5 pixel).
 - `velocity_estimates.py` — glue: position from contour centroid or max
