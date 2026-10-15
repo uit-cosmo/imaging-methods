@@ -205,7 +205,11 @@ def parabolic_2d_interp(
 def find_maximum_interpolate(x, y):
     """The maximum of a quartic interpolating spline through ``(x, y)``: ``(x_max,
     y_max)``, among the roots of its derivative and the two ends of ``x``. Warns when
-    the maximum is at an end."""
+    the maximum is at an end.
+
+    A copy of velocity_estimation's private
+    ``time_delay_estimation._find_maximum_interpolate``, the same search and warning,
+    until velocity_estimation makes it public and this calls it."""
     from scipy.interpolate import InterpolatedUnivariateSpline
     import warnings
 
