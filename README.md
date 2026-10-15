@@ -7,6 +7,8 @@ I have applied this to APD, Phantom and synthetic blob data. The main method is 
 - data_preprocessing: Method to handle and preprocess experimental data
 - discharge: Dataclasses definitions for shots and analysis results
 - duration_time_estimation: Method to estimate duration time by fitting power spectral density or auto-correlation function
+- fitting: Exponential fits to a profile
+- geometry: The last closed flux surface of an EFIT reconstruction
 - parameter_estimation: Other estimation methods applied to the outcome of 2DCA.
 - show_data: Diverse plotting functions
 - utils: Other functions
@@ -60,6 +62,24 @@ $E(\ell_x, \ell_y, \theta) = \sum_{x, y} (\varphi(\ell_x, \ell_y, \theta; x, y) 
 <img src="https://github.com/uit-cosmo/imaging-methods/blob/main/figures/example_fit.png?raw=true" alt="2DCA" style="max-width: 40%;" />
 
 By convention, lx and ly are defined in such a way that ly is the larger of the two. $\theta \in [0, \pi]$
+
+## Exponential fits
+
+`fit_two_sided(x, y)` fits a two-sided exponential centred at 0 to a profile normalised to 1 at its peak, such as the
+cut through a conditional average along R or Z:
+
+$f(x) = c + (1 - c) \exp(-|x|/\lambda), \quad \lambda = s(1 - \sigma) \text{ for } x < 0, \quad \lambda = s\sigma \text{ for } x \ge 0$
+
+The parameters $(s, \sigma, c)$ minimise the sum of squared residuals (L-BFGS-B, with $s > 0$, $0 < \sigma < 1$ and
+$|c| \le 10$), starting from the $1/e$ lengths read off the data on either side of the peak. `fit_exp(x, y)` fits
+$f(x) = A \exp(x/s)$ as a straight line through $\log y$, leaving out the values that are not positive.
+
+## Last closed flux surface
+
+`calculate_splinted_LCFS(t, efit_time, rbbbs, zbbbs)` takes EFIT's boundary points at the EFIT time nearest $t$, keeps
+the outboard leg, $R \ge 86$ cm, and interpolates $R(Z)$ through it with a cubic spline, evaluated at 100 heights from
+$Z = -8$ cm to $1$ cm. A pixel's horizontal distance to the separatrix at its own height is then
+$R - R_\mathrm{sep}(Z)$. The numbers are C-Mod's, in centimetres, and carry to no other machine.
 
 ## Three-point time delay estimation (3TDE)
 
