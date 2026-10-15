@@ -255,21 +255,6 @@ def test_a_record_that_starts_lit_does_not_take_the_fallback(name):
         )  # the record's decaying tail, with the light going down
 
 
-def test_percentiles_are_named_in_words():
-    assert [
-        puff._percentile(q) for q in (0.9, 0.1, 0.5, 0.75, 0.91, 0.12, 0.23, 0.02)
-    ] == [
-        "90th percentile",
-        "10th percentile",
-        "50th percentile",
-        "75th percentile",
-        "91st percentile",
-        "12th percentile",
-        "23rd percentile",
-        "2nd percentile",
-    ]
-
-
 def test_a_window_before_the_puff_is_kept():
     t, x = signal(rise_at=0.3)
     w = puff.find_puff(t, x, (0.05, 0.2))

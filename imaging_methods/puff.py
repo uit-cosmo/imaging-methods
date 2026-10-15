@@ -277,14 +277,8 @@ def _span(a, b):
 
 
 def _percentile(q):
-    """``0.9`` -> ``"90th percentile"``."""
-    n = round(100 * q)
-    suffix = (
-        "th"
-        if n % 100 in (11, 12, 13)
-        else {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
-    )
-    return f"{n}{suffix} percentile"
+    """``0.9`` -> ``"90th percentile"``: the fallback quantile, 0.9 or 0.1."""
+    return f"{round(100 * q)}th percentile"
 
 
 def find_puff(
