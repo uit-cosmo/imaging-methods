@@ -40,7 +40,6 @@ import dataclasses
 import warnings
 from dataclasses import dataclass, field, replace
 
-import netCDF4  # noqa: F401  -- before h5py, which velocity_estimation imports, or every netCDF read fails
 import numpy as np
 import xarray as xr
 import velocity_estimation as ve
