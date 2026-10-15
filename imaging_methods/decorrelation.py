@@ -510,33 +510,24 @@ def at(bank, x, y):
 # ---------------------------------------------------------------------------------------
 
 
-def track(average_ds, variable, method, position_filter, estimator, level=None):
+def track(average_ds, variable, method, params):
     """One track through one reference's average: ``(vr, vz, position, fit)``.
 
     ``method`` is "max", the subpixel maximum of ``variable`` at each lag, or
-    "contouring", the centroid of its contour at ``level`` (a fraction of the average's
-    maximum). ``position`` is (time, 2), R and Z at each lag of the average, NaN where
-    the tracker found nothing; ``fit`` is (time,) bool, the lags the velocity's slope
-    rests on. A lag in ``fit`` without a position is fitted where the tracker
-    interpolated, as ``smooth_da`` fills it. The velocities are NaN where the fit fails.
+    "contouring", the centroid of its contour at ``params.contouring.threshold_factor``
+    (a fraction of the average's maximum). ``params`` is a ``MethodParameters``, of
+    which the position filter, the velocity estimator and the contour level are read.
+    ``position`` is (time, 2), R and Z at each lag of the average, NaN where the
+    tracker found nothing; ``fit`` is (time,) bool, the lags the velocity's slope rests
+    on. A lag in ``fit`` without a position is fitted where the tracker interpolated,
+    as ``smooth_da`` fills it. The velocities are NaN where the fit fails.
     """
-    if method == "contouring":
-        if level is None:
-            raise ValueError("a contour-tracked track needs its level")
-        contouring = ContouringParams(threshold_factor=level)
-    else:
-        contouring = ContouringParams()
-    params = MethodParameters(
-        position_filter=position_filter,
-        velocity=VelocityParams(estimator=estimator),
-        contouring=contouring,
-    )
     pos, mask, valid = get_positions_and_mask(
         average_ds, variable, params, position_method=method
     )
     with np.errstate(invalid="ignore"):
         vr, vz = get_averaged_velocity_from_position(
-            position_da=pos, mask=mask, estimator=estimator
+            position_da=pos, mask=mask, estimator=params.velocity.estimator
         )
     lags = average_ds.time.values
     index = np.searchsorted(lags, pos.time.values[0]) + np.arange(pos.time.size)
@@ -658,6 +649,14 @@ def fields(ds, average_at, averages, tracking, tde, dead, pixels=None):
     }
     count = np.zeros((ny, nx), dtype=int)
     catde = np.full((len(CATDE_VARIABLES), ny, nx), np.nan)
+    # How each variable is tracked; the contour level is set per pixel, below.
+    params = {
+        variable: MethodParameters(
+            position_filter=tracking.position_filter_for(variable),
+            velocity=tracking.velocity,
+        )
+        for variable, _ in TRACKS.values()
+    }
     found = {}
     tracked = {}
     with warnings.catch_warnings():
@@ -671,7 +670,7 @@ def fields(ds, average_at, averages, tracking, tde, dead, pixels=None):
                 continue
             found[(x, y)] = average_ds
             for suffix, (variable, method) in TRACKS.items():
-                level = None
+                p = params[variable]
                 if method == "contouring":
                     # A property of this pixel's average, not a setting: read off it
                     # before tracking.
@@ -679,14 +678,8 @@ def fields(ds, average_at, averages, tracking, tde, dead, pixels=None):
                         average_ds, variable, tracking.neighbour_step
                     )
                     out[suffix]["level"][y, x] = level
-                vr, vz, position, fit = track(
-                    average_ds,
-                    variable,
-                    method,
-                    tracking.position_filter_for(variable),
-                    tracking.velocity.estimator,
-                    level,
-                )
+                    p = replace(p, contouring=ContouringParams(threshold_factor=level))
+                vr, vz, position, fit = track(average_ds, variable, method, p)
                 out[suffix]["vr"][y, x], out[suffix]["vz"][y, x] = vr, vz
                 out[suffix]["nlags"][y, x] = int(np.sum(fit))
                 tracked[(suffix, x, y)] = position, fit

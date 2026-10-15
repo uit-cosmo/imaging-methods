@@ -21,10 +21,13 @@ import xarray as xr
 
 import pipeline_fixture as fixture
 from imaging_methods import (
+    ContouringParams,
+    MethodParameters,
     TwoDcaParams,
     decorrelation,
     find_events_and_2dca,
     get_default_apd_method_params,
+    neighbour_level,
 )
 
 # The record, its settings, mask, averages, bank and products (fields_out, blobs_out)
@@ -466,12 +469,25 @@ def test_fields_at_some_pixels_leave_the_rest_nan(
     assert np.isnan(some.vr3_tde.values[elsewhere]).all()
 
 
-def test_track_needs_a_level_to_contour(fresh, settings):
+def test_track_is_one_pixel_of_the_fields(fresh, settings, fields_out):
+    """``track`` with the parameters ``fields`` builds for the centroid track: the
+    tracking settings and the pixel's own contour level."""
     tracking = settings[1]
-    with pytest.raises(ValueError, match="level"):
-        decorrelation.track(
-            fresh[(2, 1)], "cond_av", "contouring", tracking.position_filter, "lsq"
-        )
+    x, y = 2, 1
+    level = neighbour_level(fresh[(x, y)], "cond_av", tracking.neighbour_step)
+    params = MethodParameters(
+        position_filter=tracking.position_filter_for("cond_av"),
+        velocity=tracking.velocity,
+        contouring=ContouringParams(threshold_factor=level),
+    )
+    vr, vz, position, fit = decorrelation.track(
+        fresh[(x, y)], "cond_av", "contouring", params
+    )
+    assert np.isfinite(vr) and vr == fields_out.vr_com.values[y, x]
+    assert vz == fields_out.vz_com.values[y, x]
+    np.testing.assert_array_equal(position[:, 0], fields_out.pos_r_com.values[y, x])
+    np.testing.assert_array_equal(position[:, 1], fields_out.pos_z_com.values[y, x])
+    np.testing.assert_array_equal(fit, fields_out.fit_com.values[y, x])
 
 
 # --- stamp, nevents and the paper's cut ---
