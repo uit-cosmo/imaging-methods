@@ -620,6 +620,10 @@ def test_reliable_min_lags_moves_the_cut_and_its_default_is_the_old_one(fields_o
     assert not decorrelation.reliable(paper).values[1, 2]
     assert decorrelation.reliable(paper, min_lags=5).values[1, 2]
     assert not decorrelation.reliable(paper, min_lags=9).values.any()
+    # Keyword-only: a call written for the signature without min_lags,
+    # reliable(f, None, 100), would otherwise set min_lags to 100.
+    with pytest.raises(TypeError):
+        decorrelation.reliable(paper, None, 100)
     # On the fixture's fields the centroid fits rest on 3 to 6 of their 11 lags, so the
     # paper's 8 keeps none, and 4 keeps the interior pixels that reach it.
     assert not decorrelation.reliable(fields_out, min_events=0).values.any()
