@@ -132,6 +132,10 @@ dmypy.json
 # nc files
 /tests/*nc
 *nc
+# ...except the decorrelation tests' synthetic record and expected values
+!/tests/data/pipeline_record.nc
+!/tests/data/pipeline_expected_fields.nc
+!/tests/data/pipeline_expected_blobs.nc
 
 # .gif files
 /examples/*gif

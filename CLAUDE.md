@@ -79,6 +79,15 @@ Pipeline order roughly matches module order:
 - `utils.py` — `PhantomDataInterface`/`MaskedImagingDataInterface`
   (`velocity_estimation` interfaces), analytic `autocorrelation`/
   `power_spectral_density`, `smooth_da`, default method parameters.
+- `decorrelation.py` — the 2DCA at every live reference pixel of a record and
+  what is read off it (moved from fusion_scripts' `decorrelation/pipeline.py`):
+  `average` → `stack` into one bank (`at` gives an average back, bit for bit)
+  → `fields` (three 2DCA tracks, 2- and 3-point TDE off the record and on the
+  average) and `blobs` (13 blob parameters); `dead_mask(ds, hand_made)`,
+  `reliable` (the paper's cut). Its helpers are `contours.neighbour_level`,
+  `maximum_trajectory.get_maximum_time` and
+  `velocity_estimates.get_positions_and_mask`. Shot Explorer's decorrelation
+  products are thin adapters over it.
 
 `examples/synthetic_data.py` is a runnable end-to-end walkthrough on
 blobmodel data.
@@ -124,6 +133,17 @@ black/mypy gates in CI and no tool config in pyproject.toml — defaults apply.
 - `smooth_da` output carries a boolean `valid` time coordinate — False where
   the input was NaN (values there are extrapolated and can lie far outside
   the field of view).
+- **netCDF4 before h5py**: `__init__.py` imports `netCDF4` first.
+  `velocity_estimation` pulls in h5py (through plasmapy), and once h5py's
+  libhdf5 is loaded every netCDF read fails with `Errno -101`. Keep it the
+  package's first import.
+- **The decorrelation defaults are cache keys**: the defaults of
+  `decorrelation.Averages`, `Tracking`, `Tde` and `Blobs` are the C-Mod
+  settings of the paper's twodca deck, written as literals (the APD defaults
+  plus the deck's changes). Shot Explorer hashes them field by field, and
+  `stamp` writes them with repr, so no field's name, order, annotation, value
+  or Python type (`size_penalty` stays the int 5) may change without a new
+  cache key downstream. `tests/test_decorrelation.py` pins them.
 - `find_events_and_2dca` and `get_contour_evolution` print progress with bare
   `print` (`verbose=True` default); keep output quiet in library additions or
   route through the existing `verbose` flags.

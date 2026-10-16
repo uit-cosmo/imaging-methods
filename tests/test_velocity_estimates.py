@@ -158,3 +158,52 @@ def test_require_within_boundaries_shortens_the_mask():
     # The clipped tail drags the velocity down; excluding it recovers the input.
     assert on[0] > off[0]
     assert on[0] == pytest.approx(0.1, rel=0.05)  # v = 1 px/frame, dr = 0.1
+
+
+# --- get_positions_and_mask: the tracking step, returned ---
+
+
+def deck_params():
+    from imaging_methods import get_default_apd_method_params
+
+    params = get_default_apd_method_params()
+    params.position_filter.window_size = 3
+    params.position_filter.mask_signal_factor = 0.6
+    params.velocity.estimator = "lsq"
+    return params
+
+
+def test_positions_flag_the_lags_without_a_raw_position():
+    """A contour level above the late frames' peaks: no centroid there, so those lags
+    are extrapolated, and flagged as not valid."""
+    from imaging_methods import get_positions_and_mask
+
+    ds = make_moving_gaussian_ds(v=0.0, start=4.0)  # still, centred on pixel (4, 4)
+    ds["cond_av"] = ds.cond_av * np.exp(-ds.time / 10)  # a decaying average
+    params = deck_params()
+    params.contouring.threshold_factor = 0.4
+    params.position_filter.window_size = 1
+    pos, mask, valid = get_positions_and_mask(ds, "cond_av", params)
+    decayed = np.exp(-ds.time.values / 10) < 0.4  # from lag 10 on
+    np.testing.assert_array_equal(valid, ~decayed)
+    assert np.isfinite(pos.values).all()  # extrapolated where there was nothing
+    np.testing.assert_allclose(pos.values[~decayed], [[0.4, 0.4]] * 10, atol=1e-12)
+
+
+def test_positions_within_boundaries_and_unknown_methods():
+    from imaging_methods import get_positions_and_mask
+
+    ds = make_moving_gaussian_ds()
+    params = deck_params()
+    params.contouring.threshold_factor = 0.5
+    params.position_filter.window_size = 1
+    params.position_filter.mask_distance = 100
+    params.position_filter.mask_signal_factor = 0.0
+    _, everything, _ = get_positions_and_mask(ds, "cond_av", params)
+    params.position_filter.require_within_boundaries = True
+    _, inside, _ = get_positions_and_mask(ds, "cond_av", params)
+    assert np.asarray(everything).all()
+    assert np.asarray(inside).sum() < np.asarray(everything).sum()
+    assert not np.asarray(inside)[-1]  # the blob has run off the edge by then
+    with pytest.raises(NotImplementedError, match="Unknown position method"):
+        get_positions_and_mask(ds, "cond_av", params, position_method="centroid")

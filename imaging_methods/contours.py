@@ -13,6 +13,9 @@ __all__ = [
     "is_within_boundaries",
     "fit_ellipses_to_contour_ds",
     "get_contour_evolution",
+    "zero_lag_frame",
+    "neighbour_ratios",
+    "neighbour_level",
 ]
 
 
@@ -391,3 +394,65 @@ def get_contour_evolution(
     contour_ds["max_displacement"] = max_displacement
 
     return contour_ds
+
+
+# The contour level read off the conditional average instead of set by hand.
+# Moved from fusion_scripts `twodca_manuscript/contour_level.py` at 12b8543.
+
+
+def zero_lag_frame(average_ds, variable="cond_av"):
+    """The (y, x) frame of ``variable`` at the lag closest to zero."""
+    field = average_ds[variable].transpose("time", "y", "x")
+    return field.values[int(np.abs(field.time.values).argmin())]
+
+
+def neighbour_ratios(frame, step=1):
+    """Values of the peak's 4-neighbours, as fractions of the peak.
+
+    Fewer than four when the peak sits on the array border -- the ratios are averaged,
+    so a border pixel simply averages what it has. Border pixels are not excluded: on
+    the W7-X puff-1 velocity field they already fail the tracking on their own, 2 of 44
+    fitted against 50 of 84 in the interior.
+
+    ``step`` pixels away rather than one: on a view sampled much finer than the
+    structure, the nearest neighbours sit at the peak and the level at ~1.
+    """
+    ny, nx = frame.shape
+    y, x = np.unravel_index(np.argmax(frame), frame.shape)
+    neighbours = [
+        frame[y + dy, x + dx]
+        for dy, dx in ((-step, 0), (step, 0), (0, -step), (0, step))
+        if 0 <= y + dy < ny and 0 <= x + dx < nx
+    ]
+    return np.array(neighbours) / frame[y, x]
+
+
+def neighbour_level(average_ds, variable="cond_av", step=1):
+    """Contour level for one conditional average: the neighbour mean.
+
+    Takes the zero-lag frame only -- the peak pixel, which is normally the reference
+    pixel (``check_max`` makes it brighter than its neighbours, not the frame's
+    maximum, and ``check_max=0`` guarantees nothing), and its four nearest neighbours
+    ``step`` pixels away -- and returns
+
+        threshold_factor = mean(neighbour values) / peak value
+
+    so the level set is the one that reaches, on average, one step out from the peak.
+    It is a lookup, not a search: no optimisation, no scan over levels, and the same
+    level is then used at every lag (``get_contour_evolution``'s ``threshold_factor``).
+    For a velocity field it is recomputed per pixel, from that pixel's own conditional
+    average.
+
+    A hand-set level does not transfer between records: on W7-X, the 0.48 that closes
+    the zero-lag contour of one puff leaves a two-lag fit and -1486 m/s on another puff
+    of the same record. On C-Mod this rule lands on 0.425 against the hand-set 0.43.
+    Against the closure floor (the lowest level whose zero-lag set still closes inside
+    the array), the other candidate that adapts, it is both more stable under
+    resampling the events and more discriminating between records. The four neighbours
+    are not equal, so averaging them is the one arbitrary choice in the rule.
+
+    Deliberately no guards: no closure floor as a lower bound, no minimum number of
+    lags. A pixel whose contour opens or whose mask collapses at its own level is bad
+    data, and no velocity is the right answer for it.
+    """
+    return float(neighbour_ratios(zero_lag_frame(average_ds, variable), step).mean())

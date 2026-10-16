@@ -6,6 +6,8 @@ __all__ = [
     "compute_maximum_trajectory_da",
     "find_maximum_for_frame",
     "parabolic_2d_interp",
+    "find_maximum_interpolate",
+    "get_maximum_time",
 ]
 
 
@@ -194,3 +196,63 @@ def parabolic_2d_interp(
     sub_x = x_idx + float(np.clip(delta_x, -0.5, 0.5))
     sub_y = y_idx + float(np.clip(delta_y, -0.5, 0.5))
     return sub_x, sub_y
+
+
+# When an event peaks at a pixel: the maximum of a spline through its lags.
+# Moved from fusion_scripts `density_scan/peak_time.py` at 12b8543.
+
+
+def find_maximum_interpolate(x, y):
+    """The maximum of a quartic interpolating spline through ``(x, y)``: ``(x_max,
+    y_max)``, among the roots of its derivative and the two ends of ``x``. Warns when
+    the maximum is at an end.
+
+    A copy of velocity_estimation's private
+    ``time_delay_estimation._find_maximum_interpolate``, the same search and warning,
+    until velocity_estimation makes it public and this calls it."""
+    from scipy.interpolate import InterpolatedUnivariateSpline
+    import warnings
+
+    # Taking the derivative and finding the roots only work if the spline degree is at least 4.
+    spline = InterpolatedUnivariateSpline(x, y, k=4)
+    possible_maxima = spline.derivative().roots()
+    possible_maxima = np.append(
+        possible_maxima, (x[0], x[-1])
+    )  # also check the endpoints of the interval
+    values = spline(possible_maxima)
+
+    max_index = np.argmax(values)
+    max_time = possible_maxima[max_index]
+    if max_time == x[0] or max_time == x[-1]:
+        warnings.warn(
+            "Maximization on interpolation yielded a maximum in the boundary!"
+        )
+
+    return max_time, spline(max_time)
+
+
+def get_maximum_time(e, refx=None, refy=None):
+    """The lag at which the event ``e`` peaks at pixel (refx, refy).
+
+    ``e`` is a DataArray over time, y and x with ``R`` among its coordinates, such as a
+    conditional average's ``cond_av``; the pixel defaults to ``e["refx"]`` and
+    ``e["refy"]``. The lag is the maximum of a quartic spline through the pixel's series
+    (``find_maximum_interpolate``). Returns None for a pixel outside the array, and
+    warns when the maximum is at the edge of the window.
+    """
+    import warnings
+
+    if refx is None or refy is None:
+        refx, refy = int(e["refx"].item()), int(e["refy"].item())
+
+    is_in_boundaries = 0 <= refx < e.R.sizes["x"] and 0 <= refy < e.R.sizes["y"]
+    if not is_in_boundaries:
+        return None
+    times, data = e.time, e.isel(x=refx, y=refy)
+
+    tau, _ = find_maximum_interpolate(times, data)
+    if tau <= np.min(times) or tau >= np.max(times):
+        warnings.warn(
+            "Time delay found at the window edge, consider running 2DCA with a larger window"
+        )
+    return tau
