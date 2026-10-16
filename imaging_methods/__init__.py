@@ -43,6 +43,8 @@ from .parameter_estimation import (
     fit_ellipse_to_event,
     estimate_fwhm_sizes,
 )
+from .fitting import fit_two_sided, fit_exp
+from .geometry import calculate_splinted_LCFS
 from .data_preprocessing import interpolate_nans_3d, run_norm_ds
 from . import dead_pixels, puff
 from .maximum_trajectory import (
