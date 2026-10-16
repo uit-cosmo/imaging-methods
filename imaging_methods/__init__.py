@@ -44,6 +44,7 @@ from .parameter_estimation import (
     estimate_fwhm_sizes,
 )
 from .data_preprocessing import interpolate_nans_3d, run_norm_ds
+from . import dead_pixels, puff
 from .maximum_trajectory import (
     get_physical_pos,
     compute_maximum_trajectory_da,

@@ -46,6 +46,14 @@ Pipeline order roughly matches module order:
 - `data_preprocessing.py` — `interpolate_nans_3d` (dead-pixel interpolation;
   NaN mask taken from t=0 and assumed constant in time), `run_norm_ds`
   (running normalization via fppanalysis; zero-fills non-finite output).
+- `dead_pixels.py` — dead APD pixels from the raw record: Welch red-spectrum
+  ratio, then regression gain on an already-live neighbour, iterated;
+  `consolidate` gives a run day's mask. Its loops (per pixel, per row) are
+  there for memory: batched, `estimate` peaks at 6 times the record, not 2.5.
+- `puff.py` — the gas-puff analysis window of a raw record (`puff_window`/
+  `find_puff` → `PuffWindow`, with its rule in words). Give it the whole
+  record: the dark level is read off its start. The drivers that read files
+  stay in fusion_scripts. Both rules, with their math, are in the README.
 - `cond_av.py` — `find_events_and_2dca(ds, TwoDcaParams)`: the core method.
   Returns `(events, average_ds)` where `average_ds` has `cond_av`,
   `cond_repr` (conditional reproducibility = cond_av²/mean²), `cross_corr`,
