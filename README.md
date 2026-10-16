@@ -45,9 +45,9 @@ differences method.
 ## Contour level read off the average
 
 The level of the contour tracked through a conditional average is read off the average instead of set by hand
-(`neighbour_level`). Let $\phi_0$ be the frame of the average at the lag closest to zero, $p$ its maximum (the reference
-pixel, by construction of the 2DCA) and $N$ the pixels `step` away from $p$ along its row and column: four, fewer on the
-border. The threshold factor is
+(`neighbour_level`). Let $\phi_0$ be the frame of the average at the lag closest to zero, $p$ its maximum (normally the
+reference pixel: the 2DCA's `check_max` makes the reference the brightest of its neighbours, not of the frame) and $N$
+the pixels `step` away from $p$ along its row and column: four, fewer on the border. The threshold factor is
 
 $\ell = \frac{1}{|N|} \sum_{n \in N} \frac{\phi_0(n)}{\phi_0(p)}$
 

@@ -430,8 +430,10 @@ def neighbour_ratios(frame, step=1):
 def neighbour_level(average_ds, variable="cond_av", step=1):
     """Contour level for one conditional average: the neighbour mean.
 
-    Takes the zero-lag frame only -- the peak pixel, which is the reference pixel by
-    construction, and its four nearest neighbours ``step`` pixels away -- and returns
+    Takes the zero-lag frame only -- the peak pixel, which is normally the reference
+    pixel (``check_max`` makes it brighter than its neighbours, not the frame's
+    maximum, and ``check_max=0`` guarantees nothing), and its four nearest neighbours
+    ``step`` pixels away -- and returns
 
         threshold_factor = mean(neighbour values) / peak value
 
